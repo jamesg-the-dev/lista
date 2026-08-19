@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using RosterApp.Domain.Auditing;
 using RosterApp.Domain.Rostering;
+using RosterApp.Domain.Tenancy;
 
 namespace RosterApp.Infrastructure;
 
@@ -12,16 +14,19 @@ namespace RosterApp.Infrastructure;
 public sealed class RosterDbContext(DbContextOptions<RosterDbContext> options) : DbContext(options)
 {
     public DbSet<Shift> Shifts => Set<Shift>();
+    public DbSet<Organisation> Organisations => Set<Organisation>();
+    public DbSet<Venue> Venues => Set<Venue>();
+    public DbSet<Manager> Managers => Set<Manager>();
+    public DbSet<ManagerVenueAccess> ManagerVenueAccesses => Set<ManagerVenueAccess>();
+    public DbSet<AuditLogEntry> AuditLogEntries => Set<AuditLogEntry>();
 
-    // TODO: DbSet<Organisation>, DbSet<Venue>, DbSet<Employee>, DbSet<ShiftAuditEntry>
+    // TODO: global query filter for tenant scoping (VenueId / OrganisationId) once
+    // more venue-scoped aggregates exist (Shift is the first candidate in Phase 1).
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // TODO: entity configurations (mirror Pentana's .ValueGeneratedNever() pattern
-        //       for any natural keys, e.g. reference numbers)
-        // TODO: global query filter for tenant scoping (VenueId / OrganisationId)
-        // TODO: apply all IEntityTypeConfiguration<> from this assembly via ApplyConfigurationsFromAssembly
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(RosterDbContext).Assembly);
     }
 }

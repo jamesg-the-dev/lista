@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RosterApp.Api/RosterApp.Api.csproj" />
+    <Project Path="src/RosterApp.Application/RosterApp.Application.csproj" />
+    <Project Path="src/RosterApp.Domain/RosterApp.Domain.csproj" />
+    <Project Path="src/RosterApp.Infrastructure/RosterApp.Infrastructure.csproj" />
+  </Folder>
+</Solution>

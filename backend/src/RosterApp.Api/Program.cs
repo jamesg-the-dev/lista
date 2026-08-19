@@ -1,24 +1,65 @@
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using RosterApp.Api.Auth;
+using RosterApp.Api.Common;
+using RosterApp.Application;
+using RosterApp.Application.Common;
+using RosterApp.Application.Rostering;
+using RosterApp.Infrastructure;
+using RosterApp.Infrastructure.AwardCalculator;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// TODO: builder.Services.AddDbContext<RosterDbContext>(opts =>
-//     opts.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
-//   Connection string points at Supabase's Postgres instance in all environments;
-//   local dev can point at a local Postgres or a Supabase dev project.
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
 
-// TODO: builder.Services.AddMediatR(cfg =>
-//     cfg.RegisterServicesFromAssembly(typeof(RosterApp.Application.AssemblyMarker).Assembly));
+// Tenant context: HttpContextAccessor backs CurrentTenantContext, which
+// reads the claims SupabaseClaimsTransformation stamps onto the principal.
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentTenantContext, CurrentTenantContext>();
+builder.Services.AddScoped<IClaimsTransformation, SupabaseClaimsTransformation>();
+builder.Services.AddScoped<IAwardRateCalculator, AwardRateCalculator>();
 
-// TODO: register MediatR pipeline behaviors here (in this order):
-//   1. Tenant-scoping behavior (resolves org/venue from auth context, applies to all queries/commands)
-//   2. Permission/authorization behavior
-//   3. Audit interceptor (append-only audit trail on state-changing commands)
-//   4. Validation behavior
+builder
+    .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.MapInboundClaims = false;
+
+        var supabaseUrl = builder.Configuration["Supabase:Url"];
+
+        options.Authority = $"{supabaseUrl}/auth/v1";
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = $"{supabaseUrl}/auth/v1",
+            ValidateAudience = true,
+            ValidAudience = "authenticated",
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+        };
+    });
+
+if (builder.Environment.IsDevelopment())
+{
+    // Full exception detail (e.g. exact signature-mismatch reason) is
+    // redacted by default even in the logs above unless this is set.
+    Microsoft.IdentityModel.Logging.IdentityModelEventSource.ShowPII = true;
+}
+
+builder.Services.AddAuthorization();
+
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
 var app = builder.Build();
 
+app.UseExceptionHandler();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
