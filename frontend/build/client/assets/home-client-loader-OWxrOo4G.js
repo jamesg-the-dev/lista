@@ -1,0 +1,1 @@
+import{E as e}from"./utils-BJ0Opo7w.js";function t(){return e(`/roster`)}export{t as clientLoader};

@@ -717,14 +717,14 @@ actual purchase decision.
   Built. Known open item: drag-and-drop between roster cells is not
   wired up yet (click-to-add/edit only).
 
-* [ ] 2. Staff profiles + availability/leave.
+* [x] 2. Staff profiles + availability/leave.
   Prerequisite data for everything downstream: pay tier/classification
   and employment type feed `IAwardRateCalculator`; availability/leave
   feed both `IRosterComplianceValidator`'s context and basic
   double-booking prevention in the builder. Build before touching the
   builder enhancements in step 3 — they depend on this data existing.
 
-* [ ] 3. Roster builder enhancements (retrofit onto the existing UI, not a
+* [x] 3. Roster builder enhancements (retrofit onto the existing UI, not a
   new screen):
 
   * Live labour budget bar (running $ / % of forecast-sales target,
