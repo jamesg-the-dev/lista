@@ -103,7 +103,7 @@ function StatusBadge({ status }: { status: LeaveRequestStatus }) {
   const meta = STATUS_META[status];
   return (
     <span
-      className="text-xs font-sans font-medium px-2 py-1 rounded flex-shrink-0"
+      className="text-xs font-sans font-medium px-2 py-1 rounded shrink-0"
       style={{ color: meta.color, background: meta.tint }}
     >
       {meta.label}
@@ -298,7 +298,7 @@ function LeaveRequestsSection({
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               <StatusBadge status={lr.status} />
               {lr.status === "requested" && (
                 <>

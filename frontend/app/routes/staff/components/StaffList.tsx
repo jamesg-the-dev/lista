@@ -46,7 +46,7 @@ function StaffRow({
     >
       <div className="flex items-center gap-3 min-w-0">
         <div
-          className="w-9 h-9 rounded-full flex items-center justify-center font-sans font-bold text-sm flex-shrink-0"
+          className="w-9 h-9 rounded-full flex items-center justify-center font-sans font-bold text-sm shrink-0"
           style={{ background: "var(--muted)", color: "var(--foreground)" }}
         >
           {initials(staff.name)}
@@ -61,7 +61,7 @@ function StaffRow({
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-3 flex-shrink-0">
+      <div className="flex items-center gap-3 shrink-0">
         <span
           className="text-xs font-sans font-medium tabular-nums px-2 py-1 rounded"
           style={{
@@ -178,7 +178,7 @@ export default function StaffList() {
               }
             >
               <span
-                className="w-2 h-2 rounded-full flex-shrink-0"
+                className="w-2 h-2 rounded-full shrink-0"
                 style={{ background: "var(--foreground)" }}
               />
               <div className="text-left">
@@ -194,7 +194,7 @@ export default function StaffList() {
               </div>
               <ChevronDownIcon
                 size={14}
-                className="ml-1 flex-shrink-0"
+                className="ml-1 shrink-0"
                 style={{ color: "var(--muted-foreground)" }}
               />
             </DropdownMenuTrigger>

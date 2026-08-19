@@ -1,4 +1,4 @@
-import { CalendarDaysIcon, UsersIcon } from "lucide-react";
+import { CalendarDaysIcon, LineChartIcon, UsersIcon } from "lucide-react";
 import { NavLink, useLocation } from "react-router";
 
 import {
@@ -15,6 +15,7 @@ import {
 
 const navItems = [
   { title: "Roster", url: "/roster", icon: CalendarDaysIcon },
+  { title: "Dashboard", url: "/dashboard", icon: LineChartIcon },
   { title: "Staff", url: "/staff", icon: UsersIcon },
 ];
 

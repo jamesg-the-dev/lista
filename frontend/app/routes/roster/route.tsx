@@ -204,12 +204,12 @@ export default function RosterBuilder() {
                 />
               }
             >
-              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "var(--foreground)" }} />
+              <span className="w-2 h-2 rounded-full shrink-0" style={{ background: "var(--foreground)" }} />
               <div className="text-left">
                 <p className="font-sans font-semibold text-sm uppercase leading-tight">{venue.name}</p>
                 <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>{venue.suburb}</p>
               </div>
-              <ChevronDownIcon size={14} className="ml-1 flex-shrink-0" style={{ color: "var(--muted-foreground)" }} />
+              <ChevronDownIcon size={14} className="ml-1 shrink-0" style={{ color: "var(--muted-foreground)" }} />
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-64" style={{ background: "var(--muted)", borderColor: "var(--border)" }}>
               {venues.map((v) => (
@@ -320,7 +320,7 @@ export default function RosterBuilder() {
                   <Fragment key={st.id}>
                     <div className="flex items-center gap-3 pr-4 py-3 border-t" style={{ borderColor: "var(--border)" }}>
                       <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center font-sans font-bold text-sm flex-shrink-0"
+                        className="w-9 h-9 rounded-full flex items-center justify-center font-sans font-bold text-sm shrink-0"
                         style={{ background: meta.tint, color: meta.color }}
                       >
                         {initials(st.name)}
@@ -353,7 +353,7 @@ export default function RosterBuilder() {
                                   style={{ background: "var(--card)" }}
                                 >
                                   <div
-                                    className="w-6 flex-shrink-0 flex items-center justify-center font-sans font-bold text-xs"
+                                    className="w-6 shrink-0 flex items-center justify-center font-sans font-bold text-xs"
                                     style={{ background: meta.color, color: meta.tint }}
                                   >
                                     {meta.letter}
