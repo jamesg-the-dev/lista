@@ -71,3 +71,7 @@ Backend is scaffolded but not yet buildable end-to-end (no `dotnet restore`
 run in this environment). Open `backend/src` in Rider or VS, restore
 NuGet packages, and point `appsettings.json`'s connection string at your
 Supabase Postgres instance.
+
+
+## Running migrations
+`dotnet ef database update --project backend/src/RosterApp.Infrastructure --startup-project backend/src/RosterApp.Api`

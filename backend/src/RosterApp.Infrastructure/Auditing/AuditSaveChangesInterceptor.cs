@@ -41,7 +41,7 @@ public sealed class AuditSaveChangesInterceptor(ICurrentTenantContext tenantCont
         var actorId = tenantContext.IsAuthenticated ? tenantContext.ManagerId : (Guid?)null;
         var organisationId = tenantContext.IsAuthenticated ? tenantContext.OrganisationId : (Guid?)null;
 
-        foreach (var entry in context.ChangeTracker.Entries<AggregateRoot>())
+        foreach (var entry in context.ChangeTracker.Entries<AggregateRoot>().ToList())
         {
             if (entry.Entity.DomainEvents.Count == 0)
             {

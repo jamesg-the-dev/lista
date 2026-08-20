@@ -5,9 +5,7 @@ using RosterApp.Api.Auth;
 using RosterApp.Api.Common;
 using RosterApp.Application;
 using RosterApp.Application.Common;
-using RosterApp.Application.Rostering;
 using RosterApp.Infrastructure;
-using RosterApp.Infrastructure.AwardCalculator;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,7 +17,6 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentTenantContext, CurrentTenantContext>();
 builder.Services.AddScoped<IClaimsTransformation, SupabaseClaimsTransformation>();
-builder.Services.AddScoped<IAwardRateCalculator, AwardRateCalculator>();
 
 builder
     .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using RosterApp.Infrastructure;
@@ -11,9 +12,11 @@ using RosterApp.Infrastructure;
 namespace RosterApp.Infrastructure.Migrations
 {
     [DbContext(typeof(RosterDbContext))]
-    partial class RosterDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260820004324_AddShiftVenueForeignKey")]
+    partial class AddShiftVenueForeignKey
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -204,32 +207,28 @@ namespace RosterApp.Infrastructure.Migrations
                             b1.Property<Guid>("ShiftId")
                                 .HasColumnType("uuid");
 
-                            b1.Property<int>("Id")
+                            b1.Property<int>("__synthesizedOrdinal")
                                 .ValueGeneratedOnAdd()
                                 .HasColumnType("integer");
 
-                            NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<int>("Id"));
-
                             b1.Property<decimal>("Amount")
-                                .HasPrecision(10, 2)
-                                .HasColumnType("numeric(10,2)");
+                                .HasColumnType("numeric");
 
                             b1.Property<decimal>("Hours")
-                                .HasPrecision(6, 2)
-                                .HasColumnType("numeric(6,2)");
+                                .HasColumnType("numeric");
 
                             b1.Property<string>("Label")
                                 .IsRequired()
-                                .HasMaxLength(200)
-                                .HasColumnType("character varying(200)");
+                                .HasColumnType("text");
 
                             b1.Property<decimal>("RatePerHour")
-                                .HasPrecision(10, 2)
-                                .HasColumnType("numeric(10,2)");
+                                .HasColumnType("numeric");
 
-                            b1.HasKey("ShiftId", "Id");
+                            b1.HasKey("ShiftId", "__synthesizedOrdinal");
 
-                            b1.ToTable("ShiftAwardBreakdownLines", (string)null);
+                            b1.ToTable("Shifts");
+
+                            b1.ToJson("AwardBreakdown");
 
                             b1.WithOwner()
                                 .HasForeignKey("ShiftId");
@@ -240,30 +239,25 @@ namespace RosterApp.Infrastructure.Migrations
                             b1.Property<Guid>("ShiftId")
                                 .HasColumnType("uuid");
 
-                            b1.Property<int>("Id")
+                            b1.Property<int>("__synthesizedOrdinal")
                                 .ValueGeneratedOnAdd()
                                 .HasColumnType("integer");
 
-                            NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<int>("Id"));
-
                             b1.Property<string>("Message")
                                 .IsRequired()
-                                .HasMaxLength(500)
-                                .HasColumnType("character varying(500)");
+                                .HasColumnType("text");
 
-                            b1.Property<string>("Severity")
-                                .IsRequired()
-                                .HasMaxLength(20)
-                                .HasColumnType("character varying(20)");
+                            b1.Property<int>("Severity")
+                                .HasColumnType("integer");
 
-                            b1.Property<string>("Type")
-                                .IsRequired()
-                                .HasMaxLength(30)
-                                .HasColumnType("character varying(30)");
+                            b1.Property<int>("Type")
+                                .HasColumnType("integer");
 
-                            b1.HasKey("ShiftId", "Id");
+                            b1.HasKey("ShiftId", "__synthesizedOrdinal");
 
-                            b1.ToTable("ShiftComplianceViolations", (string)null);
+                            b1.ToTable("Shifts");
+
+                            b1.ToJson("ComplianceViolations");
 
                             b1.WithOwner()
                                 .HasForeignKey("ShiftId");

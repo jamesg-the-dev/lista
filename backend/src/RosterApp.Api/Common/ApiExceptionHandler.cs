@@ -24,6 +24,10 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
                 StatusCodes.Status403Forbidden,
                 new ApiError("forbidden", forbidden.Message)),
 
+            NotFoundException notFound => (
+                StatusCodes.Status404NotFound,
+                new ApiError("not_found", notFound.Message)),
+
             ValidationException validation => (
                 StatusCodes.Status400BadRequest,
                 new ApiError(

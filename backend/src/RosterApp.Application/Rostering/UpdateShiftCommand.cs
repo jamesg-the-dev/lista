@@ -1,11 +1,11 @@
 using FluentValidation;
 using MediatR;
 using RosterApp.Application.Common;
-using RosterApp.Domain.Rostering;
 
 namespace RosterApp.Application.Rostering;
 
-public sealed record CreateShiftCommand(
+public sealed record UpdateShiftCommand(
+    Guid ShiftId,
     Guid VenueId,
     Guid EmployeeId,
     DateOnly ShiftDate,
@@ -15,10 +15,11 @@ public sealed record CreateShiftCommand(
     decimal BaseRatePerHour
 ) : IRequest<ShiftDto>, IVenueScopedRequest;
 
-public sealed class CreateShiftCommandValidator : AbstractValidator<CreateShiftCommand>
+public sealed class UpdateShiftCommandValidator : AbstractValidator<UpdateShiftCommand>
 {
-    public CreateShiftCommandValidator()
+    public UpdateShiftCommandValidator()
     {
+        RuleFor(c => c.ShiftId).NotEmpty();
         RuleFor(c => c.VenueId).NotEmpty();
         RuleFor(c => c.EmployeeId).NotEmpty();
         RuleFor(c => c.End).GreaterThan(c => c.Start).WithMessage("Shift end must be after start.");
@@ -27,14 +28,20 @@ public sealed class CreateShiftCommandValidator : AbstractValidator<CreateShiftC
     }
 }
 
-public sealed class CreateShiftCommandHandler(
+public sealed class UpdateShiftCommandHandler(
     IAwardRateCalculator awardRateCalculator,
     IShiftRepository shiftRepository,
     IUnitOfWork unitOfWork
-) : IRequestHandler<CreateShiftCommand, ShiftDto>
+) : IRequestHandler<UpdateShiftCommand, ShiftDto>
 {
-    public async Task<ShiftDto> Handle(CreateShiftCommand request, CancellationToken cancellationToken)
+    public async Task<ShiftDto> Handle(UpdateShiftCommand request, CancellationToken cancellationToken)
     {
+        var shift = await shiftRepository.GetByIdAsync(request.ShiftId, cancellationToken);
+        if (shift is null || shift.VenueId != request.VenueId)
+        {
+            throw new NotFoundException($"Shift '{request.ShiftId}' was not found.");
+        }
+
         var awardBreakdown = awardRateCalculator.Calculate(
             request.ShiftDate.DayOfWeek,
             request.Start,
@@ -42,8 +49,7 @@ public sealed class CreateShiftCommandHandler(
             request.UnpaidBreakMinutes,
             request.BaseRatePerHour);
 
-        var shift = Shift.Create(
-            request.VenueId,
+        shift.UpdateSchedule(
             request.EmployeeId,
             request.ShiftDate,
             request.Start,
@@ -51,7 +57,6 @@ public sealed class CreateShiftCommandHandler(
             request.UnpaidBreakMinutes,
             awardBreakdown);
 
-        shiftRepository.Add(shift);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return ShiftDto.FromDomain(shift);
