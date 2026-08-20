@@ -97,3 +97,23 @@ export function duplicateRoster(venueId: string, weekStartIso: string): Promise<
     targetWeekStart: weekStartIso,
   });
 }
+
+// ---------------------------------------------------------------------------
+// Compliance overrides — ComplianceController
+// ---------------------------------------------------------------------------
+
+// violationType is already the wire enum member name (e.g. "InsufficientRest")
+// — callers pass unmapViolationType(view-model value), same convention as
+// the route segment documented on ComplianceController.OverrideComplianceViolation.
+export function overrideComplianceViolation(
+  shiftId: string,
+  venueId: string,
+  violationType: string,
+  reason: string,
+): Promise<ShiftDto> {
+  const params = new URLSearchParams({ venueId });
+  return apiClient.post<ShiftDto>(
+    `/api/shifts/${shiftId}/compliance-violations/${violationType}/override?${params}`,
+    { reason },
+  );
+}

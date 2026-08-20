@@ -1,39 +1,35 @@
-import {
-  mockFetchCostBreakdown,
-  mockFetchForecastSummary,
-  mockFetchLabourCostTrend,
-} from "./mock-data";
-import type {
-  CostBreakdownDto,
-  LabourCostTrendPointDto,
-  LabourForecastSummaryDto,
-} from "./types";
+import { apiClient } from "~/lib/api-client";
 
-// Stubbed API layer backed by an in-memory mock dataset — see mock-data.ts.
-// Real function signatures, called with an artificial delay so loading
-// states are exercised for real. When the backend exists, mock-data.ts
-// gets deleted and only the body of each function below changes to a real
-// fetch call — hooks.ts, and every component, stay untouched. Follows the
-// same pattern as routes/roster/api.ts and routes/staff/api.ts. Venues come
-// from useCurrentAccount() (see hooks.ts's useVenues), not from here.
+import type { CostByRoleDto, CostTrendDayDto, ForecastSummaryDto } from "./types";
 
-export async function fetchLabourCostTrend(
+// Backed by LabourCostController — see types.ts's file header for why
+// fetchForecastSummary calls RosterController's budget-summary endpoint
+// instead. Venues come from useCurrentAccount() (see hooks.ts's useVenues),
+// not from here.
+
+export function fetchCostTrend(
   venueId: string,
-  weeks: number,
-): Promise<LabourCostTrendPointDto[]> {
-  return mockFetchLabourCostTrend(venueId, weeks);
+  from: string,
+  to: string,
+): Promise<CostTrendDayDto[]> {
+  const params = new URLSearchParams({ from, to });
+  return apiClient.get<CostTrendDayDto[]>(`/api/venues/${venueId}/labour-cost/trend?${params}`);
 }
 
-export async function fetchCostBreakdown(
+export function fetchCostByRole(
   venueId: string,
   weekStartIso: string,
-): Promise<CostBreakdownDto> {
-  return mockFetchCostBreakdown(venueId, weekStartIso);
+): Promise<CostByRoleDto[]> {
+  const params = new URLSearchParams({ weekStart: weekStartIso });
+  return apiClient.get<CostByRoleDto[]>(`/api/venues/${venueId}/labour-cost/by-role?${params}`);
 }
 
-export async function fetchForecastSummary(
+export function fetchForecastSummary(
   venueId: string,
   weekStartIso: string,
-): Promise<LabourForecastSummaryDto> {
-  return mockFetchForecastSummary(venueId, weekStartIso);
+): Promise<ForecastSummaryDto> {
+  const params = new URLSearchParams({ weekStart: weekStartIso });
+  return apiClient.get<ForecastSummaryDto>(
+    `/api/venues/${venueId}/roster/budget-summary?${params}`,
+  );
 }

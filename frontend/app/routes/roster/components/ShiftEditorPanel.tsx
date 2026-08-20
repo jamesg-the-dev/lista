@@ -1,4 +1,5 @@
 import type { ChangeEvent } from "react";
+import { useEffect, useState } from "react";
 import type { DateTime } from "luxon";
 import { AlertTriangleIcon, ClockIcon } from "lucide-react";
 
@@ -31,7 +32,13 @@ import {
   formatHoursDuration,
   getRateInfo,
 } from "../types";
-import type { DayOfWeek, Shift, ShiftDraft, StaffMember } from "../types";
+import type {
+  ComplianceViolationType,
+  DayOfWeek,
+  Shift,
+  ShiftDraft,
+  StaffMember,
+} from "../types";
 import { DAY_LABELS } from "../types";
 
 export interface ShiftEditorPanelState {
@@ -52,6 +59,8 @@ interface ShiftEditorPanelProps {
   onSave: () => void;
   onDelete: () => void;
   saving: boolean;
+  onOverrideViolation: (violationType: ComplianceViolationType, reason: string) => void;
+  overridingViolationType: ComplianceViolationType | null;
 }
 
 export function ShiftEditorPanel({
@@ -65,7 +74,19 @@ export function ShiftEditorPanel({
   onSave,
   onDelete,
   saving,
+  onOverrideViolation,
+  overridingViolationType,
 }: ShiftEditorPanelProps) {
+  // Local override-reason drafts, keyed by violation type — reset whenever
+  // a different shift's panel opens so a stale draft from one shift can't
+  // leak into another.
+  const [overrideReasons, setOverrideReasons] = useState<
+    Partial<Record<ComplianceViolationType, string>>
+  >({});
+  useEffect(() => {
+    setOverrideReasons({});
+  }, [panel?.draftId]);
+
   const rateInfo = panel
     ? getRateInfo(weekStart, panel.dayOfWeek, draft.start, draft.end, draft.unpaidBreakMinutes, staff?.rate ?? 0)
     : null;
@@ -233,9 +254,7 @@ export function ShiftEditorPanel({
 
               {/* Inline compliance warnings from the shift's last save —
                   itemised per CLAUDE.md's IRosterComplianceValidator
-                  contract, never flattened to a boolean. Overriding a
-                  Blocking violation is ComplianceController's endpoint
-                  (not built yet), so the reason field is read-only for now. */}
+                  contract, never flattened to a boolean. */}
               {warningViolations.length > 0 && (
                 <div className="flex flex-col gap-2">
                   {warningViolations.map((v) => (
@@ -250,32 +269,50 @@ export function ShiftEditorPanel({
 
               {blockingViolations.length > 0 && (
                 <div className="flex flex-col gap-3">
-                  {blockingViolations.map((v) => (
-                    <Field key={v.type}>
-                      <Alert variant="destructive">
-                        <AlertTriangleIcon />
-                        <AlertTitle className="flex items-center gap-2">
-                          {VIOLATION_TYPE_META[v.type].label}
-                          <Badge variant="destructive">Blocking</Badge>
-                        </AlertTitle>
-                        <AlertDescription>{v.message}</AlertDescription>
-                      </Alert>
-                      <FieldLabel htmlFor={`override-${v.type}`}>
-                        Manager override reason
-                      </FieldLabel>
-                      <Textarea
-                        id={`override-${v.type}`}
-                        value={v.overrideReason ?? ""}
-                        disabled
-                        placeholder="Overrides aren't available yet."
-                      />
-                      <FieldDescription>
-                        {v.acknowledged
-                          ? "Overridden — reason recorded for audit purposes."
-                          : "Overriding a blocking violation isn't wired up yet."}
-                      </FieldDescription>
-                    </Field>
-                  ))}
+                  {blockingViolations.map((v) => {
+                    const reasonValue = overrideReasons[v.type] ?? v.overrideReason ?? "";
+                    const isOverriding = overridingViolationType === v.type;
+                    return (
+                      <Field key={v.type}>
+                        <Alert variant="destructive">
+                          <AlertTriangleIcon />
+                          <AlertTitle className="flex items-center gap-2">
+                            {VIOLATION_TYPE_META[v.type].label}
+                            <Badge variant="destructive">Blocking</Badge>
+                          </AlertTitle>
+                          <AlertDescription>{v.message}</AlertDescription>
+                        </Alert>
+                        <FieldLabel htmlFor={`override-${v.type}`}>
+                          Manager override reason
+                        </FieldLabel>
+                        <Textarea
+                          id={`override-${v.type}`}
+                          value={reasonValue}
+                          disabled={v.acknowledged}
+                          onChange={(e) =>
+                            setOverrideReasons((prev) => ({ ...prev, [v.type]: e.target.value }))
+                          }
+                          placeholder="Explain why this shift should still be published."
+                        />
+                        <FieldDescription>
+                          {v.acknowledged
+                            ? "Overridden — reason recorded for audit purposes."
+                            : "An override reason is required and is recorded to the audit log."}
+                        </FieldDescription>
+                        {!v.acknowledged && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onOverrideViolation(v.type, reasonValue)}
+                            disabled={reasonValue.trim().length === 0 || isOverriding}
+                          >
+                            {isOverriding && <Spinner data-icon="inline-start" />}
+                            Override
+                          </Button>
+                        )}
+                      </Field>
+                    );
+                  })}
                 </div>
               )}
             </div>

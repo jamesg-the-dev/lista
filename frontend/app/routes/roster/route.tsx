@@ -27,13 +27,14 @@ import {
   useBudgetSummary,
   useCreateShift,
   useDeleteShift,
+  useOverrideComplianceViolation,
   useRosterStaffMembers,
   useSaveForecastSalesTarget,
   useShifts,
   useUpdateShift,
   useVenues,
 } from "./hooks";
-import type { Shift, ShiftDraft } from "./types";
+import type { ComplianceViolationType, Shift, ShiftDraft } from "./types";
 import {
   DAY_LABELS,
   ROLE_META,
@@ -64,6 +65,7 @@ export default function RosterBuilder() {
   const updateShiftMutation = useUpdateShift(activeVenueId, weekStartIso);
   const deleteShiftMutation = useDeleteShift(activeVenueId, weekStartIso);
   const saveForecastTargetMutation = useSaveForecastSalesTarget(activeVenueId, weekStartIso);
+  const overrideViolationMutation = useOverrideComplianceViolation(activeVenueId, weekStartIso);
 
   const [panelOpen, setPanelOpen] = useState(false);
   const [panel, setPanel] = useState<ShiftEditorPanelState | null>(null);
@@ -141,6 +143,19 @@ export default function RosterBuilder() {
     if (!panel?.shift) return;
     await deleteShiftMutation.mutateAsync(panel.shift.id);
     closePanel();
+  }
+
+  // Keeps the panel open (unlike save/delete) and swaps in the updated shift
+  // — the audit-logged override flips that violation's `acknowledged` flag
+  // without touching anything else on the shift.
+  async function handleOverrideViolation(violationType: ComplianceViolationType, reason: string) {
+    if (!panel?.shift) return;
+    const updated = await overrideViolationMutation.mutateAsync({
+      shiftId: panel.shift.id,
+      violationType,
+      reason,
+    });
+    setPanel((prev) => (prev ? { ...prev, shift: updated } : prev));
   }
 
   const panelStaff = panel ? (staff.find((s) => s.id === panel.staffId) ?? null) : null;
@@ -404,6 +419,12 @@ export default function RosterBuilder() {
         onSave={handleSaveShift}
         onDelete={handleDeleteShift}
         saving={createShiftMutation.isPending || updateShiftMutation.isPending || deleteShiftMutation.isPending}
+        onOverrideViolation={handleOverrideViolation}
+        overridingViolationType={
+          overrideViolationMutation.isPending
+            ? (overrideViolationMutation.variables?.violationType ?? null)
+            : null
+        }
       />
     </div>
   );

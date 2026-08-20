@@ -3,8 +3,8 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tansta
 import { currentAccountQueryOptions } from "~/lib/account/hooks";
 
 import * as api from "./api";
-import type { ShiftInput } from "./types";
-import { mapShift, mapStaffMember } from "./types";
+import type { ComplianceViolationType, ShiftInput } from "./types";
+import { mapShift, mapStaffMember, unmapViolationType } from "./types";
 
 // No controller lists venues (see types.ts's file header) — reuses the
 // account query's cache entry via `select` rather than issuing a second
@@ -97,5 +97,30 @@ export function useDuplicateRoster(venueId: string, weekStartIso: string) {
   return useMutation({
     mutationFn: () => api.duplicateRoster(venueId, weekStartIso),
     onSuccess: () => invalidateWeek(queryClient, venueId, weekStartIso),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Compliance overrides — ComplianceController
+// ---------------------------------------------------------------------------
+
+interface OverrideComplianceViolationInput {
+  shiftId: string;
+  violationType: ComplianceViolationType;
+  reason: string;
+}
+
+// Only invalidates the shifts key, not budgetSummary — an override changes a
+// shift's compliance state, not its cost.
+export function useOverrideComplianceViolation(venueId: string, weekStartIso: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ shiftId, violationType, reason }: OverrideComplianceViolationInput) =>
+      api
+        .overrideComplianceViolation(shiftId, venueId, unmapViolationType(violationType), reason)
+        .then(mapShift),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shifts", venueId, weekStartIso] });
+    },
   });
 }

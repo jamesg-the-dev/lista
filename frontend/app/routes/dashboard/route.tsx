@@ -219,7 +219,7 @@ export default function LabourCostDashboard() {
             style={{ borderColor: "var(--border)", background: "var(--card)" }}
           >
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-              <h2 className="font-sans font-semibold text-sm">Cost by role</h2>
+              <h2 className="font-sans font-semibold text-sm">Cost by pay tier</h2>
               {trend.length > 0 && effectiveWeekIso && (
                 <Select
                   value={effectiveWeekIso}

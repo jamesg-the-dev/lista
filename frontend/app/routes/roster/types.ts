@@ -265,9 +265,11 @@ export function formatHoursDuration(hours: number): string {
 // `type` is unique per shift (one violation per rule), so it doubles as the
 // stable React list key within a given shift's violations array.
 //
-// Writing an override (OverrideComplianceViolationCommand) is
-// ComplianceController's endpoint, not built yet — the override control in
-// ShiftEditorPanel is disabled until that lands.
+// Writing an override goes through ComplianceController's
+// OverrideComplianceViolationCommand (see api.ts's overrideComplianceViolation
+// and hooks.ts's useOverrideComplianceViolation) — unmapViolationType below
+// converts the view-model union back to the wire enum member name for the
+// route segment, same convention as toShiftRequestDto for the command body.
 // ---------------------------------------------------------------------------
 
 const VIOLATION_TYPE_TABLE: Record<string, ComplianceViolationType> = {
@@ -284,6 +286,17 @@ export type ComplianceViolationType =
 
 export function mapViolationType(wire: string): ComplianceViolationType {
   return mustMapWireEnum(wire, VIOLATION_TYPE_TABLE, "ComplianceViolationType");
+}
+
+const VIOLATION_TYPE_WIRE_TABLE: Record<ComplianceViolationType, string> = {
+  insufficient_rest: "InsufficientRest",
+  missing_break: "MissingBreak",
+  span_of_hours_exceeded: "SpanOfHoursExceeded",
+  max_consecutive_days: "MaxConsecutiveDays",
+};
+
+export function unmapViolationType(value: ComplianceViolationType): string {
+  return VIOLATION_TYPE_WIRE_TABLE[value];
 }
 
 export const VIOLATION_TYPE_META: Record<ComplianceViolationType, { label: string }> = {
