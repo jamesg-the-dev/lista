@@ -4,11 +4,13 @@ using Microsoft.Extensions.DependencyInjection;
 using RosterApp.Application.Account;
 using RosterApp.Application.Common;
 using RosterApp.Application.Rostering;
+using RosterApp.Application.Staffing;
 using RosterApp.Infrastructure.Account;
 using RosterApp.Infrastructure.Auditing;
 using RosterApp.Infrastructure.AwardCalculator;
 using RosterApp.Infrastructure.Persistence;
 using RosterApp.Infrastructure.Rostering;
+using RosterApp.Infrastructure.Staffing;
 
 namespace RosterApp.Infrastructure;
 
@@ -27,6 +29,13 @@ public static class DependencyInjection
         services.AddScoped<IRosterLookup, RosterLookup>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IAwardRateCalculator, HospitalityGeneralAwardRateCalculator>();
+
+        services.AddScoped<IStaffMemberRepository, StaffMemberRepository>();
+        services.AddScoped<IStandingUnavailabilityRepository, StandingUnavailabilityRepository>();
+        services.AddScoped<ILeaveRequestRepository, LeaveRequestRepository>();
+        services.AddScoped<IStaffLookup, StaffLookup>();
+        services.AddScoped<IStaffAvailabilityChecker, StaffAvailabilityChecker>();
+        services.AddScoped<IStaffUniquenessChecker, StaffUniquenessChecker>();
 
         return services;
     }

@@ -99,6 +99,126 @@ namespace RosterApp.Infrastructure.Migrations
                     b.ToTable("Shifts");
                 });
 
+            modelBuilder.Entity("RosterApp.Domain.Staffing.LeaveRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid>("StaffMemberId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StaffMemberId", "StartDate");
+
+                    b.ToTable("LeaveRequests");
+                });
+
+            modelBuilder.Entity("RosterApp.Domain.Staffing.StaffMember", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Classification")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
+
+                    b.Property<string>("EmploymentType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("MaxWeeklyHours")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("OrganisationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganisationId", "Email")
+                        .IsUnique();
+
+                    b.HasIndex("OrganisationId", "Phone")
+                        .IsUnique()
+                        .HasFilter("\"Phone\" IS NOT NULL");
+
+                    b.ToTable("StaffMembers", t =>
+                        {
+                            t.HasCheckConstraint("CK_StaffMembers_Phone_E164", "\"Phone\" ~ '^\\+[1-9]\\d{6,14}$'");
+                        });
+                });
+
+            modelBuilder.Entity("RosterApp.Domain.Staffing.StandingUnavailability", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DayOfWeek")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<bool>("IncludesAfternoon")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IncludesEvening")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IncludesMorning")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsAllDay")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("StaffMemberId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StaffMemberId", "DayOfWeek")
+                        .IsUnique();
+
+                    b.ToTable("StandingUnavailabilities");
+                });
+
             modelBuilder.Entity("RosterApp.Domain.Tenancy.Manager", b =>
                 {
                     b.Property<Guid>("Id")
@@ -272,6 +392,48 @@ namespace RosterApp.Infrastructure.Migrations
                     b.Navigation("AwardBreakdown");
 
                     b.Navigation("ComplianceViolations");
+                });
+
+            modelBuilder.Entity("RosterApp.Domain.Staffing.LeaveRequest", b =>
+                {
+                    b.HasOne("RosterApp.Domain.Staffing.StaffMember", null)
+                        .WithMany()
+                        .HasForeignKey("StaffMemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("RosterApp.Domain.Staffing.StaffMember", b =>
+                {
+                    b.OwnsMany("RosterApp.Domain.Staffing.StaffMemberVenueAssignment", "VenueAssignments", b1 =>
+                        {
+                            b1.Property<Guid>("StaffMemberId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<Guid>("VenueId")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("uuid");
+
+                            b1.HasKey("StaffMemberId", "VenueId");
+
+                            b1.HasIndex("VenueId");
+
+                            b1.ToTable("StaffMemberVenueAssignments", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("StaffMemberId");
+                        });
+
+                    b.Navigation("VenueAssignments");
+                });
+
+            modelBuilder.Entity("RosterApp.Domain.Staffing.StandingUnavailability", b =>
+                {
+                    b.HasOne("RosterApp.Domain.Staffing.StaffMember", null)
+                        .WithMany()
+                        .HasForeignKey("StaffMemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("RosterApp.Domain.Tenancy.Manager", b =>

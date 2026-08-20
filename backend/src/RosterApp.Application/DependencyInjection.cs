@@ -1,7 +1,6 @@
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using RosterApp.Application.Common;
-using RosterApp.Application.Rostering;
 
 namespace RosterApp.Application;
 

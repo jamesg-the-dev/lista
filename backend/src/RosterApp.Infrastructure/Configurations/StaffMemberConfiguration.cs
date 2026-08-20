@@ -1,0 +1,67 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using RosterApp.Domain.Staffing;
+using RosterApp.Domain.ValueObjects;
+
+namespace RosterApp.Infrastructure.Configurations;
+
+public sealed class StaffMemberConfiguration : IEntityTypeConfiguration<StaffMember>
+{
+    public void Configure(EntityTypeBuilder<StaffMember> builder)
+    {
+        builder.HasKey(s => s.Id);
+        builder.Property(s => s.Id).ValueGeneratedNever();
+        builder.Property(s => s.OrganisationId).IsRequired();
+        builder.Property(s => s.Name).IsRequired().HasMaxLength(200);
+        builder.Property(s => s.Email).IsRequired().HasMaxLength(320);
+
+        // PhoneNumber always normalizes to E.164 (max 16 chars: '+' plus up
+        // to 15 digits) before it reaches here — see PhoneNumber.Create.
+        var phoneNumberComparer = new ValueComparer<PhoneNumber>(
+            (left, right) => left!.Value == right!.Value,
+            phone => phone.Value.GetHashCode(),
+            phone => PhoneNumber.Create(phone.Value, "AU"));
+
+        builder.Property(s => s.Phone)
+            .HasConversion(
+                phone => phone.Value,
+                value => PhoneNumber.Create(value, "AU"),
+                phoneNumberComparer)
+            .IsRequired()
+            .HasMaxLength(16);
+
+        builder.Property(s => s.EmploymentType).HasConversion<string>().HasMaxLength(20);
+        builder.Property(s => s.Classification).HasConversion<string>().HasMaxLength(20);
+
+        // DB-level backstop for the async uniqueness check in
+        // CreateStaffMemberCommandValidator/UpdateStaffMemberCommandValidator
+        // — scoped per-organisation, not globally, so two unrelated
+        // tenants can't collide on the same email/phone. Phone's index is
+        // partial (only rows with a phone) so it stays correct if Phone
+        // ever becomes optional later; Phone is required today, so this is
+        // currently equivalent to a full unique index.
+        builder.HasIndex(s => new { s.OrganisationId, s.Email }).IsUnique();
+        builder.HasIndex(s => new { s.OrganisationId, s.Phone })
+            .IsUnique()
+            .HasFilter("\"Phone\" IS NOT NULL");
+
+        // Postgres-level backstop for PhoneNumber's E.164 invariant, in
+        // case a write ever bypasses the domain/validator layer.
+        builder.ToTable(t => t.HasCheckConstraint(
+            "CK_StaffMembers_Phone_E164",
+            "\"Phone\" ~ '^\\+[1-9]\\d{6,14}$'"));
+
+        // Owned child table (same pattern as Shift.AwardBreakdown), not a
+        // native Postgres array — see StaffMemberVenueAssignment's doc
+        // comment for why. Indexed on VenueId for the reverse lookup
+        // GetStaffForVenueQuery needs.
+        builder.OwnsMany(s => s.VenueAssignments, assignment =>
+        {
+            assignment.ToTable("StaffMemberVenueAssignments");
+            assignment.WithOwner().HasForeignKey("StaffMemberId");
+            assignment.HasKey("StaffMemberId", "VenueId");
+            assignment.HasIndex(a => a.VenueId);
+        });
+    }
+}

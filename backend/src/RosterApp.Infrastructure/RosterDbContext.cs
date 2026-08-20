@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using RosterApp.Domain.Auditing;
 using RosterApp.Domain.Rostering;
+using RosterApp.Domain.Staffing;
 using RosterApp.Domain.Tenancy;
 
 namespace RosterApp.Infrastructure;
@@ -19,6 +20,9 @@ public sealed class RosterDbContext(DbContextOptions<RosterDbContext> options) :
     public DbSet<Manager> Managers => Set<Manager>();
     public DbSet<ManagerVenueAccess> ManagerVenueAccesses => Set<ManagerVenueAccess>();
     public DbSet<AuditLogEntry> AuditLogEntries => Set<AuditLogEntry>();
+    public DbSet<StaffMember> StaffMembers => Set<StaffMember>();
+    public DbSet<StandingUnavailability> StandingUnavailabilities => Set<StandingUnavailability>();
+    public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
 
     // TODO: global query filter for tenant scoping (VenueId / OrganisationId) once
     // more venue-scoped aggregates exist (Shift is the first candidate in Phase 1).

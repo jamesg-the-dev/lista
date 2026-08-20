@@ -5,4 +5,7 @@
     <Project Path="src/RosterApp.Domain/RosterApp.Domain.csproj" />
     <Project Path="src/RosterApp.Infrastructure/RosterApp.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RosterApp.Domain.Tests/RosterApp.Domain.Tests.csproj" />
+  </Folder>
 </Solution>

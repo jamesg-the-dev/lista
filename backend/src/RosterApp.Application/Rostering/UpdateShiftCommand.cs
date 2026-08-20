@@ -1,6 +1,7 @@
 using FluentValidation;
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Application.Staffing;
 
 namespace RosterApp.Application.Rostering;
 
@@ -15,9 +16,14 @@ public sealed record UpdateShiftCommand(
     decimal BaseRatePerHour
 ) : IRequest<ShiftDto>, IVenueScopedRequest;
 
+/// <summary>
+/// Same double-booking guard as CreateShiftCommandValidator — see the
+/// comment there for why this is an async validation rule rather than an
+/// inline handler check.
+/// </summary>
 public sealed class UpdateShiftCommandValidator : AbstractValidator<UpdateShiftCommand>
 {
-    public UpdateShiftCommandValidator()
+    public UpdateShiftCommandValidator(IStaffAvailabilityChecker staffAvailabilityChecker)
     {
         RuleFor(c => c.ShiftId).NotEmpty();
         RuleFor(c => c.VenueId).NotEmpty();
@@ -25,6 +31,12 @@ public sealed class UpdateShiftCommandValidator : AbstractValidator<UpdateShiftC
         RuleFor(c => c.End).GreaterThan(c => c.Start).WithMessage("Shift end must be after start.");
         RuleFor(c => c.UnpaidBreakMinutes).GreaterThanOrEqualTo(0);
         RuleFor(c => c.BaseRatePerHour).GreaterThan(0);
+
+        RuleFor(c => c)
+            .MustAsync((command, cancellationToken) =>
+                staffAvailabilityChecker.IsAvailableAsync(command.EmployeeId, command.ShiftDate, cancellationToken))
+            .WithMessage("This staff member is on approved leave or marked unavailable for the selected date.")
+            .WithName("EmployeeId");
     }
 }
 
