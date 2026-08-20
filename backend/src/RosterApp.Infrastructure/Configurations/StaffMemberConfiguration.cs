@@ -33,6 +33,7 @@ public sealed class StaffMemberConfiguration : IEntityTypeConfiguration<StaffMem
 
         builder.Property(s => s.EmploymentType).HasConversion<string>().HasMaxLength(20);
         builder.Property(s => s.Classification).HasConversion<string>().HasMaxLength(20);
+        builder.Property(s => s.SupabaseUserId).HasMaxLength(100);
 
         // DB-level backstop for the async uniqueness check in
         // CreateStaffMemberCommandValidator/UpdateStaffMemberCommandValidator
@@ -45,6 +46,15 @@ public sealed class StaffMemberConfiguration : IEntityTypeConfiguration<StaffMem
         builder.HasIndex(s => new { s.OrganisationId, s.Phone })
             .IsUnique()
             .HasFilter("\"Phone\" IS NOT NULL");
+
+        // Global (not per-organisation) uniqueness — one Supabase Auth
+        // account belongs to at most one StaffMember, same as
+        // Manager.SupabaseUserId. Partial so unlinked rows (the common
+        // case until a staff member activates the app) don't collide on
+        // NULL.
+        builder.HasIndex(s => s.SupabaseUserId)
+            .IsUnique()
+            .HasFilter("\"SupabaseUserId\" IS NOT NULL");
 
         // Postgres-level backstop for PhoneNumber's E.164 invariant, in
         // case a write ever bypasses the domain/validator layer.

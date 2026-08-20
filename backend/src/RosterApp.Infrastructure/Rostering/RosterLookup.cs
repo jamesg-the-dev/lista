@@ -44,4 +44,20 @@ public sealed class RosterLookup(RosterDbContext dbContext) : IRosterLookup
             .ThenBy(s => s.Start)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<ShiftDto>> GetShiftsForEmployeeDtoAsync(
+        Guid employeeId,
+        DateOnly from,
+        DateOnly to,
+        CancellationToken cancellationToken)
+    {
+        var shifts = await dbContext.Shifts
+            .AsNoTracking()
+            .Where(s => s.EmployeeId == employeeId && s.ShiftDate >= from && s.ShiftDate <= to)
+            .OrderBy(s => s.ShiftDate)
+            .ThenBy(s => s.Start)
+            .ToListAsync(cancellationToken);
+
+        return shifts.Select(ShiftDto.FromDomain).ToList();
+    }
 }

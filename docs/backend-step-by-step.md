@@ -273,3 +273,7 @@ get relitigated later, same as the other architecture calls in that doc:
   conflated.
 - **Response envelope:** whether all endpoints return a consistent wrapper
   (e.g. `ApiResponse<T>`) or raw DTOs with problem-details for errors.
+
+
+## Prompt
+begin phase N in @docs/backend-step-by-step.md  . Remember to read @CLAUDE.md  for context and use /supabase-postgres-best-practices  skill when designing and implementing the APIs

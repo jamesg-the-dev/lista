@@ -15,6 +15,7 @@ namespace RosterApp.Infrastructure;
 public sealed class RosterDbContext(DbContextOptions<RosterDbContext> options) : DbContext(options)
 {
     public DbSet<Shift> Shifts => Set<Shift>();
+    public DbSet<SwapRequest> SwapRequests => Set<SwapRequest>();
     public DbSet<Organisation> Organisations => Set<Organisation>();
     public DbSet<Venue> Venues => Set<Venue>();
     public DbSet<Manager> Managers => Set<Manager>();

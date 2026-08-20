@@ -33,6 +33,8 @@ public static class DependencyInjection
         services.AddScoped<IShiftRepository, ShiftRepository>();
         services.AddScoped<IRosterLookup, RosterLookup>();
         services.AddScoped<IBudgetSummaryLookup, BudgetSummaryLookup>();
+        services.AddScoped<ISwapRequestRepository, SwapRequestRepository>();
+        services.AddScoped<ISwapRequestLookup, SwapRequestLookup>();
         services.AddScoped<ILabourCostLookup, LabourCostLookup>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IAwardRateCalculator, HospitalityGeneralAwardRateCalculator>();

@@ -47,4 +47,18 @@ public interface IRosterLookup
         Guid? excludeShiftId,
         CancellationToken cancellationToken
     );
+
+    /// <summary>
+    /// DTO-shaped counterpart to GetShiftsForEmployeeAsync, for
+    /// GetMyShiftsQuery (Phase 5) — the staff shift view is a read
+    /// endpoint that needs the itemised awardBreakdown/complianceViolations
+    /// on the wire like every other ShiftDto response, not the domain
+    /// entities the compliance validator's context needs.
+    /// </summary>
+    Task<IReadOnlyList<ShiftDto>> GetShiftsForEmployeeDtoAsync(
+        Guid employeeId,
+        DateOnly from,
+        DateOnly to,
+        CancellationToken cancellationToken
+    );
 }

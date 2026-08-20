@@ -17,6 +17,14 @@ namespace RosterApp.Api.Common;
 /// StaffMember's per-organisation email/phone uniqueness — see
 /// IStaffUniquenessChecker) — two concurrent requests can both pass that
 /// check before either saves. Everything else is a 500.
+///
+/// TODO: aggregate state-transition guards (SwapRequest.Approve's "target
+/// hasn't accepted yet", Shift.AcknowledgeComplianceViolation's "no
+/// outstanding violation of that type") currently throw plain
+/// InvalidOperationException and fall through to the 500 case here, even
+/// though they're predictable conflicts, not bugs. Add a dedicated
+/// exception (e.g. DomainConflictException) with its own 409 case in the
+/// switch below, and have those guards throw it instead.
 /// </summary>
 public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : IExceptionHandler
 {

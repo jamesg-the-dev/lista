@@ -76,6 +76,15 @@ public sealed class StaffMember : AggregateRoot
     public int MaxWeeklyHours { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
 
+    /// <summary>
+    /// Null until the staff member activates the staff app (Phase 5) —
+    /// managers create the profile first via CreateStaffMemberCommand, then
+    /// the staff member links their own Supabase Auth account to it via
+    /// LinkStaffSupabaseAccountCommand, matched by email. Same "Supabase
+    /// user id -> internal identity" shape as Manager.SupabaseUserId.
+    /// </summary>
+    public string? SupabaseUserId { get; private set; }
+
     private readonly List<StaffMemberVenueAssignment> _venueAssignments = [];
     public IReadOnlyList<StaffMemberVenueAssignment> VenueAssignments => _venueAssignments.AsReadOnly();
     public IReadOnlyList<Guid> VenueIds => _venueAssignments.Select(a => a.VenueId).ToList();
@@ -131,6 +140,28 @@ public sealed class StaffMember : AggregateRoot
         _venueAssignments.AddRange(venueIds.Select(StaffMemberVenueAssignment.Create));
 
         AddDomainEvent(new StaffMemberUpdated(Id, DateTime.UtcNow));
+    }
+
+    /// <summary>
+    /// Idempotent for the same Supabase user (a retried/duplicate call from
+    /// the staff app is a no-op, not an error) but rejects re-linking to a
+    /// different account — a staff profile maps to exactly one login.
+    /// </summary>
+    public void LinkSupabaseAccount(string supabaseUserId)
+    {
+        if (SupabaseUserId == supabaseUserId)
+        {
+            return;
+        }
+
+        if (SupabaseUserId is not null)
+        {
+            throw new InvalidOperationException(
+                $"Staff member '{Id}' is already linked to a different Supabase account.");
+        }
+
+        SupabaseUserId = supabaseUserId;
+        AddDomainEvent(new StaffMemberSupabaseAccountLinked(Id, DateTime.UtcNow));
     }
 
     // Case/whitespace differences shouldn't defeat the email/phone

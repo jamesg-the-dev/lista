@@ -38,7 +38,12 @@ public sealed class AuditSaveChangesInterceptor(ICurrentTenantContext tenantCont
             return;
         }
 
-        var actorId = tenantContext.IsAuthenticated ? tenantContext.ManagerId : (Guid?)null;
+        // A Phase 5 staff-authenticated request (e.g. RequestSwapCommand) has
+        // no ManagerId — fall back to StaffMemberId so the audit trail still
+        // records who acted instead of silently recording no one.
+        var actorId = tenantContext.IsAuthenticated
+            ? (tenantContext.IsManager ? tenantContext.ManagerId : tenantContext.StaffMemberId)
+            : null;
         var organisationId = tenantContext.IsAuthenticated ? tenantContext.OrganisationId : (Guid?)null;
 
         foreach (var entry in context.ChangeTracker.Entries<AggregateRoot>().ToList())
