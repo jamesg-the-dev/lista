@@ -109,8 +109,8 @@ public sealed record CreateStaffMemberRequest(
     string Name,
     string Email,
     string Phone,
-    int EmploymentType,
-    int Classification,
+    string EmploymentType,
+    string Classification,
     int MaxWeeklyHours,
     IReadOnlyList<Guid> VenueIds
 );
@@ -119,10 +119,10 @@ public sealed record UpdateStaffMemberRequest(
     string Name,
     string Email,
     string Phone,
-    int EmploymentType,
-    int Classification,
+    string EmploymentType,
+    string Classification,
     int MaxWeeklyHours,
     IReadOnlyList<Guid> VenueIds
 );
 
-public sealed record SetStandingUnavailabilityRequest(int DayOfWeek, bool IsAllDay, IReadOnlyList<int> Blocks);
+public sealed record SetStandingUnavailabilityRequest(string DayOfWeek, bool IsAllDay, IReadOnlyList<string> Blocks);

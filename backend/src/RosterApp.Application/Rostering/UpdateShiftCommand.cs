@@ -42,10 +42,15 @@ public sealed class UpdateShiftCommandValidator : AbstractValidator<UpdateShiftC
 
 public sealed class UpdateShiftCommandHandler(
     IAwardRateCalculator awardRateCalculator,
+    IRosterComplianceValidator complianceValidator,
     IShiftRepository shiftRepository,
+    IRosterLookup rosterLookup,
     IUnitOfWork unitOfWork
 ) : IRequestHandler<UpdateShiftCommand, ShiftDto>
 {
+    // Same context window as CreateShiftCommandHandler — see the comment there.
+    private const int ComplianceContextDays = 8;
+
     public async Task<ShiftDto> Handle(UpdateShiftCommand request, CancellationToken cancellationToken)
     {
         var shift = await shiftRepository.GetByIdAsync(request.ShiftId, cancellationToken);
@@ -67,7 +72,18 @@ public sealed class UpdateShiftCommandHandler(
             request.Start,
             request.End,
             request.UnpaidBreakMinutes,
+            request.BaseRatePerHour,
             awardBreakdown);
+
+        var adjacentShifts = await rosterLookup.GetShiftsForEmployeeAsync(
+            request.EmployeeId,
+            request.ShiftDate.AddDays(-ComplianceContextDays),
+            request.ShiftDate.AddDays(ComplianceContextDays),
+            excludeShiftId: shift.Id,
+            cancellationToken);
+
+        var violations = await complianceValidator.ValidateAsync(shift, adjacentShifts, cancellationToken);
+        shift.SetComplianceViolations(violations);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

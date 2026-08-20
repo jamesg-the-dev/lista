@@ -15,10 +15,18 @@ public enum ComplianceSeverity
 }
 
 /// <summary>
-/// One rule violation raised by IRosterComplianceValidator (Phase 3). The
-/// Shift aggregate carries this collection from Phase 1 onward so the
-/// schema doesn't need a retrofit once the validator is implemented — the
-/// collection is simply empty until Phase 3 wires a validator into the
-/// command handlers.
+/// One rule violation raised by IRosterComplianceValidator. Acknowledged and
+/// OverrideReason capture the audit-logged manager override flow — an
+/// overridden violation stays in the collection (never deleted) with
+/// Acknowledged flipped to true, so a manager can see what was overridden
+/// and why. Re-running the validator (any shift schedule edit) replaces the
+/// whole collection with freshly computed violations, so an override does
+/// not carry across an edit to the shift it was raised against.
 /// </summary>
-public sealed record ComplianceViolation(ComplianceViolationType Type, ComplianceSeverity Severity, string Message);
+public sealed record ComplianceViolation(
+    ComplianceViolationType Type,
+    ComplianceSeverity Severity,
+    string Message,
+    bool Acknowledged = false,
+    string? OverrideReason = null
+);

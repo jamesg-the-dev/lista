@@ -5,12 +5,15 @@ using RosterApp.Application.Account;
 using RosterApp.Application.Common;
 using RosterApp.Application.Rostering;
 using RosterApp.Application.Staffing;
+using RosterApp.Application.Tenancy;
 using RosterApp.Infrastructure.Account;
 using RosterApp.Infrastructure.Auditing;
 using RosterApp.Infrastructure.AwardCalculator;
+using RosterApp.Infrastructure.ComplianceValidator;
 using RosterApp.Infrastructure.Persistence;
 using RosterApp.Infrastructure.Rostering;
 using RosterApp.Infrastructure.Staffing;
+using RosterApp.Infrastructure.Tenancy;
 
 namespace RosterApp.Infrastructure;
 
@@ -27,8 +30,11 @@ public static class DependencyInjection
         services.AddScoped<IAccountLookup, AccountLookup>();
         services.AddScoped<IShiftRepository, ShiftRepository>();
         services.AddScoped<IRosterLookup, RosterLookup>();
+        services.AddScoped<IBudgetSummaryLookup, BudgetSummaryLookup>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IAwardRateCalculator, HospitalityGeneralAwardRateCalculator>();
+        services.AddScoped<IRosterComplianceValidator, HospitalityGeneralAwardComplianceValidator>();
+        services.AddScoped<IVenueRepository, VenueRepository>();
 
         services.AddScoped<IStaffMemberRepository, StaffMemberRepository>();
         services.AddScoped<IStandingUnavailabilityRepository, StandingUnavailabilityRepository>();

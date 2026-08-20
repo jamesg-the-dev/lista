@@ -3,24 +3,18 @@ using RosterApp.Domain.Staffing;
 namespace RosterApp.Application.Staffing;
 
 /// <summary>
-/// Wire shape deliberately matches frontend/app/routes/staff/types.ts
-/// (StaffMemberDto/AvailabilityExceptionDto/LeaveRequestDto), which was
-/// built ahead of this backend against CLAUDE.md's own illustrative wire
-/// convention ("status: number; // enum as int over the wire"). Enums are
-/// therefore serialized as ints here, unlike ShiftDto/ComplianceViolationDto
-/// in Rostering which chose strings — that's an intentional divergence to
-/// avoid reshaping the already-built frontend contract, not an oversight.
-/// Storage in Postgres still uses strings for every enum column (see the
-/// Configurations), matching the rest of the codebase's enum-storage
-/// convention; only the DTO boundary differs.
+/// Every enum on this DTO (and every other DTO/command in the API) travels
+/// as its exact member name string, matching how Postgres stores it (see
+/// the Configurations' HasConversion&lt;string&gt;()) — not as a number. See
+/// CLAUDE.md § Wire format for enums.
 /// </summary>
 public sealed record StaffMemberDto(
     Guid Id,
     string Name,
     string Email,
     string Phone,
-    int EmploymentType,
-    int Classification,
+    string EmploymentType,
+    string Classification,
     int MaxWeeklyHours,
     IReadOnlyList<Guid> VenueIds,
     IReadOnlyList<AvailabilityExceptionDto> Unavailability,
@@ -34,30 +28,30 @@ public sealed record StaffMemberDto(
             staff.Name,
             staff.Email,
             staff.Phone.Value,
-            (int)staff.EmploymentType,
-            (int)staff.Classification,
+            staff.EmploymentType.ToString(),
+            staff.Classification.ToString(),
             staff.MaxWeeklyHours,
             staff.VenueIds,
             unavailability.Select(AvailabilityExceptionDto.FromDomain).ToList(),
             leaveRequests.Select(LeaveRequestDto.FromDomain).ToList());
 }
 
-public sealed record AvailabilityExceptionDto(Guid Id, int DayOfWeek, bool IsAllDay, IReadOnlyList<int> Blocks)
+public sealed record AvailabilityExceptionDto(Guid Id, string DayOfWeek, bool IsAllDay, IReadOnlyList<string> Blocks)
 {
     public static AvailabilityExceptionDto FromDomain(StandingUnavailability unavailability) => new(
         unavailability.Id,
-        (int)unavailability.DayOfWeek,
+        unavailability.DayOfWeek.ToString(),
         unavailability.IsAllDay,
-        unavailability.Blocks.Select(b => (int)b).ToList());
+        unavailability.Blocks.Select(b => b.ToString()).ToList());
 }
 
-public sealed record LeaveRequestDto(Guid Id, DateOnly StartDate, DateOnly EndDate, int Status, string? Reason)
+public sealed record LeaveRequestDto(Guid Id, DateOnly StartDate, DateOnly EndDate, string Status, string? Reason)
 {
     public static LeaveRequestDto FromDomain(LeaveRequest leaveRequest) => new(
         leaveRequest.Id,
         leaveRequest.StartDate,
         leaveRequest.EndDate,
-        (int)leaveRequest.Status,
+        leaveRequest.Status.ToString(),
         leaveRequest.Reason);
 }
 

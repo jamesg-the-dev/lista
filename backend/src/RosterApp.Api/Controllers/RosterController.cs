@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RosterApp.Api.Common;
 using RosterApp.Application.Rostering;
+using RosterApp.Application.Tenancy;
 
 namespace RosterApp.Api.Controllers;
 
@@ -72,6 +73,41 @@ public sealed class RosterController(ISender mediator) : ApiControllerBase(media
         await Mediator.Send(new DeleteShiftCommand(id, venueId), cancellationToken);
         return NoContent();
     }
+
+    [HttpGet("~/api/venues/{venueId:guid}/roster/budget-summary")]
+    public async Task<ActionResult<ApiResponse<BudgetSummaryDto>>> GetBudgetSummary(
+        Guid venueId,
+        [Required] [FromQuery] DateOnly weekStart,
+        CancellationToken cancellationToken
+    )
+    {
+        var summary = await Mediator.Send(new GetBudgetSummaryQuery(venueId, weekStart), cancellationToken);
+        return Ok(ApiResponse<BudgetSummaryDto>.Ok(summary));
+    }
+
+    [HttpPost("~/api/venues/{venueId:guid}/roster/duplicate")]
+    public async Task<ActionResult<ApiResponse<IReadOnlyList<ShiftDto>>>> DuplicateRoster(
+        Guid venueId,
+        DuplicateRosterRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        var command = new DuplicateRosterCommand(venueId, request.SourceWeekStart, request.TargetWeekStart);
+        var shifts = await Mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<ShiftDto>>.Ok(shifts));
+    }
+
+    [HttpPut("~/api/venues/{venueId:guid}/roster/forecast-sales-target")]
+    public async Task<ActionResult<ApiResponse<VenueDto>>> SetForecastSalesTarget(
+        Guid venueId,
+        SetVenueForecastSalesTargetRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        var command = new SetVenueForecastSalesTargetCommand(venueId, request.ForecastSalesTarget);
+        var venue = await Mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<VenueDto>.Ok(venue));
+    }
 }
 
 /// <summary>
@@ -87,3 +123,13 @@ public sealed record UpdateShiftRequest(
     int UnpaidBreakMinutes,
     decimal BaseRatePerHour
 );
+
+public sealed record DuplicateRosterRequest(DateOnly SourceWeekStart, DateOnly TargetWeekStart);
+
+/// <summary>
+/// Not in docs/backend-step-by-step.md's Phase 3 route table (only the read
+/// side, GetBudgetSummaryQuery, is listed there) — but Venue.ForecastSalesTarget
+/// is specced as "weekly, editable" and needs some write path, so this fills
+/// that gap on the same controller as the rest of the budget-bar routes.
+/// </summary>
+public sealed record SetVenueForecastSalesTargetRequest(decimal? ForecastSalesTarget);

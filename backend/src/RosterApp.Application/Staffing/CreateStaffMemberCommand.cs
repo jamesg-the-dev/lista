@@ -10,8 +10,8 @@ public sealed record CreateStaffMemberCommand(
     string Name,
     string Email,
     string Phone,
-    int EmploymentType,
-    int Classification,
+    string EmploymentType,
+    string Classification,
     int MaxWeeklyHours,
     IReadOnlyList<Guid> VenueIds
 ) : IRequest<StaffMemberDto>;
@@ -39,10 +39,10 @@ public sealed class CreateStaffMemberCommandValidator : AbstractValidator<Create
             .Must(phone => PhoneNumber.TryCreateMobile(phone, out _, out _))
             .WithMessage("Phone number must be a valid Australian mobile number.");
         RuleFor(c => c.EmploymentType)
-            .Must(v => Enum.IsDefined(typeof(EmploymentType), v))
+            .Must(EnumWireValidation.IsDefinedName<EmploymentType>)
             .WithMessage("Invalid employment type.");
         RuleFor(c => c.Classification)
-            .Must(v => Enum.IsDefined(typeof(AwardClassification), v))
+            .Must(EnumWireValidation.IsDefinedName<AwardClassification>)
             .WithMessage("Invalid classification.");
         RuleFor(c => c.MaxWeeklyHours).GreaterThan(0).LessThanOrEqualTo(76);
         RuleFor(c => c.VenueIds).NotEmpty();
@@ -82,8 +82,8 @@ public sealed class CreateStaffMemberCommandHandler(
             request.Name,
             request.Email,
             request.Phone,
-            (EmploymentType)request.EmploymentType,
-            (AwardClassification)request.Classification,
+            Enum.Parse<EmploymentType>(request.EmploymentType),
+            Enum.Parse<AwardClassification>(request.Classification),
             request.MaxWeeklyHours,
             request.VenueIds
         );

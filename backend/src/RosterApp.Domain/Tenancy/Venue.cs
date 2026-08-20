@@ -13,6 +13,15 @@ public sealed class Venue
     public string Name { get; private set; } = null!;
     public DateTime CreatedAtUtc { get; private set; }
 
+    /// <summary>
+    /// A single flat weekly target, not a value stored per specific week —
+    /// the roster builder's budget bar (build order step 3) compares each
+    /// week's actual cost against this one recurring figure. Null until a
+    /// manager sets it; GetBudgetSummaryQuery reports percentOfTarget as
+    /// null rather than dividing by zero/missing data.
+    /// </summary>
+    public decimal? ForecastSalesTarget { get; private set; }
+
     private Venue() { } // EF Core
 
     public static Venue Create(Guid organisationId, string name)
@@ -24,5 +33,10 @@ public sealed class Venue
             Name = name,
             CreatedAtUtc = DateTime.UtcNow,
         };
+    }
+
+    public void UpdateForecastSalesTarget(decimal? forecastSalesTarget)
+    {
+        ForecastSalesTarget = forecastSalesTarget;
     }
 }

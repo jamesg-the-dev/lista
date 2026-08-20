@@ -480,6 +480,36 @@ route directory.
       MVP (MA000009 rules only), same "second implementation slots in
       later" shape.
 
+* **Wire format for enums: exact member name string, never an int.** Every
+  enum that crosses the API boundary — on a response DTO or on an inbound
+  command/request — is serialized as its exact C# enum member name (e.g.
+  `"Draft"`, `"InsufficientRest"`, `"Casual"`), matching how the value is
+  stored in Postgres (every enum column uses `.HasConversion<string>()` in
+  its `IEntityTypeConfiguration`). This was decided after `ShiftDto`
+  (Rostering) briefly diverged from `StaffMemberDto` (Staffing) by using
+  ints — the two were reconciled onto strings, once and for all, so this
+  isn't a decision to relitigate per DTO:
+
+  * **Outbound (DTO):** the DTO property is `string`; the mapping function
+    calls `.ToString()` on the domain enum (e.g. `shift.Status.ToString()`).
+  * **Inbound (command/request):** the command record takes `string`, not
+    the domain enum type and not an int — binding straight to the enum
+    type would silently accept a numeric string, and an int would drift
+    from the DB's string storage. A FluentValidation rule checks the value
+    against `EnumWireValidation.IsDefinedName<TEnum>()`
+    (`RosterApp.Application/Common/EnumWireValidation.cs`) — exact,
+    case-sensitive membership against `Enum.GetNames<TEnum>()`, which is
+    the deliberately safe alternative to `Enum.TryParse`/`Enum.IsDefined`
+    (both of which accept unnamed numeric values, e.g. `"999"`). A failed
+    check throws `FluentValidation.ValidationException`, which the
+    pipeline's `ValidationBehavior` + `ApiExceptionHandler` already turn
+    into a 400 with a field-level error — no bespoke error handling
+    needed. The handler then converts with `Enum.Parse<TEnum>(request.Field)`.
+  * Route segments that carry an enum value (e.g.
+    `/api/shifts/{id}/compliance-violations/{violationType}/override`) bind
+    as a plain `string` route parameter, validated the same way inside the
+    command — not as the enum type and not with a numeric route constraint.
+
 * **Database:** Postgres via Supabase.
 
   * EF Core/Npgsql is the **only writer**. Business logic and audit
@@ -574,7 +604,7 @@ interface ShiftDto {
   id: string;
   startUtc: string;
   endUtc: string;
-  status: number; // enum as int over the wire
+  status: string; // enum as its exact member name over the wire — see § Backend "Wire format for enums"
   awardBreakdown: AwardBreakdownDto[]; // must stay itemised — see "Why it exists"
   complianceViolations: ComplianceViolationDto[]; // itemised, same rule as award breakdown — don't collapse to a boolean "isCompliant" flag
 }

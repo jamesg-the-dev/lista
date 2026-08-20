@@ -12,6 +12,7 @@ public sealed class ShiftConfiguration : IEntityTypeConfiguration<Shift>
         builder.HasKey(s => s.Id);
         builder.Property(s => s.Id).ValueGeneratedNever();
         builder.Property(s => s.Status).HasConversion<string>().HasMaxLength(20);
+        builder.Property(s => s.BaseRatePerHour).HasPrecision(10, 2);
 
         builder.HasIndex(s => new { s.VenueId, s.ShiftDate });
         builder.HasIndex(s => new { s.EmployeeId, s.ShiftDate });
@@ -54,6 +55,8 @@ public sealed class ShiftConfiguration : IEntityTypeConfiguration<Shift>
             violation.Property(v => v.Type).HasConversion<string>().HasMaxLength(30);
             violation.Property(v => v.Severity).HasConversion<string>().HasMaxLength(20);
             violation.Property(v => v.Message).IsRequired().HasMaxLength(500);
+            violation.Property(v => v.Acknowledged);
+            violation.Property(v => v.OverrideReason).HasMaxLength(500);
         });
     }
 }

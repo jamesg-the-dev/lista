@@ -14,9 +14,9 @@ namespace RosterApp.Application.Staffing;
 /// </summary>
 public sealed record SetStandingUnavailabilityCommand(
     Guid StaffMemberId,
-    int DayOfWeek,
+    string DayOfWeek,
     bool IsAllDay,
-    IReadOnlyList<int> Blocks
+    IReadOnlyList<string> Blocks
 ) : IRequest<AvailabilityExceptionDto>;
 
 public sealed class SetStandingUnavailabilityCommandValidator : AbstractValidator<SetStandingUnavailabilityCommand>
@@ -24,9 +24,9 @@ public sealed class SetStandingUnavailabilityCommandValidator : AbstractValidato
     public SetStandingUnavailabilityCommandValidator()
     {
         RuleFor(c => c.StaffMemberId).NotEmpty();
-        RuleFor(c => c.DayOfWeek).Must(v => Enum.IsDefined(typeof(Weekday), v))
+        RuleFor(c => c.DayOfWeek).Must(EnumWireValidation.IsDefinedName<Weekday>)
             .WithMessage("Invalid day of week.");
-        RuleForEach(c => c.Blocks).Must(v => Enum.IsDefined(typeof(AvailabilityBlock), v))
+        RuleForEach(c => c.Blocks).Must(EnumWireValidation.IsDefinedName<AvailabilityBlock>)
             .WithMessage("Invalid availability block.");
     }
 }
@@ -46,8 +46,8 @@ public sealed class SetStandingUnavailabilityCommandHandler(
             throw new NotFoundException($"Staff member '{request.StaffMemberId}' was not found.");
         }
 
-        var dayOfWeek = (Weekday)request.DayOfWeek;
-        var blocks = request.Blocks.Select(b => (AvailabilityBlock)b).ToList();
+        var dayOfWeek = Enum.Parse<Weekday>(request.DayOfWeek);
+        var blocks = request.Blocks.Select(Enum.Parse<AvailabilityBlock>).ToList();
 
         var existing = await unavailabilityRepository.GetByStaffAndDayAsync(request.StaffMemberId, dayOfWeek, cancellationToken);
         if (existing is not null)

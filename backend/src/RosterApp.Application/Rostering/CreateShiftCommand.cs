@@ -44,10 +44,21 @@ public sealed class CreateShiftCommandValidator : AbstractValidator<CreateShiftC
 
 public sealed class CreateShiftCommandHandler(
     IAwardRateCalculator awardRateCalculator,
+    IRosterComplianceValidator complianceValidator,
     IShiftRepository shiftRepository,
+    IRosterLookup rosterLookup,
     IUnitOfWork unitOfWork
 ) : IRequestHandler<CreateShiftCommand, ShiftDto>
 {
+    /// <summary>
+    /// Days either side of the shift date fetched as compliance context —
+    /// wide enough to catch a rest-between-shifts breach against the
+    /// adjoining day and a consecutive-day streak past the 6-day guideline
+    /// (see HospitalityGeneralAwardComplianceValidator) without pulling in
+    /// the whole roster.
+    /// </summary>
+    private const int ComplianceContextDays = 8;
+
     public async Task<ShiftDto> Handle(CreateShiftCommand request, CancellationToken cancellationToken)
     {
         var awardBreakdown = awardRateCalculator.Calculate(
@@ -64,7 +75,18 @@ public sealed class CreateShiftCommandHandler(
             request.Start,
             request.End,
             request.UnpaidBreakMinutes,
+            request.BaseRatePerHour,
             awardBreakdown);
+
+        var adjacentShifts = await rosterLookup.GetShiftsForEmployeeAsync(
+            request.EmployeeId,
+            request.ShiftDate.AddDays(-ComplianceContextDays),
+            request.ShiftDate.AddDays(ComplianceContextDays),
+            excludeShiftId: null,
+            cancellationToken);
+
+        var violations = await complianceValidator.ValidateAsync(shift, adjacentShifts, cancellationToken);
+        shift.SetComplianceViolations(violations);
 
         shiftRepository.Add(shift);
         await unitOfWork.SaveChangesAsync(cancellationToken);

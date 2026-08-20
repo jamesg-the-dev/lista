@@ -16,6 +16,7 @@ public sealed record ShiftDto(
     TimeOnly Start,
     TimeOnly End,
     int UnpaidBreakMinutes,
+    decimal BaseRatePerHour,
     string Status,
     IReadOnlyList<AwardBreakdownLineDto> AwardBreakdown,
     IReadOnlyList<ComplianceViolationDto> ComplianceViolations)
@@ -28,6 +29,7 @@ public sealed record ShiftDto(
         shift.Start,
         shift.End,
         shift.UnpaidBreakMinutes,
+        shift.BaseRatePerHour,
         shift.Status.ToString(),
         shift.AwardBreakdown.Select(AwardBreakdownLineDto.FromDomain).ToList(),
         shift.ComplianceViolations.Select(ComplianceViolationDto.FromDomain).ToList());
@@ -39,8 +41,18 @@ public sealed record AwardBreakdownLineDto(string Label, decimal Hours, decimal 
         new(line.Label, line.Hours, line.RatePerHour, line.Amount);
 }
 
-public sealed record ComplianceViolationDto(string Type, string Severity, string Message)
+public sealed record ComplianceViolationDto(
+    string Type,
+    string Severity,
+    string Message,
+    bool Acknowledged,
+    string? OverrideReason)
 {
     public static ComplianceViolationDto FromDomain(ComplianceViolation violation) =>
-        new(violation.Type.ToString(), violation.Severity.ToString(), violation.Message);
+        new(
+            violation.Type.ToString(),
+            violation.Severity.ToString(),
+            violation.Message,
+            violation.Acknowledged,
+            violation.OverrideReason);
 }
