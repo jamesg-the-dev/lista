@@ -7,6 +7,7 @@ using RosterApp.Application.LabourCost;
 using RosterApp.Application.Rostering;
 using RosterApp.Application.Staffing;
 using RosterApp.Application.Tenancy;
+using RosterApp.Application.Timekeeping;
 using RosterApp.Infrastructure.Account;
 using RosterApp.Infrastructure.Auditing;
 using RosterApp.Infrastructure.AwardCalculator;
@@ -16,6 +17,7 @@ using RosterApp.Infrastructure.Persistence;
 using RosterApp.Infrastructure.Rostering;
 using RosterApp.Infrastructure.Staffing;
 using RosterApp.Infrastructure.Tenancy;
+using RosterApp.Infrastructure.Timekeeping;
 
 namespace RosterApp.Infrastructure;
 
@@ -47,6 +49,9 @@ public static class DependencyInjection
         services.AddScoped<IStaffLookup, StaffLookup>();
         services.AddScoped<IStaffAvailabilityChecker, StaffAvailabilityChecker>();
         services.AddScoped<IStaffUniquenessChecker, StaffUniquenessChecker>();
+
+        services.AddScoped<ITimeEntryRepository, TimeEntryRepository>();
+        services.AddScoped<ITimeEntryLookup, TimeEntryLookup>();
 
         return services;
     }

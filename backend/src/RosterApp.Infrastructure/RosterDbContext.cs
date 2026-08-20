@@ -3,6 +3,7 @@ using RosterApp.Domain.Auditing;
 using RosterApp.Domain.Rostering;
 using RosterApp.Domain.Staffing;
 using RosterApp.Domain.Tenancy;
+using RosterApp.Domain.Timekeeping;
 
 namespace RosterApp.Infrastructure;
 
@@ -24,6 +25,7 @@ public sealed class RosterDbContext(DbContextOptions<RosterDbContext> options) :
     public DbSet<StaffMember> StaffMembers => Set<StaffMember>();
     public DbSet<StandingUnavailability> StandingUnavailabilities => Set<StandingUnavailability>();
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
+    public DbSet<TimeEntry> TimeEntries => Set<TimeEntry>();
 
     // TODO: global query filter for tenant scoping (VenueId / OrganisationId) once
     // more venue-scoped aggregates exist (Shift is the first candidate in Phase 1).
