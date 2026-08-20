@@ -2,20 +2,20 @@ import { DateTime } from "luxon";
 
 import { apiClient } from "~/lib/api-client";
 
-import { MOCK_STAFF, MOCK_VENUES } from "./mock-data";
+import { MOCK_STAFF } from "./mock-data";
 import type {
   BudgetSummaryDto,
   ShiftDto,
   ShiftInput,
   StaffMemberDto,
-  VenueDto,
 } from "./types";
 import { toShiftRequestDto } from "./types";
 
-// Venues and staff aren't backed by any of the 8 controllers covered in
-// this pass (venue listing has no controller yet; staff is
-// StaffController's turn) — stay mock-backed until then. Everything else
-// below calls the real RosterController endpoints.
+// Roster-grid staff (role/title/rate) isn't backed by any of the 8
+// controllers covered in this pass — no controller returns that shape (see
+// mock-data.ts) — so it stays mock-backed. Venues now come from
+// useCurrentAccount() (see hooks.ts's useVenues), not from here. Everything
+// else below calls the real RosterController endpoints.
 
 const staffStore: StaffMemberDto[] = MOCK_STAFF.map((s) => ({ ...s }));
 
@@ -30,16 +30,15 @@ function previousWeekIso(weekStartIso: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Venues / staff (mock — see file header)
+// Roster-grid staff (mock — see file header)
 // ---------------------------------------------------------------------------
 
-export async function fetchVenues(): Promise<VenueDto[]> {
-  return delay(MOCK_VENUES);
-}
-
+// Not filtered by venueId: the mock dataset's venueIds are illustrative
+// labels ("v1"/"v2"), not real venue GUIDs, since venues are now real
+// account data — every mock staff member shows up for every real venue.
 export async function fetchStaffMembers(venueId: string): Promise<StaffMemberDto[]> {
-  const staff = staffStore.filter((s) => s.venueIds.includes(venueId));
-  return delay(staff.map((s) => ({ ...s })));
+  void venueId;
+  return delay(staffStore.map((s) => ({ ...s })));
 }
 
 // ---------------------------------------------------------------------------

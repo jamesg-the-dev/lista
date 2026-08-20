@@ -16,22 +16,20 @@ import { ROLE_META, mapRole } from "../roster/types";
 import type { Role } from "../roster/types";
 
 // ---------------------------------------------------------------------------
-// Venue — duplicated per-route (id/name/suburb only, no positional encoding),
-// same pattern as routes/roster/types.ts and routes/staff/types.ts. Role,
+// Venue — sourced from useCurrentAccount()'s venues (see hooks.ts's
+// useVenues), not mocked or given its own endpoint — no controller lists
+// venues (same as routes/roster/types.ts and routes/staff/types.ts). Role,
 // below, is imported from routes/roster/types.ts instead of duplicated,
 // because ROLE_TABLE there is a *positionally* encoded enum (unmapRole
 // returns an array index) — a second copy of that table could silently
 // drift out of index-alignment with the first and misattribute cost to the
-// wrong role. Venue has no such hazard, so it follows the established
-// per-route duplication convention.
+// wrong role.
 // ---------------------------------------------------------------------------
 
-export interface VenueDto {
+export interface Venue {
   id: string;
   name: string;
-  suburb: string;
 }
-export type Venue = VenueDto;
 
 export function mustFindVenue(venues: Venue[], venueId: string): Venue {
   const venue = venues.find((v) => v.id === venueId);

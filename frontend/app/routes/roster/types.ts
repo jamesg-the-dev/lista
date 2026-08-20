@@ -12,10 +12,14 @@
 // "HH:mm:ss" (System.Text.Json's default TimeOnly converter); the view
 // model strips the seconds since the UI only edits to the minute.
 //
-// Venue (id/name/suburb) and StaffMemberDto below are NOT part of
-// RosterController's contract — no controller in this pass backs "list
-// venues" or "list staff for a venue" (that's StaffController's turn), so
-// they stay backed by mock-data.ts for now.
+// StaffMemberDto below is NOT part of RosterController's contract — no
+// controller backs "list staff for the roster grid" with role/title/rate
+// fields (StaffController's StaffMemberDto has a different shape entirely —
+// employment type/classification, not role/rate), so it stays backed by
+// mock-data.ts. Venue previously stayed mocked too, but no controller lists
+// venues at all, and the mock venue ids didn't satisfy RosterController's
+// `{venueId:guid}` route constraint — it's now sourced from
+// useCurrentAccount()'s venues instead (see hooks.ts's useVenues).
 
 import { DateTime, Duration, Interval } from "luxon";
 
@@ -44,15 +48,14 @@ function mustMapWireEnum<T extends string>(
 }
 
 // ---------------------------------------------------------------------------
-// Venue — mock-backed (see file header); unrelated to RosterController.
+// Venue — sourced from useCurrentAccount()'s venues (see file header), not
+// its own endpoint or mock data.
 // ---------------------------------------------------------------------------
 
-export interface VenueDto {
+export interface Venue {
   id: string;
   name: string;
-  suburb: string;
 }
-export type Venue = VenueDto;
 
 export function mustFindVenue(venues: Venue[], venueId: string): Venue {
   const venue = venues.find((v) => v.id === venueId);

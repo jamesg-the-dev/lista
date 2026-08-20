@@ -4,18 +4,26 @@
 // step 2.
 //
 // Follows CLAUDE.md's "wire type vs view model" convention: DTOs match the
-// backend query/command shape (enums as ints, dates as ISO strings), view
-// models are what components consume (string unions, Date objects). Mapping
-// happens once, at the boundary, in the mapXxx/toXxxDto functions below.
+// backend query/command shape, view models are what components consume.
+// Mapping happens once, at the boundary, in the mapXxx/toXxxDto functions
+// below.
+//
+// Backed by StaffController (backend/src/RosterApp.Api/Controllers/
+// StaffController.cs) and LeaveRequestController.cs. Per CLAUDE.md's
+// wire-format-for-enums rule, every enum on these DTOs is the exact C#
+// member name string (e.g. "Casual", "Level4", "Monday") — never an int.
+// Venue below is NOT part of either controller's contract — no controller
+// lists venues, so it's sourced from useCurrentAccount()'s venues instead
+// (see hooks.ts's useVenues) rather than mocked or given its own endpoint.
 
-function mustMapEnum<T extends string>(
-  value: number,
-  table: readonly T[],
+function mustMapWireEnum<T extends string>(
+  wire: string,
+  table: Record<string, T>,
   enumName: string,
 ): T {
-  const mapped = table[value];
+  const mapped = table[wire];
   if (mapped === undefined) {
-    throw new Error(`Unknown ${enumName} value: ${value}`);
+    throw new Error(`Unknown ${enumName} wire value: ${wire}`);
   }
   return mapped;
 }
@@ -24,14 +32,24 @@ function mustMapEnum<T extends string>(
 // Employment type — drives IAwardRateCalculator loadings later.
 // ---------------------------------------------------------------------------
 
-const EMPLOYMENT_TYPE_TABLE = ["casual", "part_time", "full_time"] as const;
-export type EmploymentType = (typeof EMPLOYMENT_TYPE_TABLE)[number];
+export type EmploymentType = "casual" | "part_time" | "full_time";
 
-export function mapEmploymentType(value: number): EmploymentType {
-  return mustMapEnum(value, EMPLOYMENT_TYPE_TABLE, "EmploymentType");
+const EMPLOYMENT_TYPE_TABLE: Record<string, EmploymentType> = {
+  Casual: "casual",
+  PartTime: "part_time",
+  FullTime: "full_time",
+};
+const EMPLOYMENT_TYPE_REVERSE: Record<EmploymentType, string> = {
+  casual: "Casual",
+  part_time: "PartTime",
+  full_time: "FullTime",
+};
+
+export function mapEmploymentType(wire: string): EmploymentType {
+  return mustMapWireEnum(wire, EMPLOYMENT_TYPE_TABLE, "EmploymentType");
 }
-export function unmapEmploymentType(value: EmploymentType): number {
-  return EMPLOYMENT_TYPE_TABLE.indexOf(value);
+export function unmapEmploymentType(value: EmploymentType): string {
+  return EMPLOYMENT_TYPE_REVERSE[value];
 }
 
 export const EMPLOYMENT_TYPE_META: Record<EmploymentType, { label: string }> = {
@@ -48,22 +66,39 @@ export const EMPLOYMENT_TYPE_META: Record<EmploymentType, { label: string }> = {
 // sourced from Fair Work's Pay Calculator. See CLAUDE.md § Award compliance.
 // ---------------------------------------------------------------------------
 
-const CLASSIFICATION_TABLE = [
-  "introductory",
-  "level_1",
-  "level_2",
-  "level_3",
-  "level_4",
-  "level_5",
-  "level_6",
-] as const;
-export type AwardClassification = (typeof CLASSIFICATION_TABLE)[number];
+export type AwardClassification =
+  | "introductory"
+  | "level_1"
+  | "level_2"
+  | "level_3"
+  | "level_4"
+  | "level_5"
+  | "level_6";
 
-export function mapClassification(value: number): AwardClassification {
-  return mustMapEnum(value, CLASSIFICATION_TABLE, "AwardClassification");
+const CLASSIFICATION_TABLE: Record<string, AwardClassification> = {
+  Introductory: "introductory",
+  Level1: "level_1",
+  Level2: "level_2",
+  Level3: "level_3",
+  Level4: "level_4",
+  Level5: "level_5",
+  Level6: "level_6",
+};
+const CLASSIFICATION_REVERSE: Record<AwardClassification, string> = {
+  introductory: "Introductory",
+  level_1: "Level1",
+  level_2: "Level2",
+  level_3: "Level3",
+  level_4: "Level4",
+  level_5: "Level5",
+  level_6: "Level6",
+};
+
+export function mapClassification(wire: string): AwardClassification {
+  return mustMapWireEnum(wire, CLASSIFICATION_TABLE, "AwardClassification");
 }
-export function unmapClassification(value: AwardClassification): number {
-  return CLASSIFICATION_TABLE.indexOf(value);
+export function unmapClassification(value: AwardClassification): string {
+  return CLASSIFICATION_REVERSE[value];
 }
 
 export const CLASSIFICATION_META: Record<
@@ -116,14 +151,57 @@ export const DAY_LABELS = [
 ] as const;
 export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
-const TIME_BLOCK_TABLE = ["morning", "afternoon", "evening"] as const;
-export type TimeBlock = (typeof TIME_BLOCK_TABLE)[number];
+// Kept as a numeric view model (index into DAY_LABELS) rather than a string
+// union, matching the existing UI's <select> handling — only the wire
+// mapping to/from the backend's Weekday enum member names changes here.
+const WEEKDAY_TABLE: Record<string, DayOfWeek> = {
+  Monday: 0,
+  Tuesday: 1,
+  Wednesday: 2,
+  Thursday: 3,
+  Friday: 4,
+  Saturday: 5,
+  Sunday: 6,
+};
+const WEEKDAY_REVERSE = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+] as const;
 
-export function mapTimeBlock(value: number): TimeBlock {
-  return mustMapEnum(value, TIME_BLOCK_TABLE, "TimeBlock");
+export function mapDayOfWeek(wire: string): DayOfWeek {
+  const mapped = WEEKDAY_TABLE[wire];
+  if (mapped === undefined) {
+    throw new Error(`Unknown Weekday wire value: ${wire}`);
+  }
+  return mapped;
 }
-export function unmapTimeBlock(value: TimeBlock): number {
-  return TIME_BLOCK_TABLE.indexOf(value);
+export function unmapDayOfWeek(value: DayOfWeek): string {
+  return WEEKDAY_REVERSE[value];
+}
+
+export type TimeBlock = "morning" | "afternoon" | "evening";
+
+const TIME_BLOCK_TABLE: Record<string, TimeBlock> = {
+  Morning: "morning",
+  Afternoon: "afternoon",
+  Evening: "evening",
+};
+const TIME_BLOCK_REVERSE: Record<TimeBlock, string> = {
+  morning: "Morning",
+  afternoon: "Afternoon",
+  evening: "Evening",
+};
+
+export function mapTimeBlock(wire: string): TimeBlock {
+  return mustMapWireEnum(wire, TIME_BLOCK_TABLE, "AvailabilityBlock");
+}
+export function unmapTimeBlock(value: TimeBlock): string {
+  return TIME_BLOCK_REVERSE[value];
 }
 
 export const TIME_BLOCK_META: Record<TimeBlock, { label: string }> = {
@@ -134,9 +212,9 @@ export const TIME_BLOCK_META: Record<TimeBlock, { label: string }> = {
 
 export interface AvailabilityExceptionDto {
   id: string;
-  dayOfWeek: number; // 0=Mon..6=Sun
+  dayOfWeek: string; // Weekday enum member name, e.g. "Monday"
   isAllDay: boolean;
-  blocks: number[]; // TimeBlock enum ints; ignored when isAllDay is true
+  blocks: string[]; // AvailabilityBlock enum member names; ignored when isAllDay is true
 }
 
 export interface AvailabilityException {
@@ -150,23 +228,24 @@ export function mapAvailabilityException(
 ): AvailabilityException {
   return {
     id: dto.id,
-    dayOfWeek: dto.dayOfWeek as DayOfWeek,
+    dayOfWeek: mapDayOfWeek(dto.dayOfWeek),
     blocks: dto.isAllDay ? "all_day" : dto.blocks.map(mapTimeBlock),
   };
 }
 
-export function toAvailabilityExceptionDto(
-  exception: Omit<AvailabilityException, "id">,
-  id: string,
-): AvailabilityExceptionDto {
+export interface AvailabilityExceptionInput {
+  dayOfWeek: DayOfWeek;
+  blocks: TimeBlock[] | "all_day";
+}
+
+// Request body for POST /api/staff/{id}/unavailability
+// (SetStandingUnavailabilityCommand) — the id is assigned server-side and
+// returned in the response, so it's not part of the request.
+export function toSetStandingUnavailabilityRequestDto(input: AvailabilityExceptionInput) {
   return {
-    id,
-    dayOfWeek: exception.dayOfWeek,
-    isAllDay: exception.blocks === "all_day",
-    blocks:
-      exception.blocks === "all_day"
-        ? []
-        : exception.blocks.map(unmapTimeBlock),
+    dayOfWeek: unmapDayOfWeek(input.dayOfWeek),
+    isAllDay: input.blocks === "all_day",
+    blocks: input.blocks === "all_day" ? [] : input.blocks.map(unmapTimeBlock),
   };
 }
 
@@ -174,25 +253,23 @@ export function toAvailabilityExceptionDto(
 // One-off leave requests.
 // ---------------------------------------------------------------------------
 
-const LEAVE_REQUEST_STATUS_TABLE = [
-  "requested",
-  "approved",
-  "declined",
-] as const;
-export type LeaveRequestStatus = (typeof LEAVE_REQUEST_STATUS_TABLE)[number];
+export type LeaveRequestStatus = "requested" | "approved" | "declined";
 
-export function mapLeaveRequestStatus(value: number): LeaveRequestStatus {
-  return mustMapEnum(value, LEAVE_REQUEST_STATUS_TABLE, "LeaveRequestStatus");
-}
-export function unmapLeaveRequestStatus(value: LeaveRequestStatus): number {
-  return LEAVE_REQUEST_STATUS_TABLE.indexOf(value);
+const LEAVE_REQUEST_STATUS_TABLE: Record<string, LeaveRequestStatus> = {
+  Requested: "requested",
+  Approved: "approved",
+  Declined: "declined",
+};
+
+export function mapLeaveRequestStatus(wire: string): LeaveRequestStatus {
+  return mustMapWireEnum(wire, LEAVE_REQUEST_STATUS_TABLE, "LeaveRequestStatus");
 }
 
 export interface LeaveRequestDto {
   id: string;
   startDate: string; // ISO date-only, e.g. "2026-08-20"
   endDate: string;
-  status: number;
+  status: string; // LeaveRequestStatus enum member name, e.g. "Requested"
   reason: string | null;
 }
 
@@ -218,18 +295,31 @@ function toIsoDate(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-// ---------------------------------------------------------------------------
-// Venue (subset of fields this screen needs — id/name/suburb, matching the
-// shape RosterBuilder.tsx already displays).
-// ---------------------------------------------------------------------------
-
-export interface VenueDto {
-  id: string;
-  name: string;
-  suburb: string;
+export interface LeaveRequestInput {
+  startDate: Date;
+  endDate: Date;
+  reason: string | null;
 }
 
-export type Venue = VenueDto;
+// Request body for POST /api/staff/{id}/leave-requests
+// (SubmitLeaveRequestCommand) — StaffMemberId comes from the URL.
+export function toLeaveRequestInputDto(input: LeaveRequestInput) {
+  return {
+    startDate: toIsoDate(input.startDate),
+    endDate: toIsoDate(input.endDate),
+    reason: input.reason,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Venue — sourced from useCurrentAccount()'s venues (see file header), not
+// its own endpoint. Only the fields AccountVenueDto actually carries.
+// ---------------------------------------------------------------------------
+
+export interface Venue {
+  id: string;
+  name: string;
+}
 
 // ---------------------------------------------------------------------------
 // Staff member.
@@ -240,8 +330,8 @@ export interface StaffMemberDto {
   name: string;
   email: string;
   phone: string;
-  employmentType: number;
-  classification: number;
+  employmentType: string;
+  classification: string;
   maxWeeklyHours: number;
   venueIds: string[];
   unavailability: AvailabilityExceptionDto[];
@@ -281,7 +371,7 @@ export function mapStaffMember(dto: StaffMemberDto): StaffMember {
 // granular endpoints below (add/remove/decide), not bundled into one big
 // upsert, matching CQRS's one-command-per-action shape.
 export interface StaffMemberInput {
-  id: string | null; // null = create
+  id: string | null; // null = create (POST /api/staff); otherwise PUT /api/staff/{id}
   name: string;
   email: string;
   phone: string;
@@ -291,9 +381,12 @@ export interface StaffMemberInput {
   venueIds: string[];
 }
 
-export function toStaffMemberInputDto(input: StaffMemberInput) {
+// Request body shape shared by CreateStaffMemberRequest and
+// UpdateStaffMemberRequest — both are identical; only the id (URL for
+// update, absent for create) and HTTP verb differ, so api.ts picks the
+// route based on StaffMemberInput.id rather than needing two DTO shapes.
+export function toStaffMemberRequestDto(input: StaffMemberInput) {
   return {
-    id: input.id,
     name: input.name,
     email: input.email,
     phone: input.phone,
@@ -304,21 +397,29 @@ export function toStaffMemberInputDto(input: StaffMemberInput) {
   };
 }
 
-export interface AvailabilityExceptionInput {
-  dayOfWeek: DayOfWeek;
-  blocks: TimeBlock[] | "all_day";
+// ---------------------------------------------------------------------------
+// Availability window — GET /api/staff/{id}/availability
+// (GetStaffAvailabilityQuery). Not consumed by any screen yet (no roster
+// double-booking check wired up), but included for full StaffController
+// contract coverage.
+// ---------------------------------------------------------------------------
+
+export interface StaffAvailabilityDto {
+  staffMemberId: string;
+  unavailability: AvailabilityExceptionDto[];
+  approvedLeave: LeaveRequestDto[];
 }
 
-export interface LeaveRequestInput {
-  startDate: Date;
-  endDate: Date;
-  reason: string | null;
+export interface StaffAvailability {
+  staffMemberId: string;
+  unavailability: AvailabilityException[];
+  approvedLeave: LeaveRequest[];
 }
 
-export function toLeaveRequestInputDto(input: LeaveRequestInput) {
+export function mapStaffAvailability(dto: StaffAvailabilityDto): StaffAvailability {
   return {
-    startDate: toIsoDate(input.startDate),
-    endDate: toIsoDate(input.endDate),
-    reason: input.reason,
+    staffMemberId: dto.staffMemberId,
+    unavailability: dto.unavailability.map(mapAvailabilityException),
+    approvedLeave: dto.approvedLeave.map(mapLeaveRequest),
   };
 }

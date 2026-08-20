@@ -1,34 +1,30 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import {
-  addAvailabilityException,
-  createLeaveRequest,
-  fetchStaffMember,
-  fetchStaffMembers,
-  fetchVenues,
-  removeAvailabilityException,
-  saveStaffMember,
-  updateLeaveRequestStatus,
-} from "./api";
+import { currentAccountQueryOptions } from "~/lib/account/hooks";
+
+import * as api from "./api";
 import type {
   AvailabilityExceptionInput,
   LeaveRequestInput,
   LeaveRequestStatus,
   StaffMemberInput,
 } from "./types";
-import { mapLeaveRequest, mapStaffMember } from "./types";
+import { mapLeaveRequest, mapStaffAvailability, mapStaffMember } from "./types";
 
+// No controller lists venues (see types.ts's file header) — reuses the
+// account query's cache entry via `select` rather than issuing a second
+// request, and maps AccountVenueDto's shape down to this route's Venue type.
 export function useVenues() {
   return useQuery({
-    queryKey: ["venues"],
-    queryFn: fetchVenues,
+    ...currentAccountQueryOptions,
+    select: (account) => account.venues.map((v) => ({ id: v.venueId, name: v.name })),
   });
 }
 
 export function useStaffMembers(venueId: string) {
   return useQuery({
     queryKey: ["staff", "list", venueId],
-    queryFn: async () => (await fetchStaffMembers(venueId)).map(mapStaffMember),
+    queryFn: async () => (await api.fetchStaffMembers(venueId)).map(mapStaffMember),
     enabled: !!venueId,
   });
 }
@@ -36,7 +32,15 @@ export function useStaffMembers(venueId: string) {
 export function useStaffMember(staffId: string | null) {
   return useQuery({
     queryKey: ["staff", "detail", staffId],
-    queryFn: async () => mapStaffMember(await fetchStaffMember(staffId!)),
+    queryFn: async () => mapStaffMember(await api.fetchStaffMember(staffId!)),
+    enabled: !!staffId,
+  });
+}
+
+export function useStaffAvailability(staffId: string, from: string, to: string) {
+  return useQuery({
+    queryKey: ["staff", "availability", staffId, from, to],
+    queryFn: async () => mapStaffAvailability(await api.fetchStaffAvailability(staffId, from, to)),
     enabled: !!staffId,
   });
 }
@@ -44,7 +48,8 @@ export function useStaffMember(staffId: string | null) {
 export function useSaveStaffMember() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: StaffMemberInput) => saveStaffMember(input),
+    mutationFn: (input: StaffMemberInput) =>
+      input.id ? api.updateStaffMember(input.id, input) : api.createStaffMember(input),
     onSuccess: (dto) => {
       queryClient.invalidateQueries({
         predicate: (query) =>
@@ -59,7 +64,7 @@ export function useAddAvailabilityException(staffId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: AvailabilityExceptionInput) =>
-      addAvailabilityException(staffId, input),
+      api.setStandingUnavailability(staffId, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff", "detail", staffId] });
     },
@@ -70,7 +75,7 @@ export function useRemoveAvailabilityException(staffId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (exceptionId: string) =>
-      removeAvailabilityException(staffId, exceptionId),
+      api.removeStandingUnavailability(staffId, exceptionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff", "detail", staffId] });
     },
@@ -81,13 +86,16 @@ export function useCreateLeaveRequest(staffId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: LeaveRequestInput) =>
-      mapLeaveRequest(await createLeaveRequest(staffId, input)),
+      mapLeaveRequest(await api.submitLeaveRequest(staffId, input)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff", "detail", staffId] });
     },
   });
 }
 
+// Backend only exposes approve/decline as separate commands (there's no
+// "revert to requested"); the frontend still passes a LeaveRequestStatus in
+// so the calling UI (approve/decline buttons) stays unchanged from the mock.
 export function useUpdateLeaveRequestStatus(staffId: string) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -99,7 +107,9 @@ export function useUpdateLeaveRequestStatus(staffId: string) {
       status: LeaveRequestStatus;
     }) =>
       mapLeaveRequest(
-        await updateLeaveRequestStatus(staffId, leaveRequestId, status),
+        await (status === "approved"
+          ? api.approveLeaveRequest(leaveRequestId)
+          : api.declineLeaveRequest(leaveRequestId)),
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff", "detail", staffId] });

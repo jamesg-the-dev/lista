@@ -574,7 +574,15 @@ roster builder specifically:
 
 * `useVenueContextStore` — the active venue a manager has switched into,
   needed by the venue switcher and by every query key that scopes to a
-  venue.
+  venue. Defaults to the first venue in `useCurrentAccount().venues`
+  (set by `AppLayout`'s `clientLoader` once the account has loaded — see
+  `frontend/app/layouts/AppLayout.tsx`), since no controller lists venues
+  on its own; `useCurrentAccount()` is the allowed source for populating a
+  venue list anywhere one's needed, until a dedicated venues endpoint
+  exists. **TODO:** "first venue in the list" is a placeholder, not a real
+  default — add a per-manager default-venue preference (persisted on the
+  account/manager record) and switch `AppLayout`'s clientLoader to prefer
+  it over `venues[0]` when set.
 * `useRosterDraftStore` — in-progress, unpublished shift edits in the
   builder grid, needed by the grid, the award-cost breakdown panel, the
   live labour budget bar, and the publish action together.

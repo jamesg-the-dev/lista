@@ -1,11 +1,19 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 
+import { currentAccountQueryOptions } from "~/lib/account/hooks";
+
 import * as api from "./api";
 import type { ShiftInput } from "./types";
 import { mapShift, mapStaffMember } from "./types";
 
+// No controller lists venues (see types.ts's file header) — reuses the
+// account query's cache entry via `select` rather than issuing a second
+// request, and maps AccountVenueDto's shape down to this route's Venue type.
 export function useVenues() {
-  return useQuery({ queryKey: ["venues"], queryFn: api.fetchVenues });
+  return useQuery({
+    ...currentAccountQueryOptions,
+    select: (account) => account.venues.map((v) => ({ id: v.venueId, name: v.name })),
+  });
 }
 
 export function useRosterStaffMembers(venueId: string) {

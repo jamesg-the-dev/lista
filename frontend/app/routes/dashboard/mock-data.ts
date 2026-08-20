@@ -7,21 +7,19 @@ import type {
   LabourCostTrendPointDto,
   LabourForecastSummaryDto,
   RoleCostDto,
-  VenueDto,
 } from "./types";
 
-// In-memory mock dataset standing in for the real backend — see api.ts.
-// Deleted once a real .NET API exists; only the body of each api.ts
-// function changes at that point. Follows the same pattern as
-// routes/roster/mock-data.ts and routes/staff/mock-data.ts.
+// In-memory mock dataset standing in for the real backend (LabourCostController
+// — see CLAUDE.md build order step 4, not yet built) — see api.ts. Deleted
+// once that controller exists; only the body of each api.ts function
+// changes at that point.
 //
-// Venue ids/names match those two files' mock venues so switching venue
-// via the shared venue-context store behaves consistently across routes.
-
-export const MOCK_VENUES: VenueDto[] = [
-  { id: "v1", name: "Little Collins Café", suburb: "Melbourne CBD" },
-  { id: "v2", name: "Fitzroy Yard", suburb: "Fitzroy" },
-];
+// "v1"/"v2" below are illustrative keys only, not real venue ids — venues
+// are now real account data (see hooks.ts's useVenues), so these lookups
+// return empty/zero data for any real venue id rather than this hand-tuned
+// demo data. That's an acceptable trade-off: this screen isn't built yet
+// (per CLAUDE.md), so "no data" reads more honestly than fake numbers under
+// a real venue's name.
 
 // Anchor matches routes/roster/route.tsx's WEEK_START (Mon 17 Aug 2026) so
 // the most recent trend point lines up with "this week" on the roster
@@ -126,10 +124,6 @@ const FORECAST_TARGET_BY_VENUE: Record<string, number | null> = {
 
 function delay<T>(value: T, ms = 150 + Math.random() * 250): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms));
-}
-
-export async function mockFetchVenues(): Promise<VenueDto[]> {
-  return delay(MOCK_VENUES);
 }
 
 export async function mockFetchLabourCostTrend(

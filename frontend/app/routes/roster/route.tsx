@@ -198,7 +198,6 @@ export default function RosterBuilder() {
               <span className="w-2 h-2 rounded-full shrink-0" style={{ background: "var(--foreground)" }} />
               <div className="text-left">
                 <p className="font-sans font-semibold text-sm uppercase leading-tight">{venue.name}</p>
-                <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>{venue.suburb}</p>
               </div>
               <ChevronDownIcon size={14} className="ml-1 shrink-0" style={{ color: "var(--muted-foreground)" }} />
             </DropdownMenuTrigger>
@@ -211,7 +210,6 @@ export default function RosterBuilder() {
                 >
                   <div>
                     <p className="text-sm font-medium">{v.name}</p>
-                    <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>{v.suburb}</p>
                   </div>
                   {v.id === activeVenueId && (
                     <span className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--foreground)" }} />

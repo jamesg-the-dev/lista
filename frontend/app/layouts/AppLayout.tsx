@@ -5,6 +5,7 @@ import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
 import { currentAccountQueryOptions } from "~/lib/account/hooks";
 import { queryClient } from "~/lib/query-client";
 import { supabase } from "~/lib/supabase-client";
+import { useVenueContextStore } from "~/lib/venue-context";
 
 // Runs before any authenticated route renders (SSR is disabled for this app
 // — see react-router.config.ts — so this is the first and only chance to
@@ -17,10 +18,22 @@ export async function clientLoader() {
     throw redirect("/login");
   }
 
+  let account;
   try {
-    await queryClient.ensureQueryData(currentAccountQueryOptions);
+    account = await queryClient.ensureQueryData(currentAccountQueryOptions);
   } catch {
     throw redirect("/login");
+  }
+
+  // Default the active venue to the first one on the account. There's no
+  // per-manager "default venue" preference yet (see CLAUDE.md's TODO under
+  // § Screens & build order), so "first in the list" is a placeholder for
+  // that. Also re-defaults if the stored venue id isn't one of this
+  // account's venues (e.g. a stale id from a previous session/org).
+  const { activeVenueId, setActiveVenueId } = useVenueContextStore.getState();
+  const hasValidActiveVenue = account.venues.some((v) => v.venueId === activeVenueId);
+  if (!hasValidActiveVenue && account.venues.length > 0) {
+    setActiveVenueId(account.venues[0].venueId);
   }
 }
 

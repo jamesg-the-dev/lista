@@ -185,12 +185,6 @@ export default function StaffList() {
                 <p className="font-sans font-semibold text-sm uppercase leading-tight">
                   {activeVenue?.name ?? "Loading venue…"}
                 </p>
-                <p
-                  className="text-xs"
-                  style={{ color: "var(--muted-foreground)" }}
-                >
-                  {activeVenue?.suburb ?? ""}
-                </p>
               </div>
               <ChevronDownIcon
                 size={14}
@@ -213,12 +207,6 @@ export default function StaffList() {
                 >
                   <div>
                     <p className="text-sm font-medium">{v.name}</p>
-                    <p
-                      className="text-xs"
-                      style={{ color: "var(--muted-foreground)" }}
-                    >
-                      {v.suburb}
-                    </p>
                   </div>
                   {v.id === activeVenueId && (
                     <span

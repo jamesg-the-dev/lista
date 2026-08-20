@@ -126,12 +126,6 @@ export default function LabourCostDashboard() {
                 <p className="font-sans font-semibold text-sm uppercase leading-tight">
                   {venue.name}
                 </p>
-                <p
-                  className="text-xs"
-                  style={{ color: "var(--muted-foreground)" }}
-                >
-                  {venue.suburb}
-                </p>
               </div>
               <ChevronDownIcon
                 size={14}
@@ -157,12 +151,6 @@ export default function LabourCostDashboard() {
                 >
                   <div>
                     <p className="text-sm font-medium">{v.name}</p>
-                    <p
-                      className="text-xs"
-                      style={{ color: "var(--muted-foreground)" }}
-                    >
-                      {v.suburb}
-                    </p>
                   </div>
                   {v.id === activeVenueId && (
                     <span

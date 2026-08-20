@@ -2,13 +2,11 @@ import {
   mockFetchCostBreakdown,
   mockFetchForecastSummary,
   mockFetchLabourCostTrend,
-  mockFetchVenues,
 } from "./mock-data";
 import type {
   CostBreakdownDto,
   LabourCostTrendPointDto,
   LabourForecastSummaryDto,
-  VenueDto,
 } from "./types";
 
 // Stubbed API layer backed by an in-memory mock dataset — see mock-data.ts.
@@ -16,11 +14,8 @@ import type {
 // states are exercised for real. When the backend exists, mock-data.ts
 // gets deleted and only the body of each function below changes to a real
 // fetch call — hooks.ts, and every component, stay untouched. Follows the
-// same pattern as routes/roster/api.ts and routes/staff/api.ts.
-
-export async function fetchVenues(): Promise<VenueDto[]> {
-  return mockFetchVenues();
-}
+// same pattern as routes/roster/api.ts and routes/staff/api.ts. Venues come
+// from useCurrentAccount() (see hooks.ts's useVenues), not from here.
 
 export async function fetchLabourCostTrend(
   venueId: string,

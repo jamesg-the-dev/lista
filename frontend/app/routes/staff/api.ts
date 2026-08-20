@@ -1,136 +1,83 @@
-import { MOCK_STAFF, MOCK_VENUES } from "./mock-data";
+import { apiClient } from "~/lib/api-client";
+
 import type {
   AvailabilityExceptionDto,
   AvailabilityExceptionInput,
   LeaveRequestDto,
   LeaveRequestInput,
-  LeaveRequestStatus,
+  StaffAvailabilityDto,
   StaffMemberDto,
   StaffMemberInput,
-  VenueDto,
 } from "./types";
 import {
-  toAvailabilityExceptionDto,
   toLeaveRequestInputDto,
-  toStaffMemberInputDto,
-  unmapLeaveRequestStatus,
+  toSetStandingUnavailabilityRequestDto,
+  toStaffMemberRequestDto,
 } from "./types";
 
-// Stubbed API layer backed by an in-memory mock dataset. Real function
-// signatures, called with an artificial delay so loading states are
-// exercised for real. When the backend exists, mock-data.ts gets deleted
-// and only the body of each function below changes to a real fetch call —
-// hooks.ts, and every component, stay untouched.
+// Backed by StaffController and LeaveRequestController — see types.ts's
+// file header. Venue listing has no controller of its own, so it isn't
+// here; see hooks.ts's useVenues, sourced from useCurrentAccount() instead.
 
-let staffStore: StaffMemberDto[] = MOCK_STAFF.map((s) => ({ ...s }));
-
-function delay<T>(value: T, ms = 150 + Math.random() * 250): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), ms));
+export function fetchStaffMembers(venueId: string): Promise<StaffMemberDto[]> {
+  return apiClient.get<StaffMemberDto[]>(`/api/venues/${venueId}/staff`);
 }
 
-function mustFindStaff(staffId: string): StaffMemberDto {
-  const staff = staffStore.find((s) => s.id === staffId);
-  if (!staff) throw new Error(`Unknown staff id: ${staffId}`);
-  return staff;
+export function fetchStaffMember(staffId: string): Promise<StaffMemberDto> {
+  return apiClient.get<StaffMemberDto>(`/api/staff/${staffId}`);
 }
 
-export async function fetchVenues(): Promise<VenueDto[]> {
-  return delay(MOCK_VENUES);
+export function createStaffMember(input: StaffMemberInput): Promise<StaffMemberDto> {
+  return apiClient.post<StaffMemberDto>("/api/staff", toStaffMemberRequestDto(input));
 }
 
-export async function fetchStaffMembers(
-  venueId: string,
-): Promise<StaffMemberDto[]> {
-  // Simulated backend failure — CBD Rooftop's staff sync hasn't completed
-  // yet, so listing its staff fails. Exercises the list error state.
-  if (venueId === "v3") {
-    await delay(null, 300);
-    throw new Error("Staff sync for this venue is still in progress. Try again shortly.");
-  }
-  const staff = staffStore.filter((s) => s.venueIds.includes(venueId));
-  return delay(staff.map((s) => ({ ...s })));
-}
-
-export async function fetchStaffMember(staffId: string): Promise<StaffMemberDto> {
-  return delay({ ...mustFindStaff(staffId) });
-}
-
-export async function saveStaffMember(
+export function updateStaffMember(
+  staffId: string,
   input: StaffMemberInput,
 ): Promise<StaffMemberDto> {
-  const dto = toStaffMemberInputDto(input);
-
-  // Simulated backend guardrail — exercises the save-error state.
-  if (dto.maxWeeklyHours > 60) {
-    await delay(null, 250);
-    throw new Error("Max weekly hours can't exceed 60.");
-  }
-
-  if (dto.id) {
-    const existing = mustFindStaff(dto.id);
-    Object.assign(existing, dto);
-    return delay({ ...existing });
-  }
-
-  const created: StaffMemberDto = {
-    id: crypto.randomUUID(),
-    name: dto.name,
-    email: dto.email,
-    phone: dto.phone,
-    employmentType: dto.employmentType,
-    classification: dto.classification,
-    maxWeeklyHours: dto.maxWeeklyHours,
-    venueIds: dto.venueIds,
-    unavailability: [],
-    leaveRequests: [],
-  };
-  staffStore = [...staffStore, created];
-  return delay({ ...created });
+  return apiClient.put<StaffMemberDto>(`/api/staff/${staffId}`, toStaffMemberRequestDto(input));
 }
 
-export async function addAvailabilityException(
+export function fetchStaffAvailability(
+  staffId: string,
+  from: string,
+  to: string,
+): Promise<StaffAvailabilityDto> {
+  const params = new URLSearchParams({ from, to });
+  return apiClient.get<StaffAvailabilityDto>(`/api/staff/${staffId}/availability?${params}`);
+}
+
+export function setStandingUnavailability(
   staffId: string,
   input: AvailabilityExceptionInput,
 ): Promise<AvailabilityExceptionDto> {
-  const staff = mustFindStaff(staffId);
-  const dto = toAvailabilityExceptionDto(input, crypto.randomUUID());
-  staff.unavailability = [...staff.unavailability, dto];
-  return delay({ ...dto });
+  return apiClient.post<AvailabilityExceptionDto>(
+    `/api/staff/${staffId}/unavailability`,
+    toSetStandingUnavailabilityRequestDto(input),
+  );
 }
 
-export async function removeAvailabilityException(
+export function removeStandingUnavailability(
   staffId: string,
   exceptionId: string,
 ): Promise<void> {
-  const staff = mustFindStaff(staffId);
-  staff.unavailability = staff.unavailability.filter((e) => e.id !== exceptionId);
-  return delay(undefined);
+  return apiClient.delete<void>(`/api/staff/${staffId}/unavailability/${exceptionId}`);
 }
 
-export async function createLeaveRequest(
+export function submitLeaveRequest(
   staffId: string,
   input: LeaveRequestInput,
 ): Promise<LeaveRequestDto> {
-  const staff = mustFindStaff(staffId);
-  const created: LeaveRequestDto = {
-    id: crypto.randomUUID(),
-    status: 0, // requested
-    ...toLeaveRequestInputDto(input),
-  };
-  staff.leaveRequests = [...staff.leaveRequests, created];
-  return delay({ ...created });
+  return apiClient.post<LeaveRequestDto>(
+    `/api/staff/${staffId}/leave-requests`,
+    toLeaveRequestInputDto(input),
+  );
 }
 
-export async function updateLeaveRequestStatus(
-  staffId: string,
-  leaveRequestId: string,
-  status: LeaveRequestStatus,
-): Promise<LeaveRequestDto> {
-  const staff = mustFindStaff(staffId);
-  const leaveRequest = staff.leaveRequests.find((l) => l.id === leaveRequestId);
-  if (!leaveRequest) {
-    throw new Error(`Unknown leave request id: ${leaveRequestId}`);
-  }
-  leaveRequest.status = unmapLeaveRequestStatus(status);
-  return delay({ ...leaveRequest });
+export function approveLeaveRequest(leaveRequestId: string): Promise<LeaveRequestDto> {
+  return apiClient.post<LeaveRequestDto>(`/api/leave-requests/${leaveRequestId}/approve`);
+}
+
+export function declineLeaveRequest(leaveRequestId: string): Promise<LeaveRequestDto> {
+  return apiClient.post<LeaveRequestDto>(`/api/leave-requests/${leaveRequestId}/decline`);
 }
