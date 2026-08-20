@@ -19,7 +19,7 @@ import {
 } from "~/components/ui/empty";
 import { Spinner } from "~/components/ui/spinner";
 
-import { useCopyPreviousWeekRoster, usePreviousWeekRoster } from "../hooks";
+import { useDuplicateRoster, usePreviousWeekRoster } from "../hooks";
 
 interface CopyPreviousWeekButtonProps {
   venueId: string;
@@ -36,7 +36,7 @@ export function CopyPreviousWeekButton({
 }: CopyPreviousWeekButtonProps) {
   const [open, setOpen] = useState(false);
   const previousWeek = usePreviousWeekRoster(venueId, weekStartIso, open);
-  const copyMutation = useCopyPreviousWeekRoster(venueId, weekStartIso);
+  const copyMutation = useDuplicateRoster(venueId, weekStartIso);
 
   const shifts = previousWeek.data ?? [];
 

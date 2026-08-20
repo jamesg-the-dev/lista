@@ -1,9 +1,21 @@
 // Roster builder wire types + view models. Follows CLAUDE.md's "wire type
-// vs view model" convention: DTOs match the backend query/command shape
-// (enums as ints, dates/times as ISO strings), view models are what
-// components consume (string unions). Mapping happens once, at the
-// boundary, in the mapXxx/toXxxDto functions below — mirrors the pattern
-// established in routes/staff/types.ts.
+// vs view model" convention: DTOs match the backend query/command shape,
+// view models are what components consume. Mapping happens once, at the
+// boundary, in the mapXxx/toXxxDto functions below.
+//
+// Shift/AwardBreakdown/ComplianceViolation mirror
+// backend/src/RosterApp.Application/Rostering/{ShiftDto,CreateShiftCommand,
+// UpdateShiftCommand,GetBudgetSummaryQuery}.cs and
+// RosterController.cs exactly. Per CLAUDE.md's wire-format-for-enums rule,
+// every enum on these DTOs is the exact C# member name string (e.g.
+// "Draft", "InsufficientRest") — never an int. TimeOnly fields serialize as
+// "HH:mm:ss" (System.Text.Json's default TimeOnly converter); the view
+// model strips the seconds since the UI only edits to the minute.
+//
+// Venue (id/name/suburb) and StaffMemberDto below are NOT part of
+// RosterController's contract — no controller in this pass backs "list
+// venues" or "list staff for a venue" (that's StaffController's turn), so
+// they stay backed by mock-data.ts for now.
 
 import { DateTime, Duration, Interval } from "luxon";
 
@@ -19,8 +31,20 @@ function mustMapEnum<T extends string>(
   return mapped;
 }
 
+function mustMapWireEnum<T extends string>(
+  wire: string,
+  table: Record<string, T>,
+  enumName: string,
+): T {
+  const mapped = table[wire];
+  if (mapped === undefined) {
+    throw new Error(`Unknown ${enumName} wire value: ${wire}`);
+  }
+  return mapped;
+}
+
 // ---------------------------------------------------------------------------
-// Venue
+// Venue — mock-backed (see file header); unrelated to RosterController.
 // ---------------------------------------------------------------------------
 
 export interface VenueDto {
@@ -37,7 +61,7 @@ export function mustFindVenue(venues: Venue[], venueId: string): Venue {
 }
 
 // ---------------------------------------------------------------------------
-// Role
+// Role — mock-backed (see file header); unrelated to RosterController.
 // ---------------------------------------------------------------------------
 
 const ROLE_TABLE = ["kitchen", "floor", "bar", "manager"] as const;
@@ -67,8 +91,7 @@ export const ROLE_META: Record<Role, RoleMeta> = {
 };
 
 // ---------------------------------------------------------------------------
-// Staff member (roster-scoped subset — the full profile, availability, and
-// leave data lives in routes/staff; this is only what the grid/panel need).
+// Staff member (roster-scoped subset) — mock-backed (see file header).
 // ---------------------------------------------------------------------------
 
 export interface StaffMemberDto {
@@ -115,7 +138,10 @@ export function initials(name: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Day of week — 0=Mon..6=Sun, matching routes/staff's convention.
+// Day of week — 0=Mon..6=Sun. The grid is organised by day-of-week column
+// within the selected week; the wire model underneath is an absolute
+// shiftDate (see Shift below), so dayOfWeekForDate/dateForDay convert
+// between the two at the UI boundary.
 // ---------------------------------------------------------------------------
 
 export const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
@@ -125,87 +151,39 @@ export function dateForDay(weekStart: DateTime, dayOfWeek: number): DateTime {
   return weekStart.plus({ days: dayOfWeek });
 }
 
-// ---------------------------------------------------------------------------
-// Shift
-// ---------------------------------------------------------------------------
-
-export interface ShiftDto {
-  id: string;
-  staffId: string;
-  dayOfWeek: number;
-  start: string; // "HH:mm"
-  end: string; // "HH:mm" — may be past midnight, rolls to the next day
-  breakMins: number;
-}
-
-export interface Shift {
-  id: string;
-  staffId: string;
-  dayOfWeek: DayOfWeek;
-  start: string;
-  end: string;
-  breakMins: number;
-}
-
-export function mapShift(dto: ShiftDto): Shift {
-  return {
-    id: dto.id,
-    staffId: dto.staffId,
-    dayOfWeek: dto.dayOfWeek as DayOfWeek,
-    start: dto.start,
-    end: dto.end,
-    breakMins: dto.breakMins,
-  };
-}
-
-export interface ShiftDraft {
-  start: string;
-  end: string;
-  breakMins: number;
-}
-
-// The client always generates the id (at "add shift" time, not on save) so
-// that compliance-violation ids — deterministically derived from shift id —
-// stay stable between the live preview shown while editing and the
-// persisted result after saving. See ComplianceViolationDto below.
-export interface ShiftInput extends ShiftDraft {
-  id: string;
-  staffId: string;
-  dayOfWeek: DayOfWeek;
-}
-
-export function toShiftDto(input: ShiftInput): ShiftDto {
-  return {
-    id: input.id,
-    staffId: input.staffId,
-    dayOfWeek: input.dayOfWeek,
-    start: input.start,
-    end: input.end,
-    breakMins: input.breakMins,
-  };
-}
-
-export type ShiftsByKey = Record<string, Shift[] | undefined>;
-
-export function shiftKey(staffId: string, dayOfWeek: number): string {
-  return `${staffId}-${dayOfWeek}`;
-}
-
-export function groupShiftsByStaffDay(shifts: Shift[]): ShiftsByKey {
-  const grouped: ShiftsByKey = {};
-  for (const shift of shifts) {
-    const key = shiftKey(shift.staffId, shift.dayOfWeek);
-    grouped[key] = [...(grouped[key] ?? []), shift];
-  }
-  return grouped;
+export function dayOfWeekForDate(shiftDateIso: string): DayOfWeek {
+  const dt = DateTime.fromISO(shiftDateIso);
+  return (dt.weekday - 1) as DayOfWeek; // Luxon weekday: 1=Mon..7=Sun
 }
 
 // ---------------------------------------------------------------------------
 // Award rate breakdown — receipt-style, per CLAUDE.md's transparency
-// principle. Same MA000009-illustrative rules as before, unchanged: ordinary
-// hours, Saturday +25%, Sunday +50%, weekday evening (after 7pm) +10%. This
-// is a UI/aggregation concern reusing IAwardRateCalculator's illustrative
-// output shape — not a change to the pricing rules themselves.
+// principle. Server-computed and returned itemised on every ShiftDto once a
+// shift is saved (backend/.../ShiftDto.cs's AwardBreakdownLineDto). No
+// enum/date fields, so wire and view model are the same shape.
+// ---------------------------------------------------------------------------
+
+export interface AwardBreakdownLineDto {
+  label: string;
+  hours: number;
+  ratePerHour: number;
+  amount: number;
+}
+export type AwardBreakdownLine = AwardBreakdownLineDto;
+
+export function totalAwardCost(breakdown: AwardBreakdownLine[]): number {
+  return breakdown.reduce((sum, line) => sum + line.amount, 0);
+}
+
+// ---------------------------------------------------------------------------
+// Live preview rate calculation — used only for the shift editor's
+// receipt-style preview BEFORE a shift is saved (there is no
+// preview/dry-run endpoint on RosterController; IAwardRateCalculator only
+// runs inside CreateShift/UpdateShift's handlers). Once a shift exists, its
+// real awardBreakdown (above) is the source of truth — this mirrors the
+// same MA000009-illustrative rules purely so the preview doesn't visibly
+// diverge from what the server will compute on save. Same disclaimer as
+// CLAUDE.md § Award compliance: illustrative only, not verified.
 // ---------------------------------------------------------------------------
 
 export interface RateInfo {
@@ -221,7 +199,7 @@ export function getRateInfo(
   dayOfWeek: number,
   start: string,
   end: string,
-  breakMins: number,
+  unpaidBreakMinutes: number,
   baseRate: number,
 ): RateInfo {
   const date = dateForDay(weekStart, dayOfWeek);
@@ -233,7 +211,7 @@ export function getRateInfo(
   if (endDT <= startDT) endDT = endDT.plus({ days: 1 });
 
   const grossHrs = Interval.fromDateTimes(startDT, endDT).length("hours");
-  const breakHrs = Duration.fromObject({ minutes: breakMins }).as("hours");
+  const breakHrs = Duration.fromObject({ minutes: unpaidBreakMinutes }).as("hours");
   const paidHrs = Math.max(0, grossHrs - breakHrs);
 
   let multiplier = 1;
@@ -275,16 +253,212 @@ export function formatHoursDuration(hours: number): string {
 }
 
 // ---------------------------------------------------------------------------
-// Live labour budget target — settable per-venue weekly $ figure. Reuses the
-// award-breakdown cost data already computed per shift; this is aggregation,
-// not a new pricing engine.
+// Compliance violations — mirrors backend ComplianceViolationDto exactly:
+// itemised per shift, embedded directly on ShiftDto (no separate
+// fetch/endpoint), each carrying its own Acknowledged/OverrideReason state
+// rather than joining against a separate overrides list. Never flattened to
+// a boolean "isCompliant" flag: a manager needs to see *which* rule fired to
+// make an informed override decision. Backend has no violation id field —
+// `type` is unique per shift (one violation per rule), so it doubles as the
+// stable React list key within a given shift's violations array.
+//
+// Writing an override (OverrideComplianceViolationCommand) is
+// ComplianceController's endpoint, not built yet — the override control in
+// ShiftEditorPanel is disabled until that lands.
 // ---------------------------------------------------------------------------
 
-export interface BudgetTargetDto {
-  venueId: string;
-  weeklyTarget: number | null;
+const VIOLATION_TYPE_TABLE: Record<string, ComplianceViolationType> = {
+  InsufficientRest: "insufficient_rest",
+  MissingBreak: "missing_break",
+  SpanOfHoursExceeded: "span_of_hours_exceeded",
+  MaxConsecutiveDays: "max_consecutive_days",
+};
+export type ComplianceViolationType =
+  | "insufficient_rest"
+  | "missing_break"
+  | "span_of_hours_exceeded"
+  | "max_consecutive_days";
+
+export function mapViolationType(wire: string): ComplianceViolationType {
+  return mustMapWireEnum(wire, VIOLATION_TYPE_TABLE, "ComplianceViolationType");
 }
-export type BudgetTarget = BudgetTargetDto;
+
+export const VIOLATION_TYPE_META: Record<ComplianceViolationType, { label: string }> = {
+  insufficient_rest: { label: "Insufficient rest" },
+  missing_break: { label: "Missing break" },
+  span_of_hours_exceeded: { label: "Span of hours exceeded" },
+  max_consecutive_days: { label: "Max consecutive days" },
+};
+
+const SEVERITY_TABLE: Record<string, ComplianceSeverity> = {
+  Warning: "warning",
+  Blocking: "blocking",
+};
+export type ComplianceSeverity = "warning" | "blocking";
+
+export function mapSeverity(wire: string): ComplianceSeverity {
+  return mustMapWireEnum(wire, SEVERITY_TABLE, "ComplianceSeverity");
+}
+
+export interface ComplianceViolationDto {
+  type: string;
+  severity: string;
+  message: string;
+  acknowledged: boolean;
+  overrideReason: string | null;
+}
+
+export interface ComplianceViolation {
+  type: ComplianceViolationType;
+  severity: ComplianceSeverity;
+  message: string;
+  acknowledged: boolean;
+  overrideReason: string | null;
+}
+
+export function mapComplianceViolation(dto: ComplianceViolationDto): ComplianceViolation {
+  return {
+    type: mapViolationType(dto.type),
+    severity: mapSeverity(dto.severity),
+    message: dto.message,
+    acknowledged: dto.acknowledged,
+    overrideReason: dto.overrideReason,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Shift — backend/src/RosterApp.Application/Rostering/ShiftDto.cs. Response
+// shape for GetRosterForWeek / CreateShift / UpdateShift / DuplicateRoster.
+// ---------------------------------------------------------------------------
+
+export type ShiftStatus = "draft" | "published" | "confirmed" | "cancelled";
+
+const SHIFT_STATUS_TABLE: Record<string, ShiftStatus> = {
+  Draft: "draft",
+  Published: "published",
+  Confirmed: "confirmed",
+  Cancelled: "cancelled",
+};
+
+export function mapShiftStatus(wire: string): ShiftStatus {
+  return mustMapWireEnum(wire, SHIFT_STATUS_TABLE, "ShiftStatus");
+}
+
+export interface ShiftDto {
+  id: string;
+  venueId: string;
+  employeeId: string;
+  shiftDate: string; // DateOnly, "yyyy-MM-dd"
+  start: string; // TimeOnly, "HH:mm:ss"
+  end: string; // TimeOnly, "HH:mm:ss" — may be past midnight, rolls to the next day
+  unpaidBreakMinutes: number;
+  baseRatePerHour: number;
+  status: string;
+  awardBreakdown: AwardBreakdownLineDto[];
+  complianceViolations: ComplianceViolationDto[];
+}
+
+export interface Shift {
+  id: string;
+  venueId: string;
+  employeeId: string;
+  shiftDate: string;
+  start: string; // "HH:mm" — seconds stripped, matches the <input type="time"> value format
+  end: string;
+  unpaidBreakMinutes: number;
+  baseRatePerHour: number;
+  status: ShiftStatus;
+  awardBreakdown: AwardBreakdownLine[];
+  complianceViolations: ComplianceViolation[];
+}
+
+function fromWireTime(hhmmss: string): string {
+  return hhmmss.slice(0, 5);
+}
+function toWireTime(hhmm: string): string {
+  return `${hhmm}:00`;
+}
+
+export function mapShift(dto: ShiftDto): Shift {
+  return {
+    id: dto.id,
+    venueId: dto.venueId,
+    employeeId: dto.employeeId,
+    shiftDate: dto.shiftDate,
+    start: fromWireTime(dto.start),
+    end: fromWireTime(dto.end),
+    unpaidBreakMinutes: dto.unpaidBreakMinutes,
+    baseRatePerHour: dto.baseRatePerHour,
+    status: mapShiftStatus(dto.status),
+    awardBreakdown: dto.awardBreakdown,
+    complianceViolations: dto.complianceViolations.map(mapComplianceViolation),
+  };
+}
+
+export interface ShiftDraft {
+  start: string; // "HH:mm"
+  end: string;
+  unpaidBreakMinutes: number;
+}
+
+// CreateShiftCommand takes no client id — the server generates it. Used for
+// both create (POST /api/shifts) and, with a shiftId, update
+// (PUT /api/shifts/{id}) — UpdateShiftRequest's body is otherwise identical.
+export interface ShiftInput {
+  venueId: string;
+  employeeId: string;
+  shiftDate: string; // ISO date
+  start: string; // "HH:mm"
+  end: string;
+  unpaidBreakMinutes: number;
+  baseRatePerHour: number;
+}
+
+export function toShiftRequestDto(input: ShiftInput) {
+  return {
+    venueId: input.venueId,
+    employeeId: input.employeeId,
+    shiftDate: input.shiftDate,
+    start: toWireTime(input.start),
+    end: toWireTime(input.end),
+    unpaidBreakMinutes: input.unpaidBreakMinutes,
+    baseRatePerHour: input.baseRatePerHour,
+  };
+}
+
+export type ShiftsByKey = Record<string, Shift[] | undefined>;
+
+export function shiftKey(employeeId: string, dayOfWeek: number): string {
+  return `${employeeId}-${dayOfWeek}`;
+}
+
+export function groupShiftsByStaffDay(shifts: Shift[]): ShiftsByKey {
+  const grouped: ShiftsByKey = {};
+  for (const shift of shifts) {
+    const key = shiftKey(shift.employeeId, dayOfWeekForDate(shift.shiftDate));
+    grouped[key] = [...(grouped[key] ?? []), shift];
+  }
+  return grouped;
+}
+
+// ---------------------------------------------------------------------------
+// Live labour budget — backend/.../GetBudgetSummaryQuery.cs +
+// SetVenueForecastSalesTargetCommand.cs. TotalCost is a server-side
+// aggregation over the week's shifts (not re-summed client-side) —
+// reuses the award-breakdown data already computed per shift, per
+// CLAUDE.md; the day-by-day cost strip in the grid still sums each shift's
+// own awardBreakdown client-side purely for the chart's relative bar
+// heights, not as a competing source of truth for the weekly total.
+// ---------------------------------------------------------------------------
+
+export interface BudgetSummaryDto {
+  venueId: string;
+  weekStart: string;
+  totalCost: number;
+  forecastSalesTarget: number | null;
+  percentOfTarget: number | null;
+}
+export type BudgetSummary = BudgetSummaryDto;
 
 export type BudgetStatus = "no_target" | "under" | "near" | "over";
 
@@ -297,96 +471,4 @@ export function getBudgetStatus(
   if (pctUsed > 1) return "over";
   if (pctUsed >= 0.9) return "near";
   return "under";
-}
-
-// ---------------------------------------------------------------------------
-// Compliance violations — mirrors CLAUDE.md's IRosterComplianceValidator
-// record shape (Type/Severity/Message) exactly, so the eventual real
-// contract is a non-event. Itemised per shift, never flattened to a boolean
-// "isCompliant" flag: a manager needs to see *which* rule fired to make an
-// informed override decision.
-// ---------------------------------------------------------------------------
-
-const VIOLATION_TYPE_TABLE = [
-  "insufficient_rest",
-  "missing_break",
-  "span_of_hours_exceeded",
-  "max_consecutive_days",
-] as const;
-export type ComplianceViolationType = (typeof VIOLATION_TYPE_TABLE)[number];
-
-export function mapViolationType(value: number): ComplianceViolationType {
-  return mustMapEnum(value, VIOLATION_TYPE_TABLE, "ComplianceViolationType");
-}
-export function unmapViolationType(value: ComplianceViolationType): number {
-  return VIOLATION_TYPE_TABLE.indexOf(value);
-}
-
-export const VIOLATION_TYPE_META: Record<ComplianceViolationType, { label: string }> = {
-  insufficient_rest: { label: "Insufficient rest" },
-  missing_break: { label: "Missing break" },
-  span_of_hours_exceeded: { label: "Span of hours exceeded" },
-  max_consecutive_days: { label: "Max consecutive days" },
-};
-
-const SEVERITY_TABLE = ["warning", "blocking"] as const;
-export type ComplianceSeverity = (typeof SEVERITY_TABLE)[number];
-
-export function mapSeverity(value: number): ComplianceSeverity {
-  return mustMapEnum(value, SEVERITY_TABLE, "ComplianceSeverity");
-}
-export function unmapSeverity(value: ComplianceSeverity): number {
-  return SEVERITY_TABLE.indexOf(value);
-}
-
-// id is deterministic (`${shiftId}:${type}`), not random — so an override
-// recorded against a violation still matches it after the violation list is
-// recomputed on the next fetch.
-export interface ComplianceViolationDto {
-  id: string;
-  shiftId: string;
-  type: number;
-  severity: number;
-  message: string;
-}
-
-export interface ComplianceViolation {
-  id: string;
-  shiftId: string;
-  type: ComplianceViolationType;
-  severity: ComplianceSeverity;
-  message: string;
-}
-
-export function mapComplianceViolation(dto: ComplianceViolationDto): ComplianceViolation {
-  return {
-    id: dto.id,
-    shiftId: dto.shiftId,
-    type: mapViolationType(dto.type),
-    severity: mapSeverity(dto.severity),
-    message: dto.message,
-  };
-}
-
-export interface ComplianceOverrideDto {
-  violationId: string;
-  reason: string;
-  createdAtUtc: string;
-}
-export interface ComplianceOverride {
-  violationId: string;
-  reason: string;
-  createdAt: Date;
-}
-export function mapComplianceOverride(dto: ComplianceOverrideDto): ComplianceOverride {
-  return {
-    violationId: dto.violationId,
-    reason: dto.reason,
-    createdAt: new Date(dto.createdAtUtc),
-  };
-}
-
-export interface ComplianceOverrideInput {
-  violationId: string;
-  reason: string;
 }

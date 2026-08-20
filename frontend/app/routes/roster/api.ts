@@ -1,46 +1,26 @@
 import { DateTime } from "luxon";
 
-import { evaluateComplianceViolations } from "./compliance";
-import {
-  MOCK_BUDGET_TARGETS,
-  MOCK_SHIFTS,
-  MOCK_STAFF,
-  MOCK_VENUES,
-} from "./mock-data";
+import { apiClient } from "~/lib/api-client";
+
+import { MOCK_STAFF, MOCK_VENUES } from "./mock-data";
 import type {
-  BudgetTargetDto,
-  ComplianceOverrideDto,
-  ComplianceOverrideInput,
-  ComplianceViolationDto,
+  BudgetSummaryDto,
   ShiftDto,
   ShiftInput,
   StaffMemberDto,
   VenueDto,
 } from "./types";
-import { toShiftDto } from "./types";
+import { toShiftRequestDto } from "./types";
 
-// Stubbed API layer backed by an in-memory mock dataset. Real function
-// signatures, called with an artificial delay so loading states are
-// exercised for real. When the backend exists, mock-data.ts gets deleted
-// and only the body of each function below changes to a real fetch call —
-// hooks.ts, and every component, stay untouched. Follows the same pattern
-// as routes/staff/api.ts.
+// Venues and staff aren't backed by any of the 8 controllers covered in
+// this pass (venue listing has no controller yet; staff is
+// StaffController's turn) — stay mock-backed until then. Everything else
+// below calls the real RosterController endpoints.
 
 const staffStore: StaffMemberDto[] = MOCK_STAFF.map((s) => ({ ...s }));
-const shiftsStore: Record<string, ShiftDto[]> = Object.fromEntries(
-  Object.entries(MOCK_SHIFTS).map(([key, shifts]) => [key, shifts.map((s) => ({ ...s }))]),
-);
-const budgetTargetStore: Record<string, number | null> = Object.fromEntries(
-  Object.entries(MOCK_BUDGET_TARGETS).map(([venueId, dto]) => [venueId, dto.weeklyTarget]),
-);
-const overridesStore: Record<string, ComplianceOverrideDto[]> = {};
 
-function delay<T>(value: T, ms = 150 + Math.random() * 250): Promise<T> {
+function delay<T>(value: T, ms = 100 + Math.random() * 150): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms));
-}
-
-function weekKey(venueId: string, weekStartIso: string): string {
-  return `${venueId}:${weekStartIso}`;
 }
 
 function previousWeekIso(weekStartIso: string): string {
@@ -50,7 +30,7 @@ function previousWeekIso(weekStartIso: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Venues / staff
+// Venues / staff (mock — see file header)
 // ---------------------------------------------------------------------------
 
 export async function fetchVenues(): Promise<VenueDto[]> {
@@ -63,129 +43,58 @@ export async function fetchStaffMembers(venueId: string): Promise<StaffMemberDto
 }
 
 // ---------------------------------------------------------------------------
-// Shifts
+// Shifts — RosterController
 // ---------------------------------------------------------------------------
 
-export async function fetchShifts(venueId: string, weekStartIso: string): Promise<ShiftDto[]> {
-  const shifts = shiftsStore[weekKey(venueId, weekStartIso)] ?? [];
-  return delay(shifts.map((s) => ({ ...s })));
+export function fetchShifts(venueId: string, weekStartIso: string): Promise<ShiftDto[]> {
+  const params = new URLSearchParams({ weekStart: weekStartIso });
+  return apiClient.get<ShiftDto[]>(`/api/venues/${venueId}/roster?${params}`);
 }
 
-// Upsert, keyed by the client-generated id — see ShiftInput in types.ts for
-// why the id is always client-supplied rather than server-generated.
-export async function saveShift(
-  venueId: string,
-  weekStartIso: string,
-  input: ShiftInput,
-): Promise<ShiftDto> {
-  const dto = toShiftDto(input);
-  const key = weekKey(venueId, weekStartIso);
-  const list = shiftsStore[key] ? [...shiftsStore[key]] : [];
-  const existingIndex = list.findIndex((s) => s.id === dto.id);
-  if (existingIndex === -1) {
-    shiftsStore[key] = [...list, dto];
-  } else {
-    list[existingIndex] = dto;
-    shiftsStore[key] = list;
-  }
-  return delay({ ...dto });
+export function createShift(input: ShiftInput): Promise<ShiftDto> {
+  return apiClient.post<ShiftDto>("/api/shifts", toShiftRequestDto(input));
 }
 
-export async function deleteShift(
+export function updateShift(shiftId: string, input: ShiftInput): Promise<ShiftDto> {
+  return apiClient.put<ShiftDto>(`/api/shifts/${shiftId}`, toShiftRequestDto(input));
+}
+
+export function deleteShift(shiftId: string, venueId: string): Promise<void> {
+  const params = new URLSearchParams({ venueId });
+  return apiClient.delete<void>(`/api/shifts/${shiftId}?${params}`);
+}
+
+// ---------------------------------------------------------------------------
+// Budget — RosterController
+// ---------------------------------------------------------------------------
+
+export function fetchBudgetSummary(venueId: string, weekStartIso: string): Promise<BudgetSummaryDto> {
+  const params = new URLSearchParams({ weekStart: weekStartIso });
+  return apiClient.get<BudgetSummaryDto>(`/api/venues/${venueId}/roster/budget-summary?${params}`);
+}
+
+export function saveForecastSalesTarget(
   venueId: string,
-  weekStartIso: string,
-  shiftId: string,
+  forecastSalesTarget: number | null,
 ): Promise<void> {
-  const key = weekKey(venueId, weekStartIso);
-  shiftsStore[key] = (shiftsStore[key] ?? []).filter((s) => s.id !== shiftId);
-  return delay(undefined);
+  return apiClient
+    .put(`/api/venues/${venueId}/roster/forecast-sales-target`, { forecastSalesTarget })
+    .then(() => undefined);
 }
 
 // ---------------------------------------------------------------------------
-// Budget target
+// Copy previous week — RosterController
 // ---------------------------------------------------------------------------
 
-// weekStartIso is accepted alongside venueId (not just venueId) so this can
-// become week-scoped later without a signature change — MVP keeps a single
-// target per venue, per CLAUDE.md's "simple input is fine for MVP" call for
-// this feature, so it isn't read below.
-export async function fetchBudgetTarget(
-  venueId: string,
-  weekStartIso: string,
-): Promise<BudgetTargetDto> {
-  void weekStartIso;
-  return delay({ venueId, weeklyTarget: budgetTargetStore[venueId] ?? null });
-}
-
-export async function saveBudgetTarget(
-  venueId: string,
-  weekStartIso: string,
-  weeklyTarget: number | null,
-): Promise<BudgetTargetDto> {
-  void weekStartIso;
-  budgetTargetStore[venueId] = weeklyTarget;
-  return delay({ venueId, weeklyTarget });
-}
-
-// ---------------------------------------------------------------------------
-// Compliance
-// ---------------------------------------------------------------------------
-
-export async function fetchComplianceViolations(
-  venueId: string,
-  weekStartIso: string,
-): Promise<ComplianceViolationDto[]> {
-  const shifts = shiftsStore[weekKey(venueId, weekStartIso)] ?? [];
-  const staff = staffStore.filter((s) => s.venueIds.includes(venueId));
-  const weekStart = DateTime.fromISO(weekStartIso);
-  return delay(evaluateComplianceViolations(weekStart, shifts, staff));
-}
-
-export async function fetchComplianceOverrides(
-  venueId: string,
-  weekStartIso: string,
-): Promise<ComplianceOverrideDto[]> {
-  return delay(overridesStore[weekKey(venueId, weekStartIso)] ?? []);
-}
-
-export async function saveComplianceOverride(
-  venueId: string,
-  weekStartIso: string,
-  input: ComplianceOverrideInput,
-): Promise<ComplianceOverrideDto> {
-  const key = weekKey(venueId, weekStartIso);
-  const created: ComplianceOverrideDto = {
-    violationId: input.violationId,
-    reason: input.reason,
-    createdAtUtc: new Date().toISOString(),
-  };
-  const existing = (overridesStore[key] ?? []).filter(
-    (o) => o.violationId !== input.violationId,
-  );
-  overridesStore[key] = [...existing, created];
-  return delay({ ...created });
-}
-
-// ---------------------------------------------------------------------------
-// Copy previous week
-// ---------------------------------------------------------------------------
-
-export async function fetchPreviousWeekRoster(
-  venueId: string,
-  weekStartIso: string,
-): Promise<ShiftDto[]> {
-  // Reuses fetchShifts against the prior week's key rather than duplicating
-  // the lookup — "no previous week" naturally resolves to an empty array,
-  // not an error.
+export function fetchPreviousWeekRoster(venueId: string, weekStartIso: string): Promise<ShiftDto[]> {
+  // Reuses fetchShifts against the prior week — "no previous week" naturally
+  // resolves to an empty array, not an error.
   return fetchShifts(venueId, previousWeekIso(weekStartIso));
 }
 
-export async function copyPreviousWeekRoster(
-  venueId: string,
-  weekStartIso: string,
-): Promise<ShiftDto[]> {
-  const previous = shiftsStore[weekKey(venueId, previousWeekIso(weekStartIso))] ?? [];
-  const cloned = previous.map((s) => ({ ...s, id: crypto.randomUUID() }));
-  shiftsStore[weekKey(venueId, weekStartIso)] = cloned;
-  return delay(cloned.map((s) => ({ ...s })));
+export function duplicateRoster(venueId: string, weekStartIso: string): Promise<ShiftDto[]> {
+  return apiClient.post<ShiftDto[]>(`/api/venues/${venueId}/roster/duplicate`, {
+    sourceWeekStart: previousWeekIso(weekStartIso),
+    targetWeekStart: weekStartIso,
+  });
 }

@@ -15,11 +15,10 @@ import {
 import { Spinner } from "~/components/ui/spinner";
 
 import { currency, getBudgetStatus } from "../types";
-import type { BudgetStatus } from "../types";
+import type { BudgetStatus, BudgetSummary } from "../types";
 
 interface BudgetBarProps {
-  weeklyTotal: number;
-  target: number | null;
+  summary: BudgetSummary | undefined;
   onSaveTarget: (value: number | null) => void;
   savingTarget: boolean;
 }
@@ -65,7 +64,10 @@ const STATUS_LABEL: Record<BudgetStatus, string> = {
   over: "Over budget",
 };
 
-export function BudgetBar({ weeklyTotal, target, onSaveTarget, savingTarget }: BudgetBarProps) {
+export function BudgetBar({ summary, onSaveTarget, savingTarget }: BudgetBarProps) {
+  const weeklyTotal = summary?.totalCost ?? 0;
+  const target = summary?.forecastSalesTarget ?? null;
+
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [draftValue, setDraftValue] = useState(target != null ? String(target) : "");
 

@@ -19,7 +19,8 @@ public sealed record AccountDto(
     Guid OrganisationId,
     string Name,
     string Email,
-    IReadOnlyCollection<AccountVenueDto> Venues);
+    IReadOnlyCollection<AccountVenueDto> Venues
+);
 
 public sealed record AccountVenueDto(Guid VenueId, string Name);
 
@@ -28,7 +29,10 @@ public sealed class GetCurrentAccountQueryHandler(
     IAccountLookup accountLookup
 ) : IRequestHandler<GetCurrentAccountQuery, AccountDto>
 {
-    public async Task<AccountDto> Handle(GetCurrentAccountQuery request, CancellationToken cancellationToken)
+    public async Task<AccountDto> Handle(
+        GetCurrentAccountQuery request,
+        CancellationToken cancellationToken
+    )
     {
         if (!tenantContext.IsAuthenticated)
         {

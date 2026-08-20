@@ -24,29 +24,27 @@ import { CopyPreviousWeekButton } from "./components/CopyPreviousWeekButton";
 import type { ShiftEditorPanelState } from "./components/ShiftEditorPanel";
 import { ShiftEditorPanel } from "./components/ShiftEditorPanel";
 import {
-  useBudgetTarget,
-  useComplianceOverrides,
-  useComplianceViolations,
+  useBudgetSummary,
+  useCreateShift,
   useDeleteShift,
   useRosterStaffMembers,
-  useSaveBudgetTarget,
-  useSaveComplianceOverride,
-  useSaveShift,
+  useSaveForecastSalesTarget,
   useShifts,
+  useUpdateShift,
   useVenues,
 } from "./hooks";
-import type { ComplianceViolation, Shift, ShiftDraft } from "./types";
+import type { Shift, ShiftDraft } from "./types";
 import {
   DAY_LABELS,
   ROLE_META,
   currency,
   currency2,
   dateForDay,
-  getRateInfo,
   groupShiftsByStaffDay,
   initials,
   mustFindVenue,
   shiftKey,
+  totalAwardCost,
 } from "./types";
 
 const WEEK_START = DateTime.local(2026, 8, 17); // Mon 17 Aug 2026
@@ -60,21 +58,19 @@ export default function RosterBuilder() {
   const venuesQuery = useVenues();
   const staffQuery = useRosterStaffMembers(activeVenueId);
   const shiftsQuery = useShifts(activeVenueId, weekStartIso);
-  const budgetTargetQuery = useBudgetTarget(activeVenueId, weekStartIso);
-  const violationsQuery = useComplianceViolations(activeVenueId, weekStartIso);
-  const overridesQuery = useComplianceOverrides(activeVenueId, weekStartIso);
+  const budgetSummaryQuery = useBudgetSummary(activeVenueId, weekStartIso);
 
-  const saveShiftMutation = useSaveShift(activeVenueId, weekStartIso);
+  const createShiftMutation = useCreateShift(activeVenueId, weekStartIso);
+  const updateShiftMutation = useUpdateShift(activeVenueId, weekStartIso);
   const deleteShiftMutation = useDeleteShift(activeVenueId, weekStartIso);
-  const saveOverrideMutation = useSaveComplianceOverride(activeVenueId, weekStartIso);
-  const saveBudgetTargetMutation = useSaveBudgetTarget(activeVenueId, weekStartIso);
+  const saveForecastTargetMutation = useSaveForecastSalesTarget(activeVenueId, weekStartIso);
 
   const [panelOpen, setPanelOpen] = useState(false);
   const [panel, setPanel] = useState<ShiftEditorPanelState | null>(null);
   const [draft, setDraft] = useState<ShiftDraft>({
     start: "09:00",
     end: "17:00",
-    breakMins: 30,
+    unpaidBreakMinutes: 30,
   });
 
   const venues = venuesQuery.data ?? [];
@@ -83,30 +79,25 @@ export default function RosterBuilder() {
 
   const shiftsByKey = useMemo(() => groupShiftsByStaffDay(shifts), [shifts]);
 
-  const violationsByShift = useMemo(() => {
-    const map: Record<string, ComplianceViolation[]> = {};
-    for (const v of violationsQuery.data ?? []) {
-      map[v.shiftId] = [...(map[v.shiftId] ?? []), v];
-    }
-    return map;
-  }, [violationsQuery.data]);
-  const overrides = overridesQuery.data ?? [];
-
+  // Per-day totals for the day-cost strip chart — summed from each shift's
+  // own server-computed awardBreakdown (see CLAUDE.md's "reuses the
+  // award-breakdown data already computed" rule for the budget bar). The
+  // header BudgetBar's total instead reads budgetSummaryQuery's
+  // server-aggregated totalCost directly, so the two aren't two competing
+  // computations of the same number.
   const perDayTotals = useMemo(() => {
     const totals = new Array(7).fill(0);
     staff.forEach((st) => {
       for (let d = 0; d < 7; d++) {
         const list = shiftsByKey[shiftKey(st.id, d)] ?? [];
         list.forEach((sh) => {
-          const info = getRateInfo(weekStart, d, sh.start, sh.end, sh.breakMins, st.rate);
-          totals[d] += info.cost;
+          totals[d] += totalAwardCost(sh.awardBreakdown);
         });
       }
     });
     return totals;
-  }, [staff, shiftsByKey, weekStart]);
+  }, [staff, shiftsByKey]);
 
-  const weeklyTotal = perDayTotals.reduce((a, b) => a + b, 0);
   const maxDay = Math.max(...perDayTotals, 1);
 
   function goToWeek(deltaWeeks: number) {
@@ -114,12 +105,12 @@ export default function RosterBuilder() {
   }
 
   function openAdd(staffId: string, dayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6) {
-    setDraft({ start: "09:00", end: "17:00", breakMins: 30 });
+    setDraft({ start: "09:00", end: "17:00", unpaidBreakMinutes: 30 });
     setPanel({ staffId, dayOfWeek, shift: null, draftId: crypto.randomUUID() });
     setPanelOpen(true);
   }
   function openEdit(staffId: string, dayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6, shift: Shift) {
-    setDraft({ start: shift.start, end: shift.end, breakMins: shift.breakMins });
+    setDraft({ start: shift.start, end: shift.end, unpaidBreakMinutes: shift.unpaidBreakMinutes });
     setPanel({ staffId, dayOfWeek, shift, draftId: shift.id });
     setPanelOpen(true);
   }
@@ -127,19 +118,22 @@ export default function RosterBuilder() {
     setPanelOpen(false);
   }
 
-  async function handleSaveShift(overrideReasons: Record<string, string>) {
+  async function handleSaveShift() {
     if (!panel) return;
-    await saveShiftMutation.mutateAsync({
-      id: panel.draftId,
-      staffId: panel.staffId,
-      dayOfWeek: panel.dayOfWeek,
+    const panelStaffMember = staff.find((s) => s.id === panel.staffId);
+    if (!panelStaffMember) return;
+    const input = {
+      venueId: activeVenueId,
+      employeeId: panel.staffId,
+      shiftDate: dateForDay(weekStart, panel.dayOfWeek).toISODate()!,
+      baseRatePerHour: panelStaffMember.rate,
       ...draft,
-    });
-    await Promise.all(
-      Object.entries(overrideReasons).map(([violationId, reason]) =>
-        saveOverrideMutation.mutateAsync({ violationId, reason }),
-      ),
-    );
+    };
+    if (panel.shift) {
+      await updateShiftMutation.mutateAsync({ shiftId: panel.shift.id, input });
+    } else {
+      await createShiftMutation.mutateAsync(input);
+    }
     closePanel();
   }
 
@@ -150,9 +144,6 @@ export default function RosterBuilder() {
   }
 
   const panelStaff = panel ? (staff.find((s) => s.id === panel.staffId) ?? null) : null;
-  const panelStaffShifts = panel
-    ? shifts.filter((s) => s.staffId === panel.staffId)
-    : [];
 
   if (venuesQuery.isLoading || staffQuery.isLoading || shiftsQuery.isLoading) {
     return (
@@ -255,10 +246,9 @@ export default function RosterBuilder() {
             currentShiftCount={shifts.length}
           />
           <BudgetBar
-            weeklyTotal={weeklyTotal}
-            target={budgetTargetQuery.data?.weeklyTarget ?? null}
-            onSaveTarget={(value) => saveBudgetTargetMutation.mutate(value)}
-            savingTarget={saveBudgetTargetMutation.isPending}
+            summary={budgetSummaryQuery.data}
+            onSaveTarget={(value) => saveForecastTargetMutation.mutate(value)}
+            savingTarget={saveForecastTargetMutation.isPending}
           />
         </div>
       </header>
@@ -341,40 +331,36 @@ export default function RosterBuilder() {
                           className="border-t px-1.5 py-2 flex flex-col gap-1.5"
                           style={{ borderColor: "var(--border)" }}
                         >
-                          {list.map((sh) => {
-                            const info = getRateInfo(weekStart, dayIdx, sh.start, sh.end, sh.breakMins, st.rate);
-                            const shiftViolations = violationsByShift[sh.id] ?? [];
-                            return (
-                              <div key={sh.id} className="relative">
-                                <Button
-                                  variant="outline"
-                                  onClick={() => openEdit(st.id, dayOfWeek, sh)}
-                                  className="h-auto w-full items-stretch justify-start gap-0 overflow-hidden rounded-lg p-0 text-left"
-                                  style={{ background: "var(--card)" }}
+                          {list.map((sh) => (
+                            <div key={sh.id} className="relative">
+                              <Button
+                                variant="outline"
+                                onClick={() => openEdit(st.id, dayOfWeek, sh)}
+                                className="h-auto w-full items-stretch justify-start gap-0 overflow-hidden rounded-lg p-0 text-left"
+                                style={{ background: "var(--card)" }}
+                              >
+                                <div
+                                  className="w-6 shrink-0 flex items-center justify-center font-sans font-bold text-xs"
+                                  style={{ background: meta.color, color: meta.tint }}
                                 >
-                                  <div
-                                    className="w-6 shrink-0 flex items-center justify-center font-sans font-bold text-xs"
-                                    style={{ background: meta.color, color: meta.tint }}
-                                  >
-                                    {meta.letter}
-                                  </div>
-                                  <div className="px-2 py-1.5 min-w-0">
-                                    <p className="text-xs font-sans font-medium tabular-nums leading-tight">
-                                      {sh.start}–{sh.end}
-                                    </p>
-                                    <p className="text-[10px] font-sans font-medium tabular-nums" style={{ color: "var(--muted-foreground)" }}>
-                                      {currency2(info.cost)}
-                                    </p>
-                                  </div>
-                                </Button>
-                                {shiftViolations.length > 0 && (
-                                  <div className="absolute -top-1.5 -right-1.5 z-10">
-                                    <ComplianceBadge violations={shiftViolations} overrides={overrides} />
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
+                                  {meta.letter}
+                                </div>
+                                <div className="px-2 py-1.5 min-w-0">
+                                  <p className="text-xs font-sans font-medium tabular-nums leading-tight">
+                                    {sh.start}–{sh.end}
+                                  </p>
+                                  <p className="text-[10px] font-sans font-medium tabular-nums" style={{ color: "var(--muted-foreground)" }}>
+                                    {currency2(totalAwardCost(sh.awardBreakdown))}
+                                  </p>
+                                </div>
+                              </Button>
+                              {sh.complianceViolations.length > 0 && (
+                                <div className="absolute -top-1.5 -right-1.5 z-10">
+                                  <ComplianceBadge violations={sh.complianceViolations} />
+                                </div>
+                              )}
+                            </div>
+                          ))}
                           <Button
                             variant="ghost"
                             size="icon-sm"
@@ -415,12 +401,11 @@ export default function RosterBuilder() {
         panel={panel}
         staff={panelStaff}
         weekStart={weekStart}
-        staffShifts={panelStaffShifts}
         draft={draft}
         onDraftChange={setDraft}
         onSave={handleSaveShift}
         onDelete={handleDeleteShift}
-        saving={saveShiftMutation.isPending || deleteShiftMutation.isPending}
+        saving={createShiftMutation.isPending || updateShiftMutation.isPending || deleteShiftMutation.isPending}
       />
     </div>
   );

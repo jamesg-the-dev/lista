@@ -1,4 +1,3 @@
-import { useMemo, useState } from "react";
 import type { ChangeEvent } from "react";
 import type { DateTime } from "luxon";
 import { AlertTriangleIcon, ClockIcon } from "lucide-react";
@@ -24,7 +23,6 @@ import {
 import { Spinner } from "~/components/ui/spinner";
 import { Textarea } from "~/components/ui/textarea";
 
-import { evaluateComplianceViolations } from "../compliance";
 import {
   ROLE_META,
   VIOLATION_TYPE_META,
@@ -32,16 +30,15 @@ import {
   dateForDay,
   formatHoursDuration,
   getRateInfo,
-  mapComplianceViolation,
 } from "../types";
-import type { DayOfWeek, Shift, ShiftDraft, ShiftDto, StaffMember } from "../types";
+import type { DayOfWeek, Shift, ShiftDraft, StaffMember } from "../types";
 import { DAY_LABELS } from "../types";
 
 export interface ShiftEditorPanelState {
   staffId: string;
   dayOfWeek: DayOfWeek;
   shift: Shift | null; // null = adding a new shift
-  draftId: string; // client-generated id, stable across the preview → save transition
+  draftId: string; // stable React key for the panel while it's open
 }
 
 interface ShiftEditorPanelProps {
@@ -50,10 +47,9 @@ interface ShiftEditorPanelProps {
   panel: ShiftEditorPanelState | null;
   staff: StaffMember | null;
   weekStart: DateTime;
-  staffShifts: Shift[]; // this staff member's other shifts this week (query data)
   draft: ShiftDraft;
   onDraftChange: (draft: ShiftDraft) => void;
-  onSave: (overrideReasons: Record<string, string>) => void;
+  onSave: () => void;
   onDelete: () => void;
   saving: boolean;
 }
@@ -64,53 +60,26 @@ export function ShiftEditorPanel({
   panel,
   staff,
   weekStart,
-  staffShifts,
   draft,
   onDraftChange,
   onSave,
   onDelete,
   saving,
 }: ShiftEditorPanelProps) {
-  const [overrideReasons, setOverrideReasons] = useState<Record<string, string>>({});
-  // Tracks which shift overrideReasons was collected for, so it can be
-  // reset when the panel switches to a different shift. Adjusted during
-  // render (React's recommended pattern for state derived from a prop
-  // change) rather than in an effect, which would cause an extra render.
-  const [reasonsForDraftId, setReasonsForDraftId] = useState<string | null>(null);
-  if (panel && panel.draftId !== reasonsForDraftId) {
-    setReasonsForDraftId(panel.draftId);
-    setOverrideReasons({});
-  }
-
   const rateInfo = panel
-    ? getRateInfo(weekStart, panel.dayOfWeek, draft.start, draft.end, draft.breakMins, staff?.rate ?? 0)
+    ? getRateInfo(weekStart, panel.dayOfWeek, draft.start, draft.end, draft.unpaidBreakMinutes, staff?.rate ?? 0)
     : null;
   const roleMeta = staff ? ROLE_META[staff.role] : null;
 
-  // Live preview of what IRosterComplianceValidator would return if this
-  // draft were saved right now — evaluated against the staff member's other
-  // shifts this week, per CLAUDE.md's "takes shift context, not just the
-  // single shift" rule. Pure client-side computation so it updates on every
-  // keystroke, not just after a save round trip.
-  const previewViolations = useMemo(() => {
-    if (!panel) return [];
-    const others = staffShifts.filter((s) => s.id !== panel.draftId);
-    const draftDto: ShiftDto = {
-      id: panel.draftId,
-      staffId: panel.staffId,
-      dayOfWeek: panel.dayOfWeek,
-      start: draft.start,
-      end: draft.end,
-      breakMins: draft.breakMins,
-    };
-    return evaluateComplianceViolations(weekStart, [...others, draftDto], [{ id: panel.staffId }])
-      .filter((v) => v.shiftId === panel.draftId)
-      .map(mapComplianceViolation);
-  }, [panel, staffShifts, draft, weekStart]);
+  // Compliance violations are server-computed and only exist once a shift
+  // has been saved at least once (IRosterComplianceValidator runs inside
+  // CreateShift/UpdateShift's handlers — there's no dry-run/preview
+  // endpoint) — so a brand-new, not-yet-saved shift shows none yet.
+  const violations = panel?.shift?.complianceViolations ?? [];
+  const blockingViolations = violations.filter((v) => v.severity === "blocking");
+  const warningViolations = violations.filter((v) => v.severity === "warning");
 
-  const blockingViolations = previewViolations.filter((v) => v.severity === "blocking");
-  const warningViolations = previewViolations.filter((v) => v.severity === "warning");
-  const canSave = blockingViolations.every((v) => (overrideReasons[v.id] ?? "").trim().length > 0);
+  const canSave = draft.start.length > 0 && draft.end.length > 0 && draft.end > draft.start;
 
   function handleStartChange(e: ChangeEvent<HTMLInputElement>) {
     onDraftChange({ ...draft, start: e.target.value });
@@ -119,18 +88,7 @@ export function ShiftEditorPanel({
     onDraftChange({ ...draft, end: e.target.value });
   }
   function handleBreakChange(e: ChangeEvent<HTMLInputElement>) {
-    onDraftChange({ ...draft, breakMins: Number(e.target.value) || 0 });
-  }
-  function handleReasonChange(violationId: string, reason: string) {
-    setOverrideReasons((prev) => ({ ...prev, [violationId]: reason }));
-  }
-  function handleSaveClick() {
-    const reasons: Record<string, string> = {};
-    for (const v of blockingViolations) {
-      const reason = (overrideReasons[v.id] ?? "").trim();
-      if (reason) reasons[v.id] = reason;
-    }
-    onSave(reasons);
+    onDraftChange({ ...draft, unpaidBreakMinutes: Number(e.target.value) || 0 });
   }
 
   return (
@@ -204,6 +162,11 @@ export function ShiftEditorPanel({
                   </InputGroup>
                 </label>
               </div>
+              {!canSave && (
+                <p className="text-xs -mt-3" style={{ color: "var(--destructive)" }}>
+                  Shift end must be after start.
+                </p>
+              )}
 
               <label className="flex flex-col gap-1.5">
                 <span
@@ -216,13 +179,16 @@ export function ShiftEditorPanel({
                   type="number"
                   min="0"
                   step="5"
-                  value={draft.breakMins}
+                  value={draft.unpaidBreakMinutes}
                   onChange={handleBreakChange}
                   className="h-9 w-28 rounded-lg font-sans font-medium tabular-nums"
                 />
               </label>
 
-              {/* Transparent award breakdown — receipt style */}
+              {/* Transparent award breakdown — receipt style. Preview only
+                  (see the getRateInfo import above); once saved, the grid
+                  cell and compliance badges read the server's own
+                  awardBreakdown instead. */}
               <div
                 className="rounded-lg border p-4 font-sans font-medium text-sm tabular-nums"
                 style={{
@@ -265,14 +231,15 @@ export function ShiftEditorPanel({
                 </div>
               </div>
 
-              {/* Inline compliance warnings — itemised per CLAUDE.md's
-                  IRosterComplianceValidator contract, never flattened to a
-                  boolean. Warning-severity is informational; Blocking
-                  requires an override reason before Save is enabled. */}
+              {/* Inline compliance warnings from the shift's last save —
+                  itemised per CLAUDE.md's IRosterComplianceValidator
+                  contract, never flattened to a boolean. Overriding a
+                  Blocking violation is ComplianceController's endpoint
+                  (not built yet), so the reason field is read-only for now. */}
               {warningViolations.length > 0 && (
                 <div className="flex flex-col gap-2">
                   {warningViolations.map((v) => (
-                    <Alert key={v.id}>
+                    <Alert key={v.type}>
                       <AlertTriangleIcon />
                       <AlertTitle>{VIOLATION_TYPE_META[v.type].label}</AlertTitle>
                       <AlertDescription>{v.message}</AlertDescription>
@@ -284,7 +251,7 @@ export function ShiftEditorPanel({
               {blockingViolations.length > 0 && (
                 <div className="flex flex-col gap-3">
                   {blockingViolations.map((v) => (
-                    <Field key={v.id} data-invalid={!overrideReasons[v.id]?.trim()}>
+                    <Field key={v.type}>
                       <Alert variant="destructive">
                         <AlertTriangleIcon />
                         <AlertTitle className="flex items-center gap-2">
@@ -293,18 +260,19 @@ export function ShiftEditorPanel({
                         </AlertTitle>
                         <AlertDescription>{v.message}</AlertDescription>
                       </Alert>
-                      <FieldLabel htmlFor={`override-${v.id}`}>
-                        Manager override reason (required to save)
+                      <FieldLabel htmlFor={`override-${v.type}`}>
+                        Manager override reason
                       </FieldLabel>
                       <Textarea
-                        id={`override-${v.id}`}
-                        value={overrideReasons[v.id] ?? ""}
-                        onChange={(e) => handleReasonChange(v.id, e.target.value)}
-                        placeholder="Why is this shift going ahead despite the violation?"
-                        aria-invalid={!overrideReasons[v.id]?.trim()}
+                        id={`override-${v.type}`}
+                        value={v.overrideReason ?? ""}
+                        disabled
+                        placeholder="Overrides aren't available yet."
                       />
                       <FieldDescription>
-                        This reason is recorded against the violation for audit purposes.
+                        {v.acknowledged
+                          ? "Overridden — reason recorded for audit purposes."
+                          : "Overriding a blocking violation isn't wired up yet."}
                       </FieldDescription>
                     </Field>
                   ))}
@@ -325,7 +293,7 @@ export function ShiftEditorPanel({
                 variant="default"
                 size="lg"
                 className="flex-1 font-semibold"
-                onClick={handleSaveClick}
+                onClick={onSave}
                 disabled={!canSave || saving}
               >
                 {saving && <Spinner data-icon="inline-start" />}

@@ -5,6 +5,8 @@ frontend/build/
 frontend/.vite/
 frontend/*.tsbuildinfo
 frontend/.react-router
+frontend/.env
+frontend/.env.local
 *.log
 npm-debug.log*
 
