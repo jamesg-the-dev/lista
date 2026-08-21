@@ -67,12 +67,11 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map(item => {
+                const isActive =
+                  pathname === item.url || pathname.startsWith(`${item.url}/`);
                 return (
                   <SidebarMenuItem key={item.url}>
-                    <SidebarMenuButton
-                      render={<NavLink to={item.url} />}
-                      isActive={pathname === item.url}
-                    >
+                    <SidebarMenuButton render={<NavLink to={item.url} />} isActive={isActive}>
                       <item.icon />
                       <span>{item.title}</span>
                     </SidebarMenuButton>

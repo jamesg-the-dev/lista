@@ -58,6 +58,7 @@ export function DatePickerSimple({
             selected={date}
             onSelect={handleSelect}
             defaultMonth={date}
+            captionLayout="dropdown"
           />
         </PopoverContent>
       </Popover>

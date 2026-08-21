@@ -4,11 +4,13 @@ import { useVenueContextStore } from '~/lib/venue-context';
 
 import NewStaffMember from './components/NewStaffMember';
 import { useVenues } from './hooks';
+import { usePageTitle } from '~/lib/utils';
 
 export default function StaffNewRoute() {
   const navigate = useNavigate();
   const { activeVenueId } = useVenueContextStore();
   const venuesQuery = useVenues();
+  usePageTitle('New staff member');
 
   return (
     <NewStaffMember

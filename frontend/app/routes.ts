@@ -9,6 +9,12 @@ export default [
     route('staff', 'routes/staff/route.tsx'),
     route('staff/new', 'routes/staff/new.tsx'),
     route('staff/:staffId', 'routes/staff/profile.tsx'),
-    route('settings', 'routes/settings/route.tsx'),
+    route('settings', 'routes/settings/route.tsx', [
+      index('routes/settings/index.tsx'),
+      route('venue-profile', 'routes/settings/venue-profile.tsx'),
+      route('award-pay', 'routes/settings/award-pay.tsx'),
+      route('roster-rules', 'routes/settings/roster-rules.tsx'),
+      route('staff-roles', 'routes/settings/staff-roles.tsx'),
+    ]),
   ]),
 ] satisfies RouteConfig;
