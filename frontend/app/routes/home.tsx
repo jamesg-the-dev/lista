@@ -1,7 +1,7 @@
-import { redirect } from "react-router";
+import { redirect } from 'react-router';
 
 export function clientLoader() {
-  return redirect("/roster");
+  return redirect('/roster');
 }
 
 export default function Home() {

@@ -40,6 +40,6 @@ export function mapAccount(dto: AccountDto): Account {
     organisationId: dto.organisationId,
     name: dto.name,
     email: dto.email,
-    venues: dto.venues.map((v) => ({ venueId: v.venueId, name: v.name })),
+    venues: dto.venues.map(v => ({ venueId: v.venueId, name: v.name })),
   };
 }

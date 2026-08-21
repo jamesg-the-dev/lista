@@ -1,11 +1,11 @@
-import { Outlet, redirect } from "react-router";
+import { Outlet, redirect } from 'react-router';
 
-import { AppSidebar } from "~/components/shared/AppSidebar";
-import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
-import { currentAccountQueryOptions } from "~/lib/account/hooks";
-import { queryClient } from "~/lib/query-client";
-import { supabase } from "~/lib/supabase-client";
-import { useVenueContextStore } from "~/lib/venue-context";
+import { AppSidebar } from '~/components/shared/AppSidebar';
+import { SidebarInset, SidebarProvider } from '~/components/ui/sidebar';
+import { currentAccountQueryOptions } from '~/lib/account/hooks';
+import { queryClient } from '~/lib/query-client';
+import { supabase } from '~/lib/supabase-client';
+import { useVenueContextStore } from '~/lib/venue-context';
 
 // Runs before any authenticated route renders (SSR is disabled for this app
 // — see react-router.config.ts — so this is the first and only chance to
@@ -15,14 +15,14 @@ import { useVenueContextStore } from "~/lib/venue-context";
 export async function clientLoader() {
   const { data } = await supabase.auth.getSession();
   if (!data.session) {
-    throw redirect("/login");
+    throw redirect('/login');
   }
 
   let account;
   try {
     account = await queryClient.ensureQueryData(currentAccountQueryOptions);
   } catch {
-    throw redirect("/login");
+    throw redirect('/login');
   }
 
   // Default the active venue to the first one on the account. There's no
@@ -31,7 +31,7 @@ export async function clientLoader() {
   // that. Also re-defaults if the stored venue id isn't one of this
   // account's venues (e.g. a stale id from a previous session/org).
   const { activeVenueId, setActiveVenueId } = useVenueContextStore.getState();
-  const hasValidActiveVenue = account.venues.some((v) => v.venueId === activeVenueId);
+  const hasValidActiveVenue = account.venues.some(v => v.venueId === activeVenueId);
   if (!hasValidActiveVenue && account.venues.length > 0) {
     setActiveVenueId(account.venues[0].venueId);
   }

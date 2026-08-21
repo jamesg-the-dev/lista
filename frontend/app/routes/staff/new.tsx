@@ -1,9 +1,9 @@
-import { useNavigate } from "react-router";
+import { useNavigate } from 'react-router';
 
-import { useVenueContextStore } from "~/lib/venue-context";
+import { useVenueContextStore } from '~/lib/venue-context';
 
-import NewStaffMember from "./components/NewStaffMember";
-import { useVenues } from "./hooks";
+import NewStaffMember from './components/NewStaffMember';
+import { useVenues } from './hooks';
 
 export default function StaffNewRoute() {
   const navigate = useNavigate();
@@ -14,8 +14,8 @@ export default function StaffNewRoute() {
     <NewStaffMember
       venues={venuesQuery.data ?? []}
       defaultVenueId={activeVenueId}
-      onBack={() => navigate("/staff")}
-      onCreated={(staffId) => navigate(`/staff/${staffId}`, { replace: true })}
+      onBack={() => navigate('/staff')}
+      onCreated={staffId => navigate(`/staff/${staffId}`, { replace: true })}
     />
   );
 }

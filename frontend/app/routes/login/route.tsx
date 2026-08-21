@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
 
-import { Alert, AlertDescription } from "~/components/ui/alert";
-import { Button } from "~/components/ui/button";
-import { Field, FieldGroup, FieldLabel } from "~/components/ui/field";
-import { Input } from "~/components/ui/input";
-import { supabase } from "~/lib/supabase-client";
+import { Alert, AlertDescription } from '~/components/ui/alert';
+import { Button } from '~/components/ui/button';
+import { Field, FieldGroup, FieldLabel } from '~/components/ui/field';
+import { Input } from '~/components/ui/input';
+import { supabase } from '~/lib/supabase-client';
 
 // Minimal manager login — establishes a Supabase session so api-client.ts
 // has a token to attach. Not one of the CLAUDE.md build-order screens; it
@@ -13,14 +13,14 @@ import { supabase } from "~/lib/supabase-client";
 // be exercised end-to-end against the backend instead of only typechecked.
 export default function Login() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate("/", { replace: true });
+      if (data.session) navigate('/', { replace: true });
     });
   }, [navigate]);
 
@@ -37,20 +37,20 @@ export default function Login() {
       setError(signInError.message);
       return;
     }
-    navigate("/", { replace: true });
+    navigate('/', { replace: true });
   }
 
   return (
     <div
-      className="min-h-screen w-full flex items-center justify-center p-6"
-      style={{ background: "var(--background)", color: "var(--foreground)" }}
+      className="flex min-h-screen w-full items-center justify-center p-6"
+      style={{ background: 'var(--background)', color: 'var(--foreground)' }}
     >
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-sm rounded-lg border p-6"
-        style={{ borderColor: "var(--border)", background: "var(--card)" }}
+        style={{ borderColor: 'var(--border)', background: 'var(--card)' }}
       >
-        <h1 className="font-sans font-semibold text-sm uppercase tracking-wide mb-6">
+        <h1 className="mb-6 font-sans text-sm font-semibold tracking-wide uppercase">
           Sign in
         </h1>
 
@@ -63,7 +63,7 @@ export default function Login() {
               autoComplete="email"
               required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={e => setEmail(e.target.value)}
             />
           </Field>
 
@@ -75,7 +75,7 @@ export default function Login() {
               autoComplete="current-password"
               required
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={e => setPassword(e.target.value)}
             />
           </Field>
 
@@ -86,7 +86,7 @@ export default function Login() {
           )}
 
           <Button type="submit" disabled={submitting} className="w-full">
-            {submitting ? "Signing in..." : "Sign in"}
+            {submitting ? 'Signing in...' : 'Sign in'}
           </Button>
         </FieldGroup>
       </form>

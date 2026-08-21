@@ -1,0 +1,6 @@
+build
+node_modules
+.react-router
+.env
+coverage
+package-lock.json

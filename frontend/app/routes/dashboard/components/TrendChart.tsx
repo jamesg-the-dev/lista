@@ -1,8 +1,8 @@
-import { Empty, EmptyDescription, EmptyTitle } from "~/components/ui/empty";
-import { Skeleton } from "~/components/ui/skeleton";
+import { Empty, EmptyDescription, EmptyTitle } from '~/components/ui/empty';
+import { Skeleton } from '~/components/ui/skeleton';
 
-import type { LabourCostTrendPoint } from "../types";
-import { currency, currency2, formatWeekLabel } from "../types";
+import type { LabourCostTrendPoint } from '../types';
+import { currency, currency2, formatWeekLabel } from '../types';
 
 interface TrendChartProps {
   points: LabourCostTrendPoint[];
@@ -16,7 +16,7 @@ interface TrendChartProps {
 export function TrendChart({ points, loading }: TrendChartProps) {
   if (loading) {
     return (
-      <div className="flex items-end gap-3 h-40 px-1">
+      <div className="flex h-40 items-end gap-3 px-1">
         {Array.from({ length: 8 }).map((_, i) => (
           <Skeleton
             key={i}
@@ -39,20 +39,20 @@ export function TrendChart({ points, loading }: TrendChartProps) {
     );
   }
 
-  const maxCost = Math.max(...points.map((p) => p.totalCost), 1);
+  const maxCost = Math.max(...points.map(p => p.totalCost), 1);
   const latestWeek = points[points.length - 1]?.weekStart;
 
   return (
     <div className="overflow-x-auto">
-      <div className="flex items-end gap-3 px-1 min-w-fit">
-        {points.map((p) => {
-          const isCurrent = p.weekStart.hasSame(latestWeek, "week");
+      <div className="flex min-w-fit items-end gap-3 px-1">
+        {points.map(p => {
+          const isCurrent = p.weekStart.hasSame(latestWeek, 'week');
           const isClosed = p.totalCost === 0;
           const h = isClosed ? 4 : Math.max(6, (p.totalCost / maxCost) * 120);
           return (
             <div
               key={p.weekStart.toISODate()}
-              className="flex flex-col items-center gap-1.5 w-10 shrink-0"
+              className="flex w-10 shrink-0 flex-col items-center gap-1.5"
               title={
                 isClosed
                   ? `${formatWeekLabel(p.weekStart)} — no roster data`
@@ -60,31 +60,29 @@ export function TrendChart({ points, loading }: TrendChartProps) {
               }
             >
               <p
-                className="font-sans font-medium text-[10px] tabular-nums"
-                style={{ color: "var(--muted-foreground)" }}
+                className="font-sans text-[10px] font-medium tabular-nums"
+                style={{ color: 'var(--muted-foreground)' }}
               >
-                {isClosed ? "—" : currency(p.totalCost)}
+                {isClosed ? '—' : currency(p.totalCost)}
               </p>
-              <div className="flex items-end h-31">
+              <div className="flex h-31 items-end">
                 <div
                   className="w-6 rounded-t"
                   style={{
                     height: `${h}px`,
                     background: isClosed
-                      ? "transparent"
+                      ? 'transparent'
                       : isCurrent
-                        ? "var(--foreground)"
-                        : "var(--muted)",
-                    border: isClosed ? "1px dashed var(--border)" : undefined,
+                        ? 'var(--foreground)'
+                        : 'var(--muted)',
+                    border: isClosed ? '1px dashed var(--border)' : undefined,
                   }}
                 />
               </div>
               <p
-                className="font-sans font-medium text-[11px] tabular-nums"
+                className="font-sans text-[11px] font-medium tabular-nums"
                 style={{
-                  color: isCurrent
-                    ? "var(--foreground)"
-                    : "var(--muted-foreground)",
+                  color: isCurrent ? 'var(--foreground)' : 'var(--muted-foreground)',
                 }}
               >
                 {formatWeekLabel(p.weekStart)}

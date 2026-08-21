@@ -3,8 +3,8 @@ import {
   ChevronLeftIcon,
   LineChartIcon,
   UsersIcon,
-} from "lucide-react";
-import { NavLink, useLocation } from "react-router";
+} from 'lucide-react';
+import { NavLink, useLocation } from 'react-router';
 
 import {
   Sidebar,
@@ -18,16 +18,16 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "~/components/ui/sidebar";
-import { NavUser } from "./NavUser";
-import { useCurrentAccount } from "~/lib/account/hooks";
-import { Button } from "../ui/button";
-import { cn } from "~/lib/utils";
+} from '~/components/ui/sidebar';
+import { NavUser } from './NavUser';
+import { useCurrentAccount } from '~/lib/account/hooks';
+import { Button } from '../ui/button';
+import { cn } from '~/lib/utils';
 
 const navItems = [
-  { title: "Roster", url: "/roster", icon: CalendarDaysIcon },
-  { title: "Dashboard", url: "/dashboard", icon: LineChartIcon },
-  { title: "Staff", url: "/staff", icon: UsersIcon },
+  { title: 'Roster', url: '/roster', icon: CalendarDaysIcon },
+  { title: 'Dashboard', url: '/dashboard', icon: LineChartIcon },
+  { title: 'Staff', url: '/staff', icon: UsersIcon },
 ];
 
 export function AppSidebar() {
@@ -35,7 +35,7 @@ export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const user = {
     ...useCurrentAccount().data!,
-    avatar: "",
+    avatar: '',
   };
 
   return (
@@ -49,12 +49,12 @@ export function AppSidebar() {
         variant="outline"
         size="icon"
         onClick={toggleSidebar}
-        className="absolute top-1/2 right-1.75 z-20 hidden size-6 -translate-y-1/2 translate-x-1/2 rounded-full bg-background p-0 shadow-sm active:not-aria-[haspopup]:-translate-y-1/2 md:flex"
+        className="bg-background absolute top-1/2 right-1.75 z-20 hidden size-6 translate-x-1/2 -translate-y-1/2 rounded-full p-0 shadow-sm active:not-aria-[haspopup]:-translate-y-1/2 md:flex"
       >
         <ChevronLeftIcon
           className={cn(
-            "size-3.5 transition-transform",
-            state === "collapsed" && "rotate-180",
+            'size-3.5 transition-transform',
+            state === 'collapsed' && 'rotate-180',
           )}
         />
         <span className="sr-only">Toggle Sidebar</span>
@@ -64,7 +64,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => {
+              {navItems.map(item => {
                 return (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton

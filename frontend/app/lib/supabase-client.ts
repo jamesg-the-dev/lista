@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from '@supabase/supabase-js';
 
 // Single Supabase client for the whole app — Auth session storage/refresh
 // and (per CLAUDE.md) Realtime subscriptions both go through this instance.

@@ -1,10 +1,15 @@
-import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from '@tanstack/react-query';
 
-import { currentAccountQueryOptions } from "~/lib/account/hooks";
+import { currentAccountQueryOptions } from '~/lib/account/hooks';
 
-import * as api from "./api";
-import type { ComplianceViolationType, ShiftInput } from "./types";
-import { mapShift, mapStaffMember, unmapViolationType } from "./types";
+import * as api from './api';
+import type { ComplianceViolationType, ShiftInput } from './types';
+import { mapShift, mapStaffMember, unmapViolationType } from './types';
 
 // No controller lists venues (see types.ts's file header) — reuses the
 // account query's cache entry via `select` rather than issuing a second
@@ -12,13 +17,13 @@ import { mapShift, mapStaffMember, unmapViolationType } from "./types";
 export function useVenues() {
   return useQuery({
     ...currentAccountQueryOptions,
-    select: (account) => account.venues.map((v) => ({ id: v.venueId, name: v.name })),
+    select: account => account.venues.map(v => ({ id: v.venueId, name: v.name })),
   });
 }
 
 export function useRosterStaffMembers(venueId: string) {
   return useQuery({
-    queryKey: ["roster", "staff", venueId],
+    queryKey: ['roster', 'staff', venueId],
     queryFn: async () => (await api.fetchStaffMembers(venueId)).map(mapStaffMember),
     enabled: !!venueId,
   });
@@ -26,7 +31,7 @@ export function useRosterStaffMembers(venueId: string) {
 
 export function useShifts(venueId: string, weekStartIso: string) {
   return useQuery({
-    queryKey: ["shifts", venueId, weekStartIso],
+    queryKey: ['shifts', venueId, weekStartIso],
     queryFn: async () => (await api.fetchShifts(venueId, weekStartIso)).map(mapShift),
     enabled: !!venueId,
   });
@@ -36,8 +41,8 @@ export function useShifts(venueId: string, weekStartIso: string) {
 // per-shift) — invalidate both narrowest keys together rather than a
 // blanket refetch.
 function invalidateWeek(queryClient: QueryClient, venueId: string, weekStartIso: string) {
-  queryClient.invalidateQueries({ queryKey: ["shifts", venueId, weekStartIso] });
-  queryClient.invalidateQueries({ queryKey: ["budgetSummary", venueId, weekStartIso] });
+  queryClient.invalidateQueries({ queryKey: ['shifts', venueId, weekStartIso] });
+  queryClient.invalidateQueries({ queryKey: ['budgetSummary', venueId, weekStartIso] });
 }
 
 export function useCreateShift(venueId: string, weekStartIso: string) {
@@ -67,7 +72,7 @@ export function useDeleteShift(venueId: string, weekStartIso: string) {
 
 export function useBudgetSummary(venueId: string, weekStartIso: string) {
   return useQuery({
-    queryKey: ["budgetSummary", venueId, weekStartIso],
+    queryKey: ['budgetSummary', venueId, weekStartIso],
     queryFn: () => api.fetchBudgetSummary(venueId, weekStartIso),
     enabled: !!venueId,
   });
@@ -79,15 +84,22 @@ export function useSaveForecastSalesTarget(venueId: string, weekStartIso: string
     mutationFn: (forecastSalesTarget: number | null) =>
       api.saveForecastSalesTarget(venueId, forecastSalesTarget),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["budgetSummary", venueId, weekStartIso] });
+      queryClient.invalidateQueries({
+        queryKey: ['budgetSummary', venueId, weekStartIso],
+      });
     },
   });
 }
 
-export function usePreviousWeekRoster(venueId: string, weekStartIso: string, enabled: boolean) {
+export function usePreviousWeekRoster(
+  venueId: string,
+  weekStartIso: string,
+  enabled: boolean,
+) {
   return useQuery({
-    queryKey: ["previousWeekRoster", venueId, weekStartIso],
-    queryFn: async () => (await api.fetchPreviousWeekRoster(venueId, weekStartIso)).map(mapShift),
+    queryKey: ['previousWeekRoster', venueId, weekStartIso],
+    queryFn: async () =>
+      (await api.fetchPreviousWeekRoster(venueId, weekStartIso)).map(mapShift),
     enabled: enabled && !!venueId,
   });
 }
@@ -117,10 +129,15 @@ export function useOverrideComplianceViolation(venueId: string, weekStartIso: st
   return useMutation({
     mutationFn: ({ shiftId, violationType, reason }: OverrideComplianceViolationInput) =>
       api
-        .overrideComplianceViolation(shiftId, venueId, unmapViolationType(violationType), reason)
+        .overrideComplianceViolation(
+          shiftId,
+          venueId,
+          unmapViolationType(violationType),
+          reason,
+        )
         .then(mapShift),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["shifts", venueId, weekStartIso] });
+      queryClient.invalidateQueries({ queryKey: ['shifts', venueId, weekStartIso] });
     },
   });
 }

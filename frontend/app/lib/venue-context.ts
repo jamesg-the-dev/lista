@@ -1,4 +1,4 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
 interface VenueContextState {
   activeVenueId: string;
@@ -15,7 +15,7 @@ interface VenueContextState {
 // the only place a real venue id is known. See CLAUDE.md's TODO under
 // § Screens & build order for the plan to make this a per-manager
 // preference instead of always "the first venue".
-export const useVenueContextStore = create<VenueContextState>((set) => ({
-  activeVenueId: "",
-  setActiveVenueId: (venueId) => set({ activeVenueId: venueId }),
+export const useVenueContextStore = create<VenueContextState>(set => ({
+  activeVenueId: '',
+  setActiveVenueId: venueId => set({ activeVenueId: venueId }),
 }));

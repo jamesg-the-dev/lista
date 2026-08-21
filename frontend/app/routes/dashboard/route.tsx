@@ -1,34 +1,34 @@
-import { useMemo, useState } from "react";
-import { ChevronDownIcon } from "lucide-react";
+import { useMemo, useState } from 'react';
+import { ChevronDownIcon } from 'lucide-react';
 
-import { Button } from "~/components/ui/button";
+import { Button } from '~/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
-import { Empty, EmptyDescription, EmptyTitle } from "~/components/ui/empty";
+} from '~/components/ui/dropdown-menu';
+import { Empty, EmptyDescription, EmptyTitle } from '~/components/ui/empty';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "~/components/ui/select";
-import { Spinner } from "~/components/ui/spinner";
-import { useVenueContextStore } from "~/lib/venue-context";
+} from '~/components/ui/select';
+import { Spinner } from '~/components/ui/spinner';
+import { useVenueContextStore } from '~/lib/venue-context';
 
-import { CostByRoleBreakdown } from "./components/CostByRoleBreakdown";
-import { ForecastActualStub } from "./components/ForecastActualStub";
-import { TrendChart } from "./components/TrendChart";
+import { CostByRoleBreakdown } from './components/CostByRoleBreakdown';
+import { ForecastActualStub } from './components/ForecastActualStub';
+import { TrendChart } from './components/TrendChart';
 import {
   useCostBreakdown,
   useForecastSummary,
   useLabourCostTrend,
   useVenues,
-} from "./hooks";
-import { formatWeekLabel, mustFindVenue } from "./types";
+} from './hooks';
+import { formatWeekLabel, mustFindVenue } from './types';
 
 // Trailing-window options for the trend chart. Default is 8 weeks (~2
 // months) — enough to read a real trend without the chart becoming
@@ -40,9 +40,7 @@ const DEFAULT_TRAILING_WEEKS = 8;
 
 export default function LabourCostDashboard() {
   const { activeVenueId, setActiveVenueId } = useVenueContextStore();
-  const [trailingWeeks, setTrailingWeeks] = useState<number>(
-    DEFAULT_TRAILING_WEEKS,
-  );
+  const [trailingWeeks, setTrailingWeeks] = useState<number>(DEFAULT_TRAILING_WEEKS);
   const [selectedWeekIso, setSelectedWeekIso] = useState<string | null>(null);
 
   const venuesQuery = useVenues();
@@ -58,20 +56,14 @@ export default function LabourCostDashboard() {
     trend.length > 0 ? trend[trend.length - 1].weekStart.toISODate() : null;
   const effectiveWeekIso = selectedWeekIso ?? latestWeekIso;
 
-  const breakdownQuery = useCostBreakdown(
-    activeVenueId,
-    effectiveWeekIso ?? "",
-  );
-  const forecastQuery = useForecastSummary(
-    activeVenueId,
-    effectiveWeekIso ?? "",
-  );
+  const breakdownQuery = useCostBreakdown(activeVenueId, effectiveWeekIso ?? '');
+  const forecastQuery = useForecastSummary(activeVenueId, effectiveWeekIso ?? '');
 
   if (venuesQuery.isLoading) {
     return (
       <div
-        className="min-h-screen w-full flex items-center justify-center"
-        style={{ background: "var(--background)" }}
+        className="flex min-h-screen w-full items-center justify-center"
+        style={{ background: 'var(--background)' }}
       >
         <Spinner className="size-6" />
       </div>
@@ -81,14 +73,13 @@ export default function LabourCostDashboard() {
   if (venuesQuery.isError) {
     return (
       <div
-        className="min-h-screen w-full flex items-center justify-center p-6"
-        style={{ background: "var(--background)" }}
+        className="flex min-h-screen w-full items-center justify-center p-6"
+        style={{ background: 'var(--background)' }}
       >
         <Empty>
           <EmptyTitle>Couldn't load the dashboard</EmptyTitle>
           <EmptyDescription>
-            {venuesQuery.error?.message ??
-              "Something went wrong. Try again shortly."}
+            {venuesQuery.error?.message ?? 'Something went wrong. Try again shortly.'}
           </EmptyDescription>
         </Empty>
       </div>
@@ -99,48 +90,48 @@ export default function LabourCostDashboard() {
 
   return (
     <div
-      className="min-h-screen w-full flex flex-col font-sans"
-      style={{ background: "var(--background)", color: "var(--foreground)" }}
+      className="flex min-h-screen w-full flex-col font-sans"
+      style={{ background: 'var(--background)', color: 'var(--foreground)' }}
     >
       {/* Top bar */}
       <header
-        className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4 px-6 py-4 border-b"
-        style={{ background: "var(--card)", borderColor: "var(--border)" }}
+        className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4 border-b px-6 py-4"
+        style={{ background: 'var(--card)', borderColor: 'var(--border)' }}
       >
-        <div className="flex items-center gap-4 min-w-0">
+        <div className="flex min-w-0 items-center gap-4">
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
                 <Button
                   variant="outline"
                   className="h-auto gap-2 rounded-lg px-3 py-2"
-                  style={{ background: "var(--muted)" }}
+                  style={{ background: 'var(--muted)' }}
                 />
               }
             >
               <span
-                className="w-2 h-2 rounded-full shrink-0"
-                style={{ background: "var(--foreground)" }}
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ background: 'var(--foreground)' }}
               />
               <div className="text-left">
-                <p className="font-sans font-semibold text-sm uppercase leading-tight">
+                <p className="font-sans text-sm leading-tight font-semibold uppercase">
                   {venue.name}
                 </p>
               </div>
               <ChevronDownIcon
                 size={14}
                 className="ml-1 shrink-0"
-                style={{ color: "var(--muted-foreground)" }}
+                style={{ color: 'var(--muted-foreground)' }}
               />
             </DropdownMenuTrigger>
             <DropdownMenuContent
               className="w-64"
               style={{
-                background: "var(--muted)",
-                borderColor: "var(--border)",
+                background: 'var(--muted)',
+                borderColor: 'var(--border)',
               }}
             >
-              {venues.map((v) => (
+              {venues.map(v => (
                 <DropdownMenuItem
                   key={v.id}
                   onClick={() => {
@@ -154,8 +145,8 @@ export default function LabourCostDashboard() {
                   </div>
                   {v.id === activeVenueId && (
                     <span
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ background: "var(--foreground)" }}
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{ background: 'var(--foreground)' }}
                     />
                   )}
                 </DropdownMenuItem>
@@ -164,43 +155,40 @@ export default function LabourCostDashboard() {
           </DropdownMenu>
 
           <div
-            className="hidden md:block pl-4 border-l"
-            style={{ borderColor: "var(--border)" }}
+            className="hidden border-l pl-4 md:block"
+            style={{ borderColor: 'var(--border)' }}
           >
-            <h1 className="font-sans font-semibold text-sm uppercase tracking-wide">
+            <h1 className="font-sans text-sm font-semibold tracking-wide uppercase">
               Labour cost dashboard
             </h1>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 px-6 py-6 flex flex-col gap-6">
+      <main className="flex flex-1 flex-col gap-6 px-6 py-6">
         {/* Week-over-week trend */}
         <section
           className="rounded-lg border p-5"
-          style={{ borderColor: "var(--border)", background: "var(--card)" }}
+          style={{ borderColor: 'var(--border)', background: 'var(--card)' }}
         >
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="font-sans font-semibold text-sm">
+              <h2 className="font-sans text-sm font-semibold">
                 Week-over-week labour cost
               </h2>
-              <p
-                className="text-xs"
-                style={{ color: "var(--muted-foreground)" }}
-              >
+              <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
                 {venue.name} — trailing {trailingWeeks} weeks
               </p>
             </div>
             <div
               className="flex items-center gap-1 rounded-lg border p-0.5"
-              style={{ borderColor: "var(--border)" }}
+              style={{ borderColor: 'var(--border)' }}
             >
-              {TRAILING_WINDOW_OPTIONS.map((weeks) => (
+              {TRAILING_WINDOW_OPTIONS.map(weeks => (
                 <Button
                   key={weeks}
                   size="sm"
-                  variant={trailingWeeks === weeks ? "default" : "ghost"}
+                  variant={trailingWeeks === weeks ? 'default' : 'ghost'}
                   className="h-7 px-2.5 text-xs"
                   onClick={() => setTrailingWeeks(weeks)}
                 >
@@ -216,20 +204,20 @@ export default function LabourCostDashboard() {
         <div className="grid gap-6 lg:grid-cols-2">
           <section
             className="rounded-lg border p-5"
-            style={{ borderColor: "var(--border)", background: "var(--card)" }}
+            style={{ borderColor: 'var(--border)', background: 'var(--card)' }}
           >
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-              <h2 className="font-sans font-semibold text-sm">Cost by pay tier</h2>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="font-sans text-sm font-semibold">Cost by pay tier</h2>
               {trend.length > 0 && effectiveWeekIso && (
                 <Select
                   value={effectiveWeekIso}
-                  onValueChange={(value) => setSelectedWeekIso(value)}
+                  onValueChange={value => setSelectedWeekIso(value)}
                 >
                   <SelectTrigger size="sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {[...trend].reverse().map((p) => {
+                    {[...trend].reverse().map(p => {
                       const iso = p.weekStart.toISODate()!;
                       return (
                         <SelectItem key={iso} value={iso}>
@@ -249,11 +237,9 @@ export default function LabourCostDashboard() {
 
           <section
             className="rounded-lg border p-5"
-            style={{ borderColor: "var(--border)", background: "var(--card)" }}
+            style={{ borderColor: 'var(--border)', background: 'var(--card)' }}
           >
-            <h2 className="font-sans font-semibold text-sm mb-4">
-              Forecast vs actual
-            </h2>
+            <h2 className="mb-4 font-sans text-sm font-semibold">Forecast vs actual</h2>
             <ForecastActualStub
               summary={forecastQuery.data}
               loading={forecastQuery.isLoading || trendQuery.isLoading}
@@ -261,9 +247,9 @@ export default function LabourCostDashboard() {
           </section>
         </div>
 
-        <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
-          Figures shown are illustrative for demo purposes — not authoritative
-          payroll or legal advice.
+        <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+          Figures shown are illustrative for demo purposes — not authoritative payroll or
+          legal advice.
         </p>
       </main>
     </div>

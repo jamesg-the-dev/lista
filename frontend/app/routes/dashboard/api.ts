@@ -1,6 +1,6 @@
-import { apiClient } from "~/lib/api-client";
+import { apiClient } from '~/lib/api-client';
 
-import type { CostByRoleDto, CostTrendDayDto, ForecastSummaryDto } from "./types";
+import type { CostByRoleDto, CostTrendDayDto, ForecastSummaryDto } from './types';
 
 // Backed by LabourCostController — see types.ts's file header for why
 // fetchForecastSummary calls RosterController's budget-summary endpoint
@@ -13,7 +13,9 @@ export function fetchCostTrend(
   to: string,
 ): Promise<CostTrendDayDto[]> {
   const params = new URLSearchParams({ from, to });
-  return apiClient.get<CostTrendDayDto[]>(`/api/venues/${venueId}/labour-cost/trend?${params}`);
+  return apiClient.get<CostTrendDayDto[]>(
+    `/api/venues/${venueId}/labour-cost/trend?${params}`,
+  );
 }
 
 export function fetchCostByRole(
@@ -21,7 +23,9 @@ export function fetchCostByRole(
   weekStartIso: string,
 ): Promise<CostByRoleDto[]> {
   const params = new URLSearchParams({ weekStart: weekStartIso });
-  return apiClient.get<CostByRoleDto[]>(`/api/venues/${venueId}/labour-cost/by-role?${params}`);
+  return apiClient.get<CostByRoleDto[]>(
+    `/api/venues/${venueId}/labour-cost/by-role?${params}`,
+  );
 }
 
 export function fetchForecastSummary(

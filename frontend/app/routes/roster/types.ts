@@ -21,7 +21,7 @@
 // `{venueId:guid}` route constraint — it's now sourced from
 // useCurrentAccount()'s venues instead (see hooks.ts's useVenues).
 
-import { DateTime, Duration, Interval } from "luxon";
+import { DateTime, Duration, Interval } from 'luxon';
 
 function mustMapEnum<T extends string>(
   value: number,
@@ -58,7 +58,7 @@ export interface Venue {
 }
 
 export function mustFindVenue(venues: Venue[], venueId: string): Venue {
-  const venue = venues.find((v) => v.id === venueId);
+  const venue = venues.find(v => v.id === venueId);
   if (!venue) throw new Error(`Unknown venue id: ${venueId}`);
   return venue;
 }
@@ -67,11 +67,11 @@ export function mustFindVenue(venues: Venue[], venueId: string): Venue {
 // Role — mock-backed (see file header); unrelated to RosterController.
 // ---------------------------------------------------------------------------
 
-const ROLE_TABLE = ["kitchen", "floor", "bar", "manager"] as const;
+const ROLE_TABLE = ['kitchen', 'floor', 'bar', 'manager'] as const;
 export type Role = (typeof ROLE_TABLE)[number];
 
 export function mapRole(value: number): Role {
-  return mustMapEnum(value, ROLE_TABLE, "Role");
+  return mustMapEnum(value, ROLE_TABLE, 'Role');
 }
 export function unmapRole(value: Role): number {
   return ROLE_TABLE.indexOf(value);
@@ -87,10 +87,10 @@ export interface RoleMeta {
 // Role colors are our only custom-hue tokens — functional (role identity),
 // not decorative. See docs/design-system.md § Role colors.
 export const ROLE_META: Record<Role, RoleMeta> = {
-  kitchen: { label: "Kitchen", color: "#B85C2E", tint: "#3A2519", letter: "K" },
-  floor: { label: "Floor", color: "#4C9A8E", tint: "#173029", letter: "F" },
-  bar: { label: "Bar", color: "#C9A227", tint: "#332B0E", letter: "B" },
-  manager: { label: "Manager", color: "#7D8CC4", tint: "#232A42", letter: "M" },
+  kitchen: { label: 'Kitchen', color: '#B85C2E', tint: '#3A2519', letter: 'K' },
+  floor: { label: 'Floor', color: '#4C9A8E', tint: '#173029', letter: 'F' },
+  bar: { label: 'Bar', color: '#C9A227', tint: '#332B0E', letter: 'B' },
+  manager: { label: 'Manager', color: '#7D8CC4', tint: '#232A42', letter: 'M' },
 };
 
 // ---------------------------------------------------------------------------
@@ -126,11 +126,8 @@ export function mapStaffMember(dto: StaffMemberDto): StaffMember {
   };
 }
 
-export function mustFindStaff(
-  staff: StaffMember[],
-  staffId: string,
-): StaffMember {
-  const member = staff.find((s) => s.id === staffId);
+export function mustFindStaff(staff: StaffMember[], staffId: string): StaffMember {
+  const member = staff.find(s => s.id === staffId);
   if (!member) throw new Error(`Unknown staff id: ${staffId}`);
   return member;
 }
@@ -142,15 +139,7 @@ export function mustFindStaff(
 // between the two at the UI boundary.
 // ---------------------------------------------------------------------------
 
-export const DAY_LABELS = [
-  "Mon",
-  "Tue",
-  "Wed",
-  "Thu",
-  "Fri",
-  "Sat",
-  "Sun",
-] as const;
+export const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export function dateForDay(weekStart: DateTime, dayOfWeek: number): DateTime {
@@ -216,23 +205,21 @@ export function getRateInfo(
   // hour-wraparound arithmetic.
   if (endDT <= startDT) endDT = endDT.plus({ days: 1 });
 
-  const grossHrs = Interval.fromDateTimes(startDT, endDT).length("hours");
-  const breakHrs = Duration.fromObject({ minutes: unpaidBreakMinutes }).as(
-    "hours",
-  );
+  const grossHrs = Interval.fromDateTimes(startDT, endDT).length('hours');
+  const breakHrs = Duration.fromObject({ minutes: unpaidBreakMinutes }).as('hours');
   const paidHrs = Math.max(0, grossHrs - breakHrs);
 
   let multiplier = 1;
-  let label = "Ordinary hours";
+  let label = 'Ordinary hours';
   if (dayOfWeek === 5) {
     multiplier = 1.25;
-    label = "Saturday penalty +25%";
+    label = 'Saturday penalty +25%';
   } else if (dayOfWeek === 6) {
     multiplier = 1.5;
-    label = "Sunday penalty +50%";
+    label = 'Sunday penalty +50%';
   } else if (endDT.hour + endDT.minute / 60 > 19) {
     multiplier = 1.1;
-    label = "Weekday evening loading +10%";
+    label = 'Weekday evening loading +10%';
   }
 
   const cost = paidHrs * baseRate * multiplier;
@@ -240,21 +227,21 @@ export function getRateInfo(
 }
 
 export function currency(n: number): string {
-  return n.toLocaleString("en-AU", {
-    style: "currency",
-    currency: "AUD",
+  return n.toLocaleString('en-AU', {
+    style: 'currency',
+    currency: 'AUD',
     maximumFractionDigits: 0,
   });
 }
 export function currency2(n: number): string {
-  return n.toLocaleString("en-AU", {
-    style: "currency",
-    currency: "AUD",
+  return n.toLocaleString('en-AU', {
+    style: 'currency',
+    currency: 'AUD',
     maximumFractionDigits: 2,
   });
 }
 export function formatHoursDuration(hours: number): string {
-  const dur = Duration.fromObject({ hours }).shiftTo("hours", "minutes");
+  const dur = Duration.fromObject({ hours }).shiftTo('hours', 'minutes');
   const h = Math.trunc(dur.hours);
   const m = Math.round(dur.minutes);
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
@@ -278,50 +265,47 @@ export function formatHoursDuration(hours: number): string {
 // ---------------------------------------------------------------------------
 
 const VIOLATION_TYPE_TABLE: Record<string, ComplianceViolationType> = {
-  InsufficientRest: "insufficient_rest",
-  MissingBreak: "missing_break",
-  SpanOfHoursExceeded: "span_of_hours_exceeded",
-  MaxConsecutiveDays: "max_consecutive_days",
+  InsufficientRest: 'insufficient_rest',
+  MissingBreak: 'missing_break',
+  SpanOfHoursExceeded: 'span_of_hours_exceeded',
+  MaxConsecutiveDays: 'max_consecutive_days',
 };
 export type ComplianceViolationType =
-  | "insufficient_rest"
-  | "missing_break"
-  | "span_of_hours_exceeded"
-  | "max_consecutive_days";
+  | 'insufficient_rest'
+  | 'missing_break'
+  | 'span_of_hours_exceeded'
+  | 'max_consecutive_days';
 
 export function mapViolationType(wire: string): ComplianceViolationType {
-  return mustMapWireEnum(wire, VIOLATION_TYPE_TABLE, "ComplianceViolationType");
+  return mustMapWireEnum(wire, VIOLATION_TYPE_TABLE, 'ComplianceViolationType');
 }
 
 const VIOLATION_TYPE_WIRE_TABLE: Record<ComplianceViolationType, string> = {
-  insufficient_rest: "InsufficientRest",
-  missing_break: "MissingBreak",
-  span_of_hours_exceeded: "SpanOfHoursExceeded",
-  max_consecutive_days: "MaxConsecutiveDays",
+  insufficient_rest: 'InsufficientRest',
+  missing_break: 'MissingBreak',
+  span_of_hours_exceeded: 'SpanOfHoursExceeded',
+  max_consecutive_days: 'MaxConsecutiveDays',
 };
 
 export function unmapViolationType(value: ComplianceViolationType): string {
   return VIOLATION_TYPE_WIRE_TABLE[value];
 }
 
-export const VIOLATION_TYPE_META: Record<
-  ComplianceViolationType,
-  { label: string }
-> = {
-  insufficient_rest: { label: "Insufficient rest" },
-  missing_break: { label: "Missing break" },
-  span_of_hours_exceeded: { label: "Span of hours exceeded" },
-  max_consecutive_days: { label: "Max consecutive days" },
+export const VIOLATION_TYPE_META: Record<ComplianceViolationType, { label: string }> = {
+  insufficient_rest: { label: 'Insufficient rest' },
+  missing_break: { label: 'Missing break' },
+  span_of_hours_exceeded: { label: 'Span of hours exceeded' },
+  max_consecutive_days: { label: 'Max consecutive days' },
 };
 
 const SEVERITY_TABLE: Record<string, ComplianceSeverity> = {
-  Warning: "warning",
-  Blocking: "blocking",
+  Warning: 'warning',
+  Blocking: 'blocking',
 };
-export type ComplianceSeverity = "warning" | "blocking";
+export type ComplianceSeverity = 'warning' | 'blocking';
 
 export function mapSeverity(wire: string): ComplianceSeverity {
-  return mustMapWireEnum(wire, SEVERITY_TABLE, "ComplianceSeverity");
+  return mustMapWireEnum(wire, SEVERITY_TABLE, 'ComplianceSeverity');
 }
 
 export interface ComplianceViolationDto {
@@ -340,9 +324,7 @@ export interface ComplianceViolation {
   overrideReason: string | null;
 }
 
-export function mapComplianceViolation(
-  dto: ComplianceViolationDto,
-): ComplianceViolation {
+export function mapComplianceViolation(dto: ComplianceViolationDto): ComplianceViolation {
   return {
     type: mapViolationType(dto.type),
     severity: mapSeverity(dto.severity),
@@ -357,17 +339,17 @@ export function mapComplianceViolation(
 // shape for GetRosterForWeek / CreateShift / UpdateShift / DuplicateRoster.
 // ---------------------------------------------------------------------------
 
-export type ShiftStatus = "draft" | "published" | "confirmed" | "cancelled";
+export type ShiftStatus = 'draft' | 'published' | 'confirmed' | 'cancelled';
 
 const SHIFT_STATUS_TABLE: Record<string, ShiftStatus> = {
-  Draft: "draft",
-  Published: "published",
-  Confirmed: "confirmed",
-  Cancelled: "cancelled",
+  Draft: 'draft',
+  Published: 'published',
+  Confirmed: 'confirmed',
+  Cancelled: 'cancelled',
 };
 
 export function mapShiftStatus(wire: string): ShiftStatus {
-  return mustMapWireEnum(wire, SHIFT_STATUS_TABLE, "ShiftStatus");
+  return mustMapWireEnum(wire, SHIFT_STATUS_TABLE, 'ShiftStatus');
 }
 
 export interface ShiftDto {
@@ -486,15 +468,15 @@ export interface BudgetSummaryDto {
 }
 export type BudgetSummary = BudgetSummaryDto;
 
-export type BudgetStatus = "no_target" | "under" | "near" | "over";
+export type BudgetStatus = 'no_target' | 'under' | 'near' | 'over';
 
 export function getBudgetStatus(
   weeklyTotal: number,
   target: number | null,
 ): BudgetStatus {
-  if (target === null || target <= 0) return "no_target";
+  if (target === null || target <= 0) return 'no_target';
   const pctUsed = weeklyTotal / target;
-  if (pctUsed > 1) return "over";
-  if (pctUsed >= 0.9) return "near";
-  return "under";
+  if (pctUsed > 1) return 'over';
+  if (pctUsed >= 0.9) return 'near';
+  return 'under';
 }

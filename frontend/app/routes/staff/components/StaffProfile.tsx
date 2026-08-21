@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { ArrowLeftIcon, XIcon } from "lucide-react";
+import { useState } from 'react';
+import { ArrowLeftIcon, XIcon } from 'lucide-react';
 
-import { Button } from "~/components/ui/button";
-import { Textarea } from "~/components/ui/textarea";
+import { Button } from '~/components/ui/button';
+import { Skeleton } from '~/components/ui/skeleton';
+import { Textarea } from '~/components/ui/textarea';
 
 import {
   useAddAvailabilityException,
@@ -11,8 +12,8 @@ import {
   useSaveStaffMember,
   useStaffMember,
   useUpdateLeaveRequestStatus,
-} from "../hooks";
-import { DAY_LABELS, TIME_BLOCK_META } from "../types";
+} from '../hooks';
+import { DAY_LABELS, TIME_BLOCK_META } from '../types';
 import type {
   AvailabilityException,
   DayOfWeek,
@@ -20,10 +21,10 @@ import type {
   LeaveRequestStatus,
   TimeBlock,
   Venue,
-} from "../types";
-import { FieldLabel, SectionHeader, inputStyle } from "./form-ui";
-import StaffMemberForm, { toStaffMemberFormValue } from "./StaffMemberForm";
-import type { StaffMemberFormValue } from "./StaffMemberForm";
+} from '../types';
+import { FieldLabel, SectionHeader, inputStyle } from './form-ui';
+import StaffMemberForm, { toStaffMemberFormValue } from './StaffMemberForm';
+import type { StaffMemberFormValue } from './StaffMemberForm';
 
 interface StaffProfileProps {
   staffId: string;
@@ -32,43 +33,34 @@ interface StaffProfileProps {
 }
 
 function formatDate(d: Date): string {
-  return d.toLocaleDateString("en-AU", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
+  return d.toLocaleDateString('en-AU', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
   });
 }
 
 function EmptyNote({ text }: { text: string }) {
   return (
-    <p className="text-xs italic" style={{ color: "var(--muted-foreground)" }}>
+    <p className="text-xs italic" style={{ color: 'var(--muted-foreground)' }}>
       {text}
     </p>
   );
 }
 
-function ErrorBlock({
-  message,
-  onRetry,
-}: {
-  message: string;
-  onRetry: () => void;
-}) {
+function ErrorBlock({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div
       className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-10 text-center"
       style={{
-        borderColor: "var(--destructive)",
-        background: "var(--destructive-tint)",
+        borderColor: 'var(--destructive)',
+        background: 'var(--destructive-tint)',
       }}
     >
-      <p
-        className="text-sm font-medium"
-        style={{ color: "var(--destructive)" }}
-      >
+      <p className="text-sm font-medium" style={{ color: 'var(--destructive)' }}>
         Couldn't load this profile
       </p>
-      <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+      <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
         {message}
       </p>
       <Button variant="outline" size="sm" onClick={onRetry}>
@@ -83,19 +75,19 @@ const STATUS_META: Record<
   { label: string; color: string; tint: string }
 > = {
   requested: {
-    label: "Requested",
-    color: "var(--muted-foreground)",
-    tint: "var(--muted)",
+    label: 'Requested',
+    color: 'var(--muted-foreground)',
+    tint: 'var(--muted)',
   },
   approved: {
-    label: "Approved",
-    color: "var(--success)",
-    tint: "var(--success-tint)",
+    label: 'Approved',
+    color: 'var(--success)',
+    tint: 'var(--success-tint)',
   },
   declined: {
-    label: "Declined",
-    color: "var(--destructive)",
-    tint: "var(--destructive-tint)",
+    label: 'Declined',
+    color: 'var(--destructive)',
+    tint: 'var(--destructive-tint)',
   },
 };
 
@@ -103,7 +95,7 @@ function StatusBadge({ status }: { status: LeaveRequestStatus }) {
   const meta = STATUS_META[status];
   return (
     <span
-      className="text-xs font-sans font-medium px-2 py-1 rounded shrink-0"
+      className="shrink-0 rounded px-2 py-1 font-sans text-xs font-medium"
       style={{ color: meta.color, background: meta.tint }}
     >
       {meta.label}
@@ -125,14 +117,12 @@ function AvailabilitySection({
   const [blocks, setBlocks] = useState<TimeBlock[]>([]);
 
   function toggleBlock(block: TimeBlock) {
-    setBlocks((b) =>
-      b.includes(block) ? b.filter((x) => x !== block) : [...b, block],
-    );
+    setBlocks(b => (b.includes(block) ? b.filter(x => x !== block) : [...b, block]));
   }
 
   function handleAdd() {
     addMutation.mutate(
-      { dayOfWeek, blocks: allDay ? "all_day" : blocks },
+      { dayOfWeek, blocks: allDay ? 'all_day' : blocks },
       {
         onSuccess: () => {
           setBlocks([]);
@@ -148,21 +138,21 @@ function AvailabilitySection({
         title="Standing availability"
         subtitle="Days/blocks this staff member is NOT available. Anything not listed here is assumed available."
       />
-      <div className="flex flex-col gap-2 mb-4">
+      <div className="mb-4 flex flex-col gap-2">
         {exceptions.length === 0 && (
           <EmptyNote text="No standing exceptions — assumed available every day." />
         )}
-        {exceptions.map((ex) => (
+        {exceptions.map(ex => (
           <div
             key={ex.id}
             className="flex items-center justify-between rounded-lg border px-3 py-2"
-            style={{ borderColor: "var(--border)" }}
+            style={{ borderColor: 'var(--border)' }}
           >
             <span className="text-sm">
-              <strong>{DAY_LABELS[ex.dayOfWeek]}</strong>{" "}
-              {ex.blocks === "all_day"
-                ? "— unavailable all day"
-                : `— unavailable ${ex.blocks.map((b) => TIME_BLOCK_META[b].label).join(", ")}`}
+              <strong>{DAY_LABELS[ex.dayOfWeek]}</strong>{' '}
+              {ex.blocks === 'all_day'
+                ? '— unavailable all day'
+                : `— unavailable ${ex.blocks.map(b => TIME_BLOCK_META[b].label).join(', ')}`}
             </span>
             <Button
               variant="ghost"
@@ -177,14 +167,14 @@ function AvailabilitySection({
       </div>
       <div
         className="flex flex-wrap items-end gap-3 rounded-lg border p-3"
-        style={{ borderColor: "var(--border)" }}
+        style={{ borderColor: 'var(--border)' }}
       >
         <label className="flex flex-col gap-1.5">
           <FieldLabel>Day</FieldLabel>
           <select
             value={dayOfWeek}
-            onChange={(e) => setDayOfWeek(Number(e.target.value) as DayOfWeek)}
-            className="rounded-lg border px-3 py-2 text-sm font-sans font-medium outline-none"
+            onChange={e => setDayOfWeek(Number(e.target.value) as DayOfWeek)}
+            className="rounded-lg border px-3 py-2 font-sans text-sm font-medium outline-none"
             style={inputStyle}
           >
             {DAY_LABELS.map((d, i) => (
@@ -194,29 +184,27 @@ function AvailabilitySection({
             ))}
           </select>
         </label>
-        <label className="flex items-center gap-1.5 text-xs pb-2.5">
+        <label className="flex items-center gap-1.5 pb-2.5 text-xs">
           <input
             type="checkbox"
             checked={allDay}
-            onChange={(e) => setAllDay(e.target.checked)}
+            onChange={e => setAllDay(e.target.checked)}
           />
           All day
         </label>
         {!allDay && (
           <div className="flex gap-1.5 pb-1">
-            {(Object.keys(TIME_BLOCK_META) as TimeBlock[]).map((b) => {
+            {(Object.keys(TIME_BLOCK_META) as TimeBlock[]).map(b => {
               const active = blocks.includes(b);
               return (
                 <button
                   key={b}
                   type="button"
                   onClick={() => toggleBlock(b)}
-                  className="text-xs font-sans font-medium px-2.5 py-1.5 rounded-lg"
+                  className="rounded-lg px-2.5 py-1.5 font-sans text-xs font-medium"
                   style={{
-                    background: active ? "var(--foreground)" : "var(--muted)",
-                    color: active
-                      ? "var(--background)"
-                      : "var(--muted-foreground)",
+                    background: active ? 'var(--foreground)' : 'var(--muted)',
+                    color: active ? 'var(--background)' : 'var(--muted-foreground)',
                   }}
                 >
                   {TIME_BLOCK_META[b].label}
@@ -247,9 +235,9 @@ function LeaveRequestsSection({
 }) {
   const createMutation = useCreateLeaveRequest(staffId);
   const statusMutation = useUpdateLeaveRequestStatus(staffId);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [reason, setReason] = useState("");
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [reason, setReason] = useState('');
 
   function handleCreate() {
     if (!startDate || !endDate) return;
@@ -261,9 +249,9 @@ function LeaveRequestsSection({
       },
       {
         onSuccess: () => {
-          setStartDate("");
-          setEndDate("");
-          setReason("");
+          setStartDate('');
+          setEndDate('');
+          setReason('');
         },
       },
     );
@@ -275,15 +263,13 @@ function LeaveRequestsSection({
         title="Leave requests"
         subtitle="One-off leave. Approve or decline a request below — no wider workflow yet."
       />
-      <div className="flex flex-col gap-2 mb-4">
-        {leaveRequests.length === 0 && (
-          <EmptyNote text="No leave requests yet." />
-        )}
-        {leaveRequests.map((lr) => (
+      <div className="mb-4 flex flex-col gap-2">
+        {leaveRequests.length === 0 && <EmptyNote text="No leave requests yet." />}
+        {leaveRequests.map(lr => (
           <div
             key={lr.id}
             className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
-            style={{ borderColor: "var(--border)" }}
+            style={{ borderColor: 'var(--border)' }}
           >
             <div className="min-w-0">
               <p className="text-sm font-medium">
@@ -291,16 +277,16 @@ function LeaveRequestsSection({
               </p>
               {lr.reason && (
                 <p
-                  className="text-xs truncate"
-                  style={{ color: "var(--muted-foreground)" }}
+                  className="truncate text-xs"
+                  style={{ color: 'var(--muted-foreground)' }}
                 >
                   {lr.reason}
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex shrink-0 items-center gap-2">
               <StatusBadge status={lr.status} />
-              {lr.status === "requested" && (
+              {lr.status === 'requested' && (
                 <>
                   <Button
                     variant="outline"
@@ -309,7 +295,7 @@ function LeaveRequestsSection({
                     onClick={() =>
                       statusMutation.mutate({
                         leaveRequestId: lr.id,
-                        status: "approved",
+                        status: 'approved',
                       })
                     }
                   >
@@ -322,7 +308,7 @@ function LeaveRequestsSection({
                     onClick={() =>
                       statusMutation.mutate({
                         leaveRequestId: lr.id,
-                        status: "declined",
+                        status: 'declined',
                       })
                     }
                   >
@@ -336,15 +322,15 @@ function LeaveRequestsSection({
       </div>
       <div
         className="flex flex-wrap items-end gap-3 rounded-lg border p-3"
-        style={{ borderColor: "var(--border)" }}
+        style={{ borderColor: 'var(--border)' }}
       >
         <label className="flex flex-col gap-1.5">
           <FieldLabel>Start</FieldLabel>
           <input
             type="date"
             value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="rounded-lg border px-3 py-2 text-sm font-sans font-medium tabular-nums outline-none"
+            onChange={e => setStartDate(e.target.value)}
+            className="rounded-lg border px-3 py-2 font-sans text-sm font-medium tabular-nums outline-none"
             style={inputStyle}
           />
         </label>
@@ -353,17 +339,17 @@ function LeaveRequestsSection({
           <input
             type="date"
             value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="rounded-lg border px-3 py-2 text-sm font-sans font-medium tabular-nums outline-none"
+            onChange={e => setEndDate(e.target.value)}
+            className="rounded-lg border px-3 py-2 font-sans text-sm font-medium tabular-nums outline-none"
             style={inputStyle}
           />
         </label>
-        <label className="flex flex-col gap-1.5 flex-1 min-w-[180px]">
+        <label className="flex min-w-[180px] flex-1 flex-col gap-1.5">
           <FieldLabel>Reason (optional)</FieldLabel>
           <Textarea
             rows={1}
             value={reason}
-            onChange={(e) => setReason(e.target.value)}
+            onChange={e => setReason(e.target.value)}
             placeholder="e.g. Annual leave"
           />
         </label>
@@ -379,11 +365,7 @@ function LeaveRequestsSection({
   );
 }
 
-export default function StaffProfile({
-  staffId,
-  venues,
-  onBack,
-}: StaffProfileProps) {
+export default function StaffProfile({ staffId, venues, onBack }: StaffProfileProps) {
   const staffQuery = useStaffMember(staffId);
   const saveMutation = useSaveStaffMember();
 
@@ -405,37 +387,29 @@ export default function StaffProfile({
   const staff = staffQuery.data;
 
   const themeStyle = {
-    background: "var(--background)",
-    color: "var(--foreground)",
+    background: 'var(--background)',
+    color: 'var(--foreground)',
   } as const;
 
   return (
-    <div
-      className="min-h-screen w-full flex flex-col font-sans"
-      style={themeStyle}
-    >
+    <div className="flex min-h-screen w-full flex-col font-sans" style={themeStyle}>
       <header
-        className="sticky top-0 z-30 flex items-center justify-between gap-4 px-6 py-4 border-b"
-        style={{ background: "var(--card)", borderColor: "var(--border)" }}
+        className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b px-6 py-4"
+        style={{ background: 'var(--card)', borderColor: 'var(--border)' }}
       >
-        <div className="flex items-center gap-4 min-w-0">
+        <div className="flex min-w-0 items-center gap-4">
           <Button variant="ghost" size="sm" onClick={onBack}>
             <ArrowLeftIcon size={14} />
             Back
           </Button>
-          <div
-            className="pl-4 border-l min-w-0"
-            style={{ borderColor: "var(--border)" }}
-          >
+          <div className="min-w-0 border-l pl-4" style={{ borderColor: 'var(--border)' }}>
             <p
-              className="font-sans font-semibold text-xs uppercase tracking-widest"
-              style={{ color: "var(--muted-foreground)" }}
+              className="font-sans text-xs font-semibold tracking-widest uppercase"
+              style={{ color: 'var(--muted-foreground)' }}
             >
               Staff profile
             </p>
-            <p className="text-base font-medium truncate">
-              {staff?.name ?? "…"}
-            </p>
+            <p className="truncate text-base font-medium">{staff?.name ?? '…'}</p>
           </div>
         </div>
         <Button
@@ -444,34 +418,23 @@ export default function StaffProfile({
           className="font-semibold"
           onClick={handleSave}
           disabled={
-            saveMutation.isPending ||
-            staffQuery.isLoading ||
-            staffQuery.isError ||
-            !form
+            saveMutation.isPending || staffQuery.isLoading || staffQuery.isError || !form
           }
         >
-          {saveMutation.isPending ? "Saving…" : "Save"}
+          {saveMutation.isPending ? 'Saving…' : 'Save'}
         </Button>
       </header>
 
       <main className="flex-1 px-6 py-6">
-        <div className="max-w-2xl mx-auto flex flex-col gap-8">
-          {staffQuery.isLoading && (
-            <div
-              className="h-64 rounded-lg border animate-pulse"
-              style={{
-                borderColor: "var(--border)",
-                background: "var(--muted)",
-              }}
-            />
-          )}
+        <div className="mx-auto flex max-w-2xl flex-col gap-8">
+          {staffQuery.isLoading && <Skeleton className="h-64 rounded-lg" />}
 
           {staffQuery.isError && (
             <ErrorBlock
               message={
                 staffQuery.error instanceof Error
                   ? staffQuery.error.message
-                  : "Something went wrong."
+                  : 'Something went wrong.'
               }
               onRetry={() => staffQuery.refetch()}
             />
@@ -483,9 +446,9 @@ export default function StaffProfile({
                 <div
                   className="rounded-lg border px-4 py-3 text-sm"
                   style={{
-                    borderColor: "var(--destructive)",
-                    background: "var(--destructive-tint)",
-                    color: "var(--destructive)",
+                    borderColor: 'var(--destructive)',
+                    background: 'var(--destructive-tint)',
+                    color: 'var(--destructive)',
                   }}
                 >
                   {saveMutation.error instanceof Error
@@ -496,10 +459,7 @@ export default function StaffProfile({
 
               <StaffMemberForm value={form} onChange={setForm} venues={venues} />
 
-              <AvailabilitySection
-                staffId={staffId}
-                exceptions={staff.unavailability}
-              />
+              <AvailabilitySection staffId={staffId} exceptions={staff.unavailability} />
               <LeaveRequestsSection
                 staffId={staffId}
                 leaveRequests={staff.leaveRequests}

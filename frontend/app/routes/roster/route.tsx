@@ -1,28 +1,28 @@
-import { Fragment, useMemo, useState } from "react";
-import { DateTime } from "luxon";
+import { Fragment, useMemo, useState } from 'react';
+import { DateTime } from 'luxon';
 import {
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   PlusIcon,
-} from "lucide-react";
+} from 'lucide-react';
 
-import { Button } from "~/components/ui/button";
+import { Button } from '~/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
-import { Empty, EmptyDescription, EmptyTitle } from "~/components/ui/empty";
-import { Spinner } from "~/components/ui/spinner";
-import { useVenueContextStore } from "~/lib/venue-context";
+} from '~/components/ui/dropdown-menu';
+import { Empty, EmptyDescription, EmptyTitle } from '~/components/ui/empty';
+import { Spinner } from '~/components/ui/spinner';
+import { useVenueContextStore } from '~/lib/venue-context';
 
-import { BudgetBar } from "./components/BudgetBar";
-import { ComplianceBadge } from "./components/ComplianceBadge";
-import { CopyPreviousWeekButton } from "./components/CopyPreviousWeekButton";
-import type { ShiftEditorPanelState } from "./components/ShiftEditorPanel";
-import { ShiftEditorPanel } from "./components/ShiftEditorPanel";
+import { BudgetBar } from './components/BudgetBar';
+import { ComplianceBadge } from './components/ComplianceBadge';
+import { CopyPreviousWeekButton } from './components/CopyPreviousWeekButton';
+import type { ShiftEditorPanelState } from './components/ShiftEditorPanel';
+import { ShiftEditorPanel } from './components/ShiftEditorPanel';
 import {
   useBudgetSummary,
   useCreateShift,
@@ -33,8 +33,8 @@ import {
   useShifts,
   useUpdateShift,
   useVenues,
-} from "./hooks";
-import type { ComplianceViolationType, Shift, ShiftDraft } from "./types";
+} from './hooks';
+import type { ComplianceViolationType, Shift, ShiftDraft } from './types';
 import {
   DAY_LABELS,
   ROLE_META,
@@ -45,8 +45,8 @@ import {
   mustFindVenue,
   shiftKey,
   totalAwardCost,
-} from "./types";
-import { initials } from "~/lib/utils";
+} from './types';
+import { initials } from '~/lib/utils';
 
 const WEEK_START = DateTime.local(2026, 8, 17); // Mon 17 Aug 2026
 const TODAY_INDEX = 1; // Tue 18 Aug 2026
@@ -76,8 +76,8 @@ export default function RosterBuilder() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [panel, setPanel] = useState<ShiftEditorPanelState | null>(null);
   const [draft, setDraft] = useState<ShiftDraft>({
-    start: "09:00",
-    end: "17:00",
+    start: '09:00',
+    end: '17:00',
     unpaidBreakMinutes: 30,
   });
 
@@ -95,10 +95,10 @@ export default function RosterBuilder() {
   // computations of the same number.
   const perDayTotals = useMemo(() => {
     const totals = new Array(7).fill(0);
-    staff.forEach((st) => {
+    staff.forEach(st => {
       for (let d = 0; d < 7; d++) {
         const list = shiftsByKey[shiftKey(st.id, d)] ?? [];
-        list.forEach((sh) => {
+        list.forEach(sh => {
           totals[d] += totalAwardCost(sh.awardBreakdown);
         });
       }
@@ -109,19 +109,15 @@ export default function RosterBuilder() {
   const maxDay = Math.max(...perDayTotals, 1);
 
   function goToWeek(deltaWeeks: number) {
-    setWeekStart((prev) => prev.plus({ weeks: deltaWeeks }));
+    setWeekStart(prev => prev.plus({ weeks: deltaWeeks }));
   }
 
   function openAdd(staffId: string, dayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6) {
-    setDraft({ start: "09:00", end: "17:00", unpaidBreakMinutes: 30 });
+    setDraft({ start: '09:00', end: '17:00', unpaidBreakMinutes: 30 });
     setPanel({ staffId, dayOfWeek, shift: null, draftId: crypto.randomUUID() });
     setPanelOpen(true);
   }
-  function openEdit(
-    staffId: string,
-    dayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6,
-    shift: Shift,
-  ) {
+  function openEdit(staffId: string, dayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6, shift: Shift) {
     setDraft({
       start: shift.start,
       end: shift.end,
@@ -136,7 +132,7 @@ export default function RosterBuilder() {
 
   async function handleSaveShift() {
     if (!panel) return;
-    const panelStaffMember = staff.find((s) => s.id === panel.staffId);
+    const panelStaffMember = staff.find(s => s.id === panel.staffId);
     if (!panelStaffMember) return;
     const input = {
       venueId: activeVenueId,
@@ -172,18 +168,16 @@ export default function RosterBuilder() {
       violationType,
       reason,
     });
-    setPanel((prev) => (prev ? { ...prev, shift: updated } : prev));
+    setPanel(prev => (prev ? { ...prev, shift: updated } : prev));
   }
 
-  const panelStaff = panel
-    ? (staff.find((s) => s.id === panel.staffId) ?? null)
-    : null;
+  const panelStaff = panel ? (staff.find(s => s.id === panel.staffId) ?? null) : null;
 
   if (venuesQuery.isLoading || staffQuery.isLoading || shiftsQuery.isLoading) {
     return (
       <div
-        className="min-h-screen w-full flex items-center justify-center"
-        style={{ background: "var(--background)" }}
+        className="flex min-h-screen w-full items-center justify-center"
+        style={{ background: 'var(--background)' }}
       >
         <Spinner className="size-6" />
       </div>
@@ -193,14 +187,14 @@ export default function RosterBuilder() {
   if (venuesQuery.isError || staffQuery.isError || shiftsQuery.isError) {
     return (
       <div
-        className="min-h-screen w-full flex items-center justify-center p-6"
-        style={{ background: "var(--background)" }}
+        className="flex min-h-screen w-full items-center justify-center p-6"
+        style={{ background: 'var(--background)' }}
       >
         <Empty>
           <EmptyTitle>Couldn't load the roster</EmptyTitle>
           <EmptyDescription>
-            {(venuesQuery.error ?? staffQuery.error ?? shiftsQuery.error)
-              ?.message ?? "Something went wrong. Try again shortly."}
+            {(venuesQuery.error ?? staffQuery.error ?? shiftsQuery.error)?.message ??
+              'Something went wrong. Try again shortly.'}
           </EmptyDescription>
         </Empty>
       </div>
@@ -211,8 +205,8 @@ export default function RosterBuilder() {
 
   return (
     <div
-      className="min-h-screen w-full flex flex-col font-sans"
-      style={{ background: "var(--background)", color: "var(--foreground)" }}
+      className="flex min-h-screen w-full flex-col font-sans"
+      style={{ background: 'var(--background)', color: 'var(--foreground)' }}
     >
       <style>{`
         ::-webkit-scrollbar { height: 10px; width: 10px; }
@@ -224,43 +218,43 @@ export default function RosterBuilder() {
 
       {/* Top bar */}
       <header
-        className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4 px-6 py-4 border-b"
-        style={{ background: "var(--card)", borderColor: "var(--border)" }}
+        className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4 border-b px-6 py-4"
+        style={{ background: 'var(--card)', borderColor: 'var(--border)' }}
       >
-        <div className="flex items-center gap-4 min-w-0">
+        <div className="flex min-w-0 items-center gap-4">
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
                 <Button
                   variant="outline"
                   className="h-auto gap-2 rounded-lg px-3 py-2"
-                  style={{ background: "var(--muted)" }}
+                  style={{ background: 'var(--muted)' }}
                 />
               }
             >
               <span
-                className="w-2 h-2 rounded-full shrink-0"
-                style={{ background: "var(--foreground)" }}
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ background: 'var(--foreground)' }}
               />
               <div className="text-left">
-                <p className="font-sans font-semibold text-sm uppercase leading-tight">
+                <p className="font-sans text-sm leading-tight font-semibold uppercase">
                   {venue.name}
                 </p>
               </div>
               <ChevronDownIcon
                 size={14}
                 className="ml-1 shrink-0"
-                style={{ color: "var(--muted-foreground)" }}
+                style={{ color: 'var(--muted-foreground)' }}
               />
             </DropdownMenuTrigger>
             <DropdownMenuContent
               className="w-64"
               style={{
-                background: "var(--muted)",
-                borderColor: "var(--border)",
+                background: 'var(--muted)',
+                borderColor: 'var(--border)',
               }}
             >
-              {venues.map((v) => (
+              {venues.map(v => (
                 <DropdownMenuItem
                   key={v.id}
                   onClick={() => setActiveVenueId(v.id)}
@@ -271,8 +265,8 @@ export default function RosterBuilder() {
                   </div>
                   {v.id === activeVenueId && (
                     <span
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ background: "var(--foreground)" }}
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{ background: 'var(--foreground)' }}
                     />
                   )}
                 </DropdownMenuItem>
@@ -281,25 +275,25 @@ export default function RosterBuilder() {
           </DropdownMenu>
 
           <div
-            className="hidden md:flex items-center gap-2 pl-4 border-l"
-            style={{ borderColor: "var(--border)" }}
+            className="hidden items-center gap-2 border-l pl-4 md:flex"
+            style={{ borderColor: 'var(--border)' }}
           >
             <Button
               variant="ghost"
               size="icon"
-              style={{ color: "var(--muted-foreground)" }}
+              style={{ color: 'var(--muted-foreground)' }}
               onClick={() => goToWeek(-1)}
             >
               <ChevronLeftIcon size={18} />
             </Button>
-            <span className="font-sans font-medium text-sm tabular-nums">
-              {dateForDay(weekStart, 0).toFormat("d LLL")} –{" "}
-              {dateForDay(weekStart, 6).toFormat("d LLL")}
+            <span className="font-sans text-sm font-medium tabular-nums">
+              {dateForDay(weekStart, 0).toFormat('d LLL')} –{' '}
+              {dateForDay(weekStart, 6).toFormat('d LLL')}
             </span>
             <Button
               variant="ghost"
               size="icon"
-              style={{ color: "var(--muted-foreground)" }}
+              style={{ color: 'var(--muted-foreground)' }}
               onClick={() => goToWeek(1)}
             >
               <ChevronRightIcon size={18} />
@@ -308,29 +302,26 @@ export default function RosterBuilder() {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="hidden lg:block text-right">
+          <div className="hidden text-right lg:block">
             <p
-              className="text-[10px] uppercase tracking-wide"
-              style={{ color: "var(--muted-foreground)" }}
+              className="text-[10px] tracking-wide uppercase"
+              style={{ color: 'var(--muted-foreground)' }}
             >
               Award engine
             </p>
-            <p className="text-xs font-medium">
-              Hospitality Industry General Award
-            </p>
+            <p className="text-xs font-medium">Hospitality Industry General Award</p>
           </div>
           <CopyPreviousWeekButton
             venueId={activeVenueId}
             weekStartIso={weekStartIso}
-            previousWeekLabel={dateForDay(
-              weekStart.minus({ weeks: 1 }),
-              0,
-            ).toFormat("d LLL")}
+            previousWeekLabel={dateForDay(weekStart.minus({ weeks: 1 }), 0).toFormat(
+              'd LLL',
+            )}
             currentShiftCount={shifts.length}
           />
           <BudgetBar
             summary={budgetSummaryQuery.data}
-            onSaveTarget={(value) => saveForecastTargetMutation.mutate(value)}
+            onSaveTarget={value => saveForecastTargetMutation.mutate(value)}
             savingTarget={saveForecastTargetMutation.isPending}
           />
         </div>
@@ -338,10 +329,10 @@ export default function RosterBuilder() {
 
       {/* Day cost strip */}
       <div
-        className="px-6 py-3 border-b"
+        className="border-b px-6 py-3"
         style={{
-          borderColor: "var(--border)",
-          background: "var(--background)",
+          borderColor: 'var(--border)',
+          background: 'var(--background)',
         }}
       >
         <div className="grid grid-cols-7 gap-2">
@@ -350,29 +341,25 @@ export default function RosterBuilder() {
             const h = Math.max(6, (perDayTotals[i] / maxDay) * 28);
             return (
               <div key={d} className="flex flex-col items-center gap-1.5">
-                <div className="flex items-end h-8">
+                <div className="flex h-8 items-end">
                   <div
                     className="w-8 rounded-t"
                     style={{
                       height: `${h}px`,
-                      background: isToday
-                        ? "var(--foreground)"
-                        : "var(--muted)",
+                      background: isToday ? 'var(--foreground)' : 'var(--muted)',
                     }}
                   />
                 </div>
                 <p
-                  className="font-sans font-medium text-[11px] tabular-nums"
-                  style={{ color: "var(--muted-foreground)" }}
+                  className="font-sans text-[11px] font-medium tabular-nums"
+                  style={{ color: 'var(--muted-foreground)' }}
                 >
                   {currency(perDayTotals[i])}
                 </p>
                 <p
-                  className="font-sans font-semibold text-xs uppercase"
+                  className="font-sans text-xs font-semibold uppercase"
                   style={{
-                    color: isToday
-                      ? "var(--foreground)"
-                      : "var(--muted-foreground)",
+                    color: isToday ? 'var(--foreground)' : 'var(--muted-foreground)',
                   }}
                 >
                   {d} {dateForDay(weekStart, i).day}
@@ -394,20 +381,17 @@ export default function RosterBuilder() {
           </Empty>
         ) : (
           <div className="min-w-[1000px]">
-            <div
-              className="grid"
-              style={{ gridTemplateColumns: "220px repeat(7, 1fr)" }}
-            >
+            <div className="grid" style={{ gridTemplateColumns: '220px repeat(7, 1fr)' }}>
               <div />
               {DAY_LABELS.map((d, i) => (
-                <div key={d} className="text-center pb-3">
+                <div key={d} className="pb-3 text-center">
                   <p
-                    className="font-sans font-semibold text-xs uppercase tracking-widest"
+                    className="font-sans text-xs font-semibold tracking-widest uppercase"
                     style={{
                       color:
                         i === TODAY_INDEX
-                          ? "var(--foreground)"
-                          : "var(--muted-foreground)",
+                          ? 'var(--foreground)'
+                          : 'var(--muted-foreground)',
                     }}
                   >
                     {d}
@@ -415,28 +399,23 @@ export default function RosterBuilder() {
                 </div>
               ))}
 
-              {staff.map((st) => {
+              {staff.map(st => {
                 const meta = ROLE_META[st.role];
                 return (
                   <Fragment key={st.id}>
                     <div
-                      className="flex items-center gap-3 pr-4 py-3 border-t"
-                      style={{ borderColor: "var(--border)" }}
+                      className="flex items-center gap-3 border-t py-3 pr-4"
+                      style={{ borderColor: 'var(--border)' }}
                     >
                       <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center font-sans font-bold text-sm shrink-0"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-sans text-sm font-bold"
                         style={{ background: meta.tint, color: meta.color }}
                       >
                         {initials(st.name)}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {st.name}
-                        </p>
-                        <p
-                          className="text-xs truncate"
-                          style={{ color: meta.color }}
-                        >
+                        <p className="truncate text-sm font-medium">{st.name}</p>
+                        <p className="truncate text-xs" style={{ color: meta.color }}>
                           {st.title}
                         </p>
                       </div>
@@ -449,19 +428,19 @@ export default function RosterBuilder() {
                       return (
                         <div
                           key={key}
-                          className="border-t px-1.5 py-2 flex flex-col gap-1.5"
-                          style={{ borderColor: "var(--border)" }}
+                          className="flex flex-col gap-1.5 border-t px-1.5 py-2"
+                          style={{ borderColor: 'var(--border)' }}
                         >
-                          {list.map((sh) => (
+                          {list.map(sh => (
                             <div key={sh.id} className="relative">
                               <Button
                                 variant="outline"
                                 onClick={() => openEdit(st.id, dayOfWeek, sh)}
                                 className="h-auto w-full items-stretch justify-start gap-0 overflow-hidden rounded-lg p-0 text-left"
-                                style={{ background: "var(--card)" }}
+                                style={{ background: 'var(--card)' }}
                               >
                                 <div
-                                  className="w-6 shrink-0 flex items-center justify-center font-sans font-bold text-xs"
+                                  className="flex w-6 shrink-0 items-center justify-center font-sans text-xs font-bold"
                                   style={{
                                     background: meta.color,
                                     color: meta.tint,
@@ -469,25 +448,21 @@ export default function RosterBuilder() {
                                 >
                                   {meta.letter}
                                 </div>
-                                <div className="px-2 py-1.5 min-w-0">
-                                  <p className="text-xs font-sans font-medium tabular-nums leading-tight">
+                                <div className="min-w-0 px-2 py-1.5">
+                                  <p className="font-sans text-xs leading-tight font-medium tabular-nums">
                                     {sh.start}–{sh.end}
                                   </p>
                                   <p
-                                    className="text-[10px] font-sans font-medium tabular-nums"
-                                    style={{ color: "var(--muted-foreground)" }}
+                                    className="font-sans text-[10px] font-medium tabular-nums"
+                                    style={{ color: 'var(--muted-foreground)' }}
                                   >
-                                    {currency2(
-                                      totalAwardCost(sh.awardBreakdown),
-                                    )}
+                                    {currency2(totalAwardCost(sh.awardBreakdown))}
                                   </p>
                                 </div>
                               </Button>
                               {sh.complianceViolations.length > 0 && (
                                 <div className="absolute -top-1.5 -right-1.5 z-10">
-                                  <ComplianceBadge
-                                    violations={sh.complianceViolations}
-                                  />
+                                  <ComplianceBadge violations={sh.complianceViolations} />
                                 </div>
                               )}
                             </div>
@@ -498,8 +473,8 @@ export default function RosterBuilder() {
                             onClick={() => openAdd(st.id, dayOfWeek)}
                             className="h-auto w-full rounded-lg border border-dashed py-2"
                             style={{
-                              borderColor: "var(--border)",
-                              color: "var(--muted-foreground)",
+                              borderColor: 'var(--border)',
+                              color: 'var(--muted-foreground)',
                             }}
                           >
                             <PlusIcon size={14} />
@@ -516,27 +491,21 @@ export default function RosterBuilder() {
       </main>
 
       {/* Legend */}
-      <div className="px-6 pb-6 flex flex-wrap gap-4">
+      <div className="flex flex-wrap gap-4 px-6 pb-6">
         {Object.entries(ROLE_META).map(([key, meta]) => (
           <div key={key} className="flex items-center gap-1.5">
             <span
-              className="w-2.5 h-2.5 rounded-full"
+              className="h-2.5 w-2.5 rounded-full"
               style={{ background: meta.color }}
             />
-            <span
-              className="text-xs"
-              style={{ color: "var(--muted-foreground)" }}
-            >
+            <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
               {meta.label}
             </span>
           </div>
         ))}
-        <span
-          className="text-xs ml-auto"
-          style={{ color: "var(--muted-foreground)" }}
-        >
-          Rates and compliance rules shown are illustrative for demo purposes —
-          not authoritative payroll or legal advice.
+        <span className="ml-auto text-xs" style={{ color: 'var(--muted-foreground)' }}>
+          Rates and compliance rules shown are illustrative for demo purposes — not
+          authoritative payroll or legal advice.
         </span>
       </div>
 

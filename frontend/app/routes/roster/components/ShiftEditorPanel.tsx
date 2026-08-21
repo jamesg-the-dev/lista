@@ -1,18 +1,18 @@
-import type { ChangeEvent } from "react";
-import { useEffect, useState } from "react";
-import type { DateTime } from "luxon";
-import { AlertTriangleIcon, ClockIcon } from "lucide-react";
+import type { ChangeEvent } from 'react';
+import { useEffect, useState } from 'react';
+import type { DateTime } from 'luxon';
+import { AlertTriangleIcon, ClockIcon } from 'lucide-react';
 
-import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
-import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
-import { Field, FieldDescription, FieldLabel } from "~/components/ui/field";
-import { Input } from "~/components/ui/input";
+import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert';
+import { Badge } from '~/components/ui/badge';
+import { Button } from '~/components/ui/button';
+import { Field, FieldDescription, FieldLabel } from '~/components/ui/field';
+import { Input } from '~/components/ui/input';
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
-} from "~/components/ui/input-group";
+} from '~/components/ui/input-group';
 import {
   Sheet,
   SheetContent,
@@ -20,9 +20,9 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from "~/components/ui/sheet";
-import { Spinner } from "~/components/ui/spinner";
-import { Textarea } from "~/components/ui/textarea";
+} from '~/components/ui/sheet';
+import { Spinner } from '~/components/ui/spinner';
+import { Textarea } from '~/components/ui/textarea';
 
 import {
   ROLE_META,
@@ -31,15 +31,15 @@ import {
   dateForDay,
   formatHoursDuration,
   getRateInfo,
-} from "../types";
+} from '../types';
 import type {
   ComplianceViolationType,
   DayOfWeek,
   Shift,
   ShiftDraft,
   StaffMember,
-} from "../types";
-import { DAY_LABELS } from "../types";
+} from '../types';
+import { DAY_LABELS } from '../types';
 
 export interface ShiftEditorPanelState {
   staffId: string;
@@ -88,7 +88,14 @@ export function ShiftEditorPanel({
   }, [panel?.draftId]);
 
   const rateInfo = panel
-    ? getRateInfo(weekStart, panel.dayOfWeek, draft.start, draft.end, draft.unpaidBreakMinutes, staff?.rate ?? 0)
+    ? getRateInfo(
+        weekStart,
+        panel.dayOfWeek,
+        draft.start,
+        draft.end,
+        draft.unpaidBreakMinutes,
+        staff?.rate ?? 0,
+      )
     : null;
   const roleMeta = staff ? ROLE_META[staff.role] : null;
 
@@ -97,10 +104,11 @@ export function ShiftEditorPanel({
   // CreateShift/UpdateShift's handlers — there's no dry-run/preview
   // endpoint) — so a brand-new, not-yet-saved shift shows none yet.
   const violations = panel?.shift?.complianceViolations ?? [];
-  const blockingViolations = violations.filter((v) => v.severity === "blocking");
-  const warningViolations = violations.filter((v) => v.severity === "warning");
+  const blockingViolations = violations.filter(v => v.severity === 'blocking');
+  const warningViolations = violations.filter(v => v.severity === 'warning');
 
-  const canSave = draft.start.length > 0 && draft.end.length > 0 && draft.end > draft.start;
+  const canSave =
+    draft.start.length > 0 && draft.end.length > 0 && draft.end > draft.start;
 
   function handleStartChange(e: ChangeEvent<HTMLInputElement>) {
     onDraftChange({ ...draft, start: e.target.value });
@@ -117,36 +125,33 @@ export function ShiftEditorPanel({
       <SheetContent
         side="right"
         className="flex flex-col p-0"
-        style={{ background: "var(--card)", borderColor: "var(--border)" }}
+        style={{ background: 'var(--card)', borderColor: 'var(--border)' }}
       >
         {panel && staff && roleMeta && rateInfo && (
           <>
             <SheetHeader
-              className="border-b px-6 py-5 gap-0"
-              style={{ borderColor: "var(--border)" }}
+              className="gap-0 border-b px-6 py-5"
+              style={{ borderColor: 'var(--border)' }}
             >
               <p
-                className="font-sans font-semibold text-xs uppercase tracking-widest"
-                style={{ color: "var(--muted-foreground)" }}
+                className="font-sans text-xs font-semibold tracking-widest uppercase"
+                style={{ color: 'var(--muted-foreground)' }}
               >
-                {panel.shift ? "Edit shift" : "Add shift"}
+                {panel.shift ? 'Edit shift' : 'Add shift'}
               </p>
-              <SheetTitle className="text-base font-medium mt-0.5">
+              <SheetTitle className="mt-0.5 text-base font-medium">
                 {staff.name}
               </SheetTitle>
               <SheetDescription style={{ color: roleMeta.color }}>
-                {DAY_LABELS[panel.dayOfWeek]}{" "}
-                {dateForDay(weekStart, panel.dayOfWeek).toFormat("d LLL")} · {staff.title}
+                {DAY_LABELS[panel.dayOfWeek]}{' '}
+                {dateForDay(weekStart, panel.dayOfWeek).toFormat('d LLL')} · {staff.title}
               </SheetDescription>
             </SheetHeader>
 
-            <div className="px-6 py-5 flex flex-col gap-5 flex-1 overflow-y-auto">
+            <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-6 py-5">
               <div className="grid grid-cols-2 gap-3">
                 <label className="flex flex-col gap-1.5">
-                  <span
-                    className="text-xs"
-                    style={{ color: "var(--muted-foreground)" }}
-                  >
+                  <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
                     Start
                   </span>
                   <InputGroup className="h-9 rounded-lg">
@@ -163,10 +168,7 @@ export function ShiftEditorPanel({
                   </InputGroup>
                 </label>
                 <label className="flex flex-col gap-1.5">
-                  <span
-                    className="text-xs"
-                    style={{ color: "var(--muted-foreground)" }}
-                  >
+                  <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
                     End
                   </span>
                   <InputGroup className="h-9 rounded-lg">
@@ -184,16 +186,13 @@ export function ShiftEditorPanel({
                 </label>
               </div>
               {!canSave && (
-                <p className="text-xs -mt-3" style={{ color: "var(--destructive)" }}>
+                <p className="-mt-3 text-xs" style={{ color: 'var(--destructive)' }}>
                   Shift end must be after start.
                 </p>
               )}
 
               <label className="flex flex-col gap-1.5">
-                <span
-                  className="text-xs"
-                  style={{ color: "var(--muted-foreground)" }}
-                >
+                <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
                   Unpaid break (minutes)
                 </span>
                 <Input
@@ -211,38 +210,32 @@ export function ShiftEditorPanel({
                   cell and compliance badges read the server's own
                   awardBreakdown instead. */}
               <div
-                className="rounded-lg border p-4 font-sans font-medium text-sm tabular-nums"
+                className="rounded-lg border p-4 font-sans text-sm font-medium tabular-nums"
                 style={{
-                  borderColor: "var(--border)",
-                  background: "var(--background)",
+                  borderColor: 'var(--border)',
+                  background: 'var(--background)',
                 }}
               >
                 <p
-                  className="font-sans font-semibold text-[11px] uppercase tracking-widest mb-3"
-                  style={{ color: "var(--muted-foreground)" }}
+                  className="mb-3 font-sans text-[11px] font-semibold tracking-widest uppercase"
+                  style={{ color: 'var(--muted-foreground)' }}
                 >
                   Award rate breakdown
                 </p>
-                <div className="flex justify-between mb-1.5">
-                  <span style={{ color: "var(--muted-foreground)" }}>
-                    Base rate
-                  </span>
+                <div className="mb-1.5 flex justify-between">
+                  <span style={{ color: 'var(--muted-foreground)' }}>Base rate</span>
                   <span>{currency2(staff.rate)}/hr</span>
                 </div>
-                <div className="flex justify-between mb-1.5">
-                  <span style={{ color: "var(--muted-foreground)" }}>
-                    Paid hours
-                  </span>
+                <div className="mb-1.5 flex justify-between">
+                  <span style={{ color: 'var(--muted-foreground)' }}>Paid hours</span>
                   <span>{formatHoursDuration(rateInfo.paidHrs)}</span>
                 </div>
                 <div
-                  className="flex justify-between mb-3 pb-3 border-b border-dashed"
-                  style={{ borderColor: "var(--border)" }}
+                  className="mb-3 flex justify-between border-b border-dashed pb-3"
+                  style={{ borderColor: 'var(--border)' }}
                 >
-                  <span style={{ color: "var(--foreground)" }}>
-                    {rateInfo.label}
-                  </span>
-                  <span style={{ color: "var(--foreground)" }}>
+                  <span style={{ color: 'var(--foreground)' }}>{rateInfo.label}</span>
+                  <span style={{ color: 'var(--foreground)' }}>
                     ×{rateInfo.multiplier.toFixed(2)}
                   </span>
                 </div>
@@ -257,7 +250,7 @@ export function ShiftEditorPanel({
                   contract, never flattened to a boolean. */}
               {warningViolations.length > 0 && (
                 <div className="flex flex-col gap-2">
-                  {warningViolations.map((v) => (
+                  {warningViolations.map(v => (
                     <Alert key={v.type}>
                       <AlertTriangleIcon />
                       <AlertTitle>{VIOLATION_TYPE_META[v.type].label}</AlertTitle>
@@ -269,8 +262,8 @@ export function ShiftEditorPanel({
 
               {blockingViolations.length > 0 && (
                 <div className="flex flex-col gap-3">
-                  {blockingViolations.map((v) => {
-                    const reasonValue = overrideReasons[v.type] ?? v.overrideReason ?? "";
+                  {blockingViolations.map(v => {
+                    const reasonValue = overrideReasons[v.type] ?? v.overrideReason ?? '';
                     const isOverriding = overridingViolationType === v.type;
                     return (
                       <Field key={v.type}>
@@ -289,15 +282,18 @@ export function ShiftEditorPanel({
                           id={`override-${v.type}`}
                           value={reasonValue}
                           disabled={v.acknowledged}
-                          onChange={(e) =>
-                            setOverrideReasons((prev) => ({ ...prev, [v.type]: e.target.value }))
+                          onChange={e =>
+                            setOverrideReasons(prev => ({
+                              ...prev,
+                              [v.type]: e.target.value,
+                            }))
                           }
                           placeholder="Explain why this shift should still be published."
                         />
                         <FieldDescription>
                           {v.acknowledged
-                            ? "Overridden — reason recorded for audit purposes."
-                            : "An override reason is required and is recorded to the audit log."}
+                            ? 'Overridden — reason recorded for audit purposes.'
+                            : 'An override reason is required and is recorded to the audit log.'}
                         </FieldDescription>
                         {!v.acknowledged && (
                           <Button
@@ -318,11 +314,16 @@ export function ShiftEditorPanel({
             </div>
 
             <SheetFooter
-              className="border-t px-6 py-5 flex-row gap-3"
-              style={{ borderColor: "var(--border)" }}
+              className="flex-row gap-3 border-t px-6 py-5"
+              style={{ borderColor: 'var(--border)' }}
             >
               {panel.shift && (
-                <Button variant="destructive" size="lg" onClick={onDelete} disabled={saving}>
+                <Button
+                  variant="destructive"
+                  size="lg"
+                  onClick={onDelete}
+                  disabled={saving}
+                >
                   Delete
                 </Button>
               )}
@@ -334,7 +335,7 @@ export function ShiftEditorPanel({
                 disabled={!canSave || saving}
               >
                 {saving && <Spinner data-icon="inline-start" />}
-                {panel.shift ? "Save changes" : "Add shift"}
+                {panel.shift ? 'Save changes' : 'Add shift'}
               </Button>
             </SheetFooter>
           </>

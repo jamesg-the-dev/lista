@@ -1,4 +1,4 @@
-import { apiClient } from "~/lib/api-client";
+import { apiClient } from '~/lib/api-client';
 
 import type {
   AvailabilityExceptionDto,
@@ -8,12 +8,12 @@ import type {
   StaffAvailabilityDto,
   StaffMemberDto,
   StaffMemberInput,
-} from "./types";
+} from './types';
 import {
   toLeaveRequestInputDto,
   toSetStandingUnavailabilityRequestDto,
   toStaffMemberRequestDto,
-} from "./types";
+} from './types';
 
 // Backed by StaffController and LeaveRequestController — see types.ts's
 // file header. Venue listing has no controller of its own, so it isn't
@@ -28,14 +28,17 @@ export function fetchStaffMember(staffId: string): Promise<StaffMemberDto> {
 }
 
 export function createStaffMember(input: StaffMemberInput): Promise<StaffMemberDto> {
-  return apiClient.post<StaffMemberDto>("/api/staff", toStaffMemberRequestDto(input));
+  return apiClient.post<StaffMemberDto>('/api/staff', toStaffMemberRequestDto(input));
 }
 
 export function updateStaffMember(
   staffId: string,
   input: StaffMemberInput,
 ): Promise<StaffMemberDto> {
-  return apiClient.put<StaffMemberDto>(`/api/staff/${staffId}`, toStaffMemberRequestDto(input));
+  return apiClient.put<StaffMemberDto>(
+    `/api/staff/${staffId}`,
+    toStaffMemberRequestDto(input),
+  );
 }
 
 export function fetchStaffAvailability(
@@ -44,7 +47,9 @@ export function fetchStaffAvailability(
   to: string,
 ): Promise<StaffAvailabilityDto> {
   const params = new URLSearchParams({ from, to });
-  return apiClient.get<StaffAvailabilityDto>(`/api/staff/${staffId}/availability?${params}`);
+  return apiClient.get<StaffAvailabilityDto>(
+    `/api/staff/${staffId}/availability?${params}`,
+  );
 }
 
 export function setStandingUnavailability(

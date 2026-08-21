@@ -32,30 +32,30 @@ function mustMapWireEnum<T extends string>(
 // Employment type — drives IAwardRateCalculator loadings later.
 // ---------------------------------------------------------------------------
 
-export type EmploymentType = "casual" | "part_time" | "full_time";
+export type EmploymentType = 'casual' | 'part_time' | 'full_time';
 
 const EMPLOYMENT_TYPE_TABLE: Record<string, EmploymentType> = {
-  Casual: "casual",
-  PartTime: "part_time",
-  FullTime: "full_time",
+  Casual: 'casual',
+  PartTime: 'part_time',
+  FullTime: 'full_time',
 };
 const EMPLOYMENT_TYPE_REVERSE: Record<EmploymentType, string> = {
-  casual: "Casual",
-  part_time: "PartTime",
-  full_time: "FullTime",
+  casual: 'Casual',
+  part_time: 'PartTime',
+  full_time: 'FullTime',
 };
 
 export function mapEmploymentType(wire: string): EmploymentType {
-  return mustMapWireEnum(wire, EMPLOYMENT_TYPE_TABLE, "EmploymentType");
+  return mustMapWireEnum(wire, EMPLOYMENT_TYPE_TABLE, 'EmploymentType');
 }
 export function unmapEmploymentType(value: EmploymentType): string {
   return EMPLOYMENT_TYPE_REVERSE[value];
 }
 
 export const EMPLOYMENT_TYPE_META: Record<EmploymentType, { label: string }> = {
-  casual: { label: "Casual" },
-  part_time: { label: "Part-time" },
-  full_time: { label: "Full-time" },
+  casual: { label: 'Casual' },
+  part_time: { label: 'Part-time' },
+  full_time: { label: 'Full-time' },
 };
 
 // ---------------------------------------------------------------------------
@@ -67,35 +67,29 @@ export const EMPLOYMENT_TYPE_META: Record<EmploymentType, { label: string }> = {
 // ---------------------------------------------------------------------------
 
 export type AwardClassification =
-  | "introductory"
-  | "level_1"
-  | "level_2"
-  | "level_3"
-  | "level_4"
-  | "level_5"
-  | "level_6";
+  'introductory' | 'level_1' | 'level_2' | 'level_3' | 'level_4' | 'level_5' | 'level_6';
 
 const CLASSIFICATION_TABLE: Record<string, AwardClassification> = {
-  Introductory: "introductory",
-  Level1: "level_1",
-  Level2: "level_2",
-  Level3: "level_3",
-  Level4: "level_4",
-  Level5: "level_5",
-  Level6: "level_6",
+  Introductory: 'introductory',
+  Level1: 'level_1',
+  Level2: 'level_2',
+  Level3: 'level_3',
+  Level4: 'level_4',
+  Level5: 'level_5',
+  Level6: 'level_6',
 };
 const CLASSIFICATION_REVERSE: Record<AwardClassification, string> = {
-  introductory: "Introductory",
-  level_1: "Level1",
-  level_2: "Level2",
-  level_3: "Level3",
-  level_4: "Level4",
-  level_5: "Level5",
-  level_6: "Level6",
+  introductory: 'Introductory',
+  level_1: 'Level1',
+  level_2: 'Level2',
+  level_3: 'Level3',
+  level_4: 'Level4',
+  level_5: 'Level5',
+  level_6: 'Level6',
 };
 
 export function mapClassification(wire: string): AwardClassification {
-  return mustMapWireEnum(wire, CLASSIFICATION_TABLE, "AwardClassification");
+  return mustMapWireEnum(wire, CLASSIFICATION_TABLE, 'AwardClassification');
 }
 export function unmapClassification(value: AwardClassification): string {
   return CLASSIFICATION_REVERSE[value];
@@ -106,32 +100,32 @@ export const CLASSIFICATION_META: Record<
   { label: string; description: string }
 > = {
   introductory: {
-    label: "Introductory",
-    description: "Induction / first 3 months",
+    label: 'Introductory',
+    description: 'Induction / first 3 months',
   },
   level_1: {
-    label: "Level 1",
-    description: "Kitchen Attendant, F&B Attendant Gr1",
+    label: 'Level 1',
+    description: 'Kitchen Attendant, F&B Attendant Gr1',
   },
   level_2: {
-    label: "Level 2",
-    description: "F&B Attendant Gr2, Cook Gr2",
+    label: 'Level 2',
+    description: 'F&B Attendant Gr2, Cook Gr2',
   },
   level_3: {
-    label: "Level 3",
-    description: "F&B Attendant Gr3, Cook Gr3, Bartender",
+    label: 'Level 3',
+    description: 'F&B Attendant Gr3, Cook Gr3, Bartender',
   },
   level_4: {
-    label: "Level 4",
-    description: "F&B Attendant Gr4, Cook Gr4",
+    label: 'Level 4',
+    description: 'F&B Attendant Gr4, Cook Gr4',
   },
   level_5: {
-    label: "Level 5",
-    description: "Tradesperson Cook",
+    label: 'Level 5',
+    description: 'Tradesperson Cook',
   },
   level_6: {
-    label: "Level 6",
-    description: "Supervisor",
+    label: 'Level 6',
+    description: 'Supervisor',
   },
 };
 
@@ -140,15 +134,7 @@ export const CLASSIFICATION_META: Record<
 // not listed as an exception is assumed available.
 // ---------------------------------------------------------------------------
 
-export const DAY_LABELS = [
-  "Mon",
-  "Tue",
-  "Wed",
-  "Thu",
-  "Fri",
-  "Sat",
-  "Sun",
-] as const;
+export const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 // Kept as a numeric view model (index into DAY_LABELS) rather than a string
@@ -164,13 +150,13 @@ const WEEKDAY_TABLE: Record<string, DayOfWeek> = {
   Sunday: 6,
 };
 const WEEKDAY_REVERSE = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
 ] as const;
 
 export function mapDayOfWeek(wire: string): DayOfWeek {
@@ -184,30 +170,30 @@ export function unmapDayOfWeek(value: DayOfWeek): string {
   return WEEKDAY_REVERSE[value];
 }
 
-export type TimeBlock = "morning" | "afternoon" | "evening";
+export type TimeBlock = 'morning' | 'afternoon' | 'evening';
 
 const TIME_BLOCK_TABLE: Record<string, TimeBlock> = {
-  Morning: "morning",
-  Afternoon: "afternoon",
-  Evening: "evening",
+  Morning: 'morning',
+  Afternoon: 'afternoon',
+  Evening: 'evening',
 };
 const TIME_BLOCK_REVERSE: Record<TimeBlock, string> = {
-  morning: "Morning",
-  afternoon: "Afternoon",
-  evening: "Evening",
+  morning: 'Morning',
+  afternoon: 'Afternoon',
+  evening: 'Evening',
 };
 
 export function mapTimeBlock(wire: string): TimeBlock {
-  return mustMapWireEnum(wire, TIME_BLOCK_TABLE, "AvailabilityBlock");
+  return mustMapWireEnum(wire, TIME_BLOCK_TABLE, 'AvailabilityBlock');
 }
 export function unmapTimeBlock(value: TimeBlock): string {
   return TIME_BLOCK_REVERSE[value];
 }
 
 export const TIME_BLOCK_META: Record<TimeBlock, { label: string }> = {
-  morning: { label: "Morning" },
-  afternoon: { label: "Afternoon" },
-  evening: { label: "Evening" },
+  morning: { label: 'Morning' },
+  afternoon: { label: 'Afternoon' },
+  evening: { label: 'Evening' },
 };
 
 export interface AvailabilityExceptionDto {
@@ -220,7 +206,7 @@ export interface AvailabilityExceptionDto {
 export interface AvailabilityException {
   id: string;
   dayOfWeek: DayOfWeek;
-  blocks: TimeBlock[] | "all_day";
+  blocks: TimeBlock[] | 'all_day';
 }
 
 export function mapAvailabilityException(
@@ -229,13 +215,13 @@ export function mapAvailabilityException(
   return {
     id: dto.id,
     dayOfWeek: mapDayOfWeek(dto.dayOfWeek),
-    blocks: dto.isAllDay ? "all_day" : dto.blocks.map(mapTimeBlock),
+    blocks: dto.isAllDay ? 'all_day' : dto.blocks.map(mapTimeBlock),
   };
 }
 
 export interface AvailabilityExceptionInput {
   dayOfWeek: DayOfWeek;
-  blocks: TimeBlock[] | "all_day";
+  blocks: TimeBlock[] | 'all_day';
 }
 
 // Request body for POST /api/staff/{id}/unavailability
@@ -244,8 +230,8 @@ export interface AvailabilityExceptionInput {
 export function toSetStandingUnavailabilityRequestDto(input: AvailabilityExceptionInput) {
   return {
     dayOfWeek: unmapDayOfWeek(input.dayOfWeek),
-    isAllDay: input.blocks === "all_day",
-    blocks: input.blocks === "all_day" ? [] : input.blocks.map(unmapTimeBlock),
+    isAllDay: input.blocks === 'all_day',
+    blocks: input.blocks === 'all_day' ? [] : input.blocks.map(unmapTimeBlock),
   };
 }
 
@@ -253,16 +239,16 @@ export function toSetStandingUnavailabilityRequestDto(input: AvailabilityExcepti
 // One-off leave requests.
 // ---------------------------------------------------------------------------
 
-export type LeaveRequestStatus = "requested" | "approved" | "declined";
+export type LeaveRequestStatus = 'requested' | 'approved' | 'declined';
 
 const LEAVE_REQUEST_STATUS_TABLE: Record<string, LeaveRequestStatus> = {
-  Requested: "requested",
-  Approved: "approved",
-  Declined: "declined",
+  Requested: 'requested',
+  Approved: 'approved',
+  Declined: 'declined',
 };
 
 export function mapLeaveRequestStatus(wire: string): LeaveRequestStatus {
-  return mustMapWireEnum(wire, LEAVE_REQUEST_STATUS_TABLE, "LeaveRequestStatus");
+  return mustMapWireEnum(wire, LEAVE_REQUEST_STATUS_TABLE, 'LeaveRequestStatus');
 }
 
 export interface LeaveRequestDto {

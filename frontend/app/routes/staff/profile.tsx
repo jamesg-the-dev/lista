@@ -1,8 +1,8 @@
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from 'react-router';
 
-import StaffProfile from "./components/StaffProfile";
-import { useVenues } from "./hooks";
-import { usePageTitle } from "~/lib/utils";
+import StaffProfile from './components/StaffProfile';
+import { useVenues } from './hooks';
+import { usePageTitle } from '~/lib/utils';
 
 export default function StaffProfileRoute() {
   const { staffId } = useParams<{ staffId: string }>();
@@ -10,7 +10,7 @@ export default function StaffProfileRoute() {
   const venuesQuery = useVenues();
 
   if (!staffId) {
-    throw new Error("staff/:staffId route rendered without a staffId param");
+    throw new Error('staff/:staffId route rendered without a staffId param');
   }
 
   usePageTitle(`Staff profile | Adam`);
@@ -19,7 +19,7 @@ export default function StaffProfileRoute() {
     <StaffProfile
       staffId={staffId}
       venues={venuesQuery.data ?? []}
-      onBack={() => navigate("/staff")}
+      onBack={() => navigate('/staff')}
     />
   );
 }

@@ -14,10 +14,10 @@
 // budget-summary endpoint (see ForecastSummaryDto below) rather than a
 // LabourCostController route, since it already returns exactly that field.
 
-import { DateTime } from "luxon";
+import { DateTime } from 'luxon';
 
-import { CLASSIFICATION_META, mapClassification } from "../staff/types";
-import type { AwardClassification } from "../staff/types";
+import { CLASSIFICATION_META, mapClassification } from '../staff/types';
+import type { AwardClassification } from '../staff/types';
 
 // ---------------------------------------------------------------------------
 // Venue — sourced from useCurrentAccount()'s venues (see hooks.ts's
@@ -31,7 +31,7 @@ export interface Venue {
 }
 
 export function mustFindVenue(venues: Venue[], venueId: string): Venue {
-  const venue = venues.find((v) => v.id === venueId);
+  const venue = venues.find(v => v.id === venueId);
   if (!venue) throw new Error(`Unknown venue id: ${venueId}`);
   return venue;
 }
@@ -102,7 +102,10 @@ export interface CostByRole {
   totalCost: number;
 }
 export function mapCostByRole(dto: CostByRoleDto): CostByRole {
-  return { classification: mapClassification(dto.classification), totalCost: dto.totalCost };
+  return {
+    classification: mapClassification(dto.classification),
+    totalCost: dto.totalCost,
+  };
 }
 
 // GetCostByRoleQuery responds with a bare array (no venueId/weekStart
@@ -158,9 +161,7 @@ export interface LabourForecastSummary {
   forecastTarget: number | null;
 }
 
-export function mapLabourForecastSummary(
-  dto: ForecastSummaryDto,
-): LabourForecastSummary {
+export function mapLabourForecastSummary(dto: ForecastSummaryDto): LabourForecastSummary {
   return {
     venueId: dto.venueId,
     weekStart: DateTime.fromISO(dto.weekStart),
@@ -175,20 +176,20 @@ export function mapLabourForecastSummary(
 // ---------------------------------------------------------------------------
 
 export function currency(n: number): string {
-  return n.toLocaleString("en-AU", {
-    style: "currency",
-    currency: "AUD",
+  return n.toLocaleString('en-AU', {
+    style: 'currency',
+    currency: 'AUD',
     maximumFractionDigits: 0,
   });
 }
 export function currency2(n: number): string {
-  return n.toLocaleString("en-AU", {
-    style: "currency",
-    currency: "AUD",
+  return n.toLocaleString('en-AU', {
+    style: 'currency',
+    currency: 'AUD',
     maximumFractionDigits: 2,
   });
 }
 
 export function formatWeekLabel(weekStart: DateTime): string {
-  return weekStart.toFormat("d LLL");
+  return weekStart.toFormat('d LLL');
 }

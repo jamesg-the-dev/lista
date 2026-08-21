@@ -1,21 +1,25 @@
-import { useState } from "react";
-import type { FormEvent } from "react";
-import { PencilIcon } from "lucide-react";
+import { useState } from 'react';
+import type { FormEvent } from 'react';
+import { PencilIcon } from 'lucide-react';
 
-import { Button } from "~/components/ui/button";
-import { Field, FieldDescription, FieldLabel } from "~/components/ui/field";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "~/components/ui/input-group";
+import { Button } from '~/components/ui/button';
+import { Field, FieldDescription, FieldLabel } from '~/components/ui/field';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from '~/components/ui/input-group';
 import {
   Popover,
   PopoverContent,
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
-} from "~/components/ui/popover";
-import { Spinner } from "~/components/ui/spinner";
+} from '~/components/ui/popover';
+import { Spinner } from '~/components/ui/spinner';
 
-import { currency, getBudgetStatus } from "../types";
-import type { BudgetStatus, BudgetSummary } from "../types";
+import { currency, getBudgetStatus } from '../types';
+import type { BudgetStatus, BudgetSummary } from '../types';
 
 interface BudgetBarProps {
   summary: BudgetSummary | undefined;
@@ -32,36 +36,36 @@ const STATUS_STYLE: Record<
   { dot: string; text: string; chipBg: string; chipBorder: string | null }
 > = {
   no_target: {
-    dot: "var(--muted-foreground)",
-    text: "var(--muted-foreground)",
-    chipBg: "transparent",
-    chipBorder: "var(--border)",
+    dot: 'var(--muted-foreground)',
+    text: 'var(--muted-foreground)',
+    chipBg: 'transparent',
+    chipBorder: 'var(--border)',
   },
   under: {
-    dot: "var(--success)",
-    text: "var(--success)",
-    chipBg: "var(--success-tint)",
+    dot: 'var(--success)',
+    text: 'var(--success)',
+    chipBg: 'var(--success-tint)',
     chipBorder: null,
   },
   near: {
-    dot: "var(--destructive)",
-    text: "var(--destructive)",
-    chipBg: "transparent",
-    chipBorder: "var(--destructive)",
+    dot: 'var(--destructive)',
+    text: 'var(--destructive)',
+    chipBg: 'transparent',
+    chipBorder: 'var(--destructive)',
   },
   over: {
-    dot: "var(--destructive)",
-    text: "var(--destructive)",
-    chipBg: "var(--destructive-tint)",
+    dot: 'var(--destructive)',
+    text: 'var(--destructive)',
+    chipBg: 'var(--destructive-tint)',
     chipBorder: null,
   },
 };
 
 const STATUS_LABEL: Record<BudgetStatus, string> = {
-  no_target: "No budget set",
-  under: "Under budget",
-  near: "Near budget",
-  over: "Over budget",
+  no_target: 'No budget set',
+  under: 'Under budget',
+  near: 'Near budget',
+  over: 'Over budget',
 };
 
 export function BudgetBar({ summary, onSaveTarget, savingTarget }: BudgetBarProps) {
@@ -69,42 +73,42 @@ export function BudgetBar({ summary, onSaveTarget, savingTarget }: BudgetBarProp
   const target = summary?.forecastSalesTarget ?? null;
 
   const [popoverOpen, setPopoverOpen] = useState(false);
-  const [draftValue, setDraftValue] = useState(target != null ? String(target) : "");
+  const [draftValue, setDraftValue] = useState(target != null ? String(target) : '');
 
   const status = getBudgetStatus(weeklyTotal, target);
   const style = STATUS_STYLE[status];
   const delta = target != null ? target - weeklyTotal : null;
 
   function openPopover(open: boolean) {
-    if (open) setDraftValue(target != null ? String(target) : "");
+    if (open) setDraftValue(target != null ? String(target) : '');
     setPopoverOpen(open);
   }
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const trimmed = draftValue.trim();
-    onSaveTarget(trimmed === "" ? null : Number(trimmed));
+    onSaveTarget(trimmed === '' ? null : Number(trimmed));
     setPopoverOpen(false);
   }
 
   return (
     <div
-      className="flex items-center gap-2 px-3 py-2 rounded-lg border"
+      className="flex items-center gap-2 rounded-lg border px-3 py-2"
       style={{
-        borderColor: style.chipBorder ?? "var(--border)",
-        background: style.chipBg === "transparent" ? "var(--muted)" : style.chipBg,
+        borderColor: style.chipBorder ?? 'var(--border)',
+        background: style.chipBg === 'transparent' ? 'var(--muted)' : style.chipBg,
       }}
     >
       <span
-        className="w-1.5 h-1.5 rounded-full live-dot"
+        className="live-dot h-1.5 w-1.5 rounded-full"
         style={{ background: style.dot }}
       />
       <div className="flex flex-col leading-tight">
-        <span className="font-sans font-semibold text-lg tabular-nums">
+        <span className="font-sans text-lg font-semibold tabular-nums">
           {currency(weeklyTotal)}
         </span>
         <span
-          className="text-[10px] font-sans font-medium uppercase tracking-wide"
+          className="font-sans text-[10px] font-medium tracking-wide uppercase"
           style={{ color: style.text }}
         >
           {STATUS_LABEL[status]}
@@ -112,18 +116,18 @@ export function BudgetBar({ summary, onSaveTarget, savingTarget }: BudgetBarProp
       </div>
       {delta !== null && (
         <span
-          className="text-xs font-sans font-medium tabular-nums px-1.5 py-0.5 rounded"
+          className="rounded px-1.5 py-0.5 font-sans text-xs font-medium tabular-nums"
           style={{
             color: style.text,
             background:
-              status === "over"
-                ? "var(--destructive-tint)"
-                : status === "under"
-                  ? "var(--success-tint)"
-                  : "transparent",
+              status === 'over'
+                ? 'var(--destructive-tint)'
+                : status === 'under'
+                  ? 'var(--success-tint)'
+                  : 'transparent',
           }}
         >
-          {delta < 0 ? "−" : "+"}
+          {delta < 0 ? '−' : '+'}
           {currency(Math.abs(delta))}
         </span>
       )}
@@ -131,7 +135,11 @@ export function BudgetBar({ summary, onSaveTarget, savingTarget }: BudgetBarProp
       <Popover open={popoverOpen} onOpenChange={openPopover}>
         <PopoverTrigger
           render={
-            <Button variant="ghost" size="icon-sm" aria-label="Set weekly budget target" />
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Set weekly budget target"
+            />
           }
         >
           <PencilIcon />
@@ -153,7 +161,7 @@ export function BudgetBar({ summary, onSaveTarget, savingTarget }: BudgetBarProp
                   inputMode="decimal"
                   placeholder="No target set"
                   value={draftValue}
-                  onChange={(e) => setDraftValue(e.target.value)}
+                  onChange={e => setDraftValue(e.target.value)}
                 />
               </InputGroup>
               <FieldDescription>

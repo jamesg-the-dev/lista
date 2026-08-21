@@ -1,6 +1,6 @@
-import { clsx, type ClassValue } from "clsx";
-import { useEffect } from "react";
-import { twMerge } from "tailwind-merge";
+import { clsx, type ClassValue } from 'clsx';
+import { useEffect } from 'react';
+import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -20,8 +20,8 @@ export function usePageTitle(title: string) {
 
 export function initials(name: string): string {
   return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
+    .split(' ')
+    .map(n => n[0])
+    .join('')
     .slice(0, 2);
 }

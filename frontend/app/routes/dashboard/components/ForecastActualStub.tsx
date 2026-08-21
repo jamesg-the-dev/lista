@@ -1,9 +1,9 @@
-import { ClockIcon } from "lucide-react";
+import { ClockIcon } from 'lucide-react';
 
-import { Skeleton } from "~/components/ui/skeleton";
+import { Skeleton } from '~/components/ui/skeleton';
 
-import type { LabourForecastSummary } from "../types";
-import { currency2 } from "../types";
+import type { LabourForecastSummary } from '../types';
+import { currency2 } from '../types';
 
 interface ForecastActualStubProps {
   summary: LabourForecastSummary | undefined;
@@ -32,33 +32,39 @@ export function ForecastActualStub({ summary, loading }: ForecastActualStubProps
   return (
     <div className="flex gap-3">
       <div
-        className="flex-1 rounded-lg border p-4 flex flex-col justify-between"
-        style={{ borderColor: "var(--border)", background: "var(--muted)" }}
+        className="flex flex-1 flex-col justify-between rounded-lg border p-4"
+        style={{ borderColor: 'var(--border)', background: 'var(--muted)' }}
       >
-        <p className="text-[10px] font-sans font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>
+        <p
+          className="font-sans text-[10px] font-semibold tracking-wide uppercase"
+          style={{ color: 'var(--muted-foreground)' }}
+        >
           Forecast
         </p>
-        <p className="font-sans font-semibold text-2xl tabular-nums mt-2">
-          {forecast != null ? currency2(forecast) : "No target set"}
+        <p className="mt-2 font-sans text-2xl font-semibold tabular-nums">
+          {forecast != null ? currency2(forecast) : 'No target set'}
         </p>
       </div>
 
       <div
-        className="flex-1 rounded-lg border border-dashed p-4 flex flex-col justify-between"
+        className="flex flex-1 flex-col justify-between rounded-lg border border-dashed p-4"
         style={{
-          borderColor: "var(--border)",
+          borderColor: 'var(--border)',
           backgroundImage:
-            "repeating-linear-gradient(45deg, var(--muted) 0, var(--muted) 6px, transparent 6px, transparent 12px)",
+            'repeating-linear-gradient(45deg, var(--muted) 0, var(--muted) 6px, transparent 6px, transparent 12px)',
         }}
       >
-        <p className="text-[10px] font-sans font-semibold uppercase tracking-wide flex items-center gap-1.5" style={{ color: "var(--muted-foreground)" }}>
+        <p
+          className="flex items-center gap-1.5 font-sans text-[10px] font-semibold tracking-wide uppercase"
+          style={{ color: 'var(--muted-foreground)' }}
+        >
           <ClockIcon size={12} />
           Actual — not yet available
         </p>
-        <p className="text-xs mt-2" style={{ color: "var(--muted-foreground)" }}>
-          Unlocks once staff clock in/out (GPS-verified time tracking) goes
-          live. Shown here so it's obvious this isn't a working comparison
-          yet — not a silently-empty number.
+        <p className="mt-2 text-xs" style={{ color: 'var(--muted-foreground)' }}>
+          Unlocks once staff clock in/out (GPS-verified time tracking) goes live. Shown
+          here so it's obvious this isn't a working comparison yet — not a silently-empty
+          number.
         </p>
       </div>
     </div>

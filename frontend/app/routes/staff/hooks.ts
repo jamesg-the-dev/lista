@@ -1,15 +1,15 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { currentAccountQueryOptions } from "~/lib/account/hooks";
+import { currentAccountQueryOptions } from '~/lib/account/hooks';
 
-import * as api from "./api";
+import * as api from './api';
 import type {
   AvailabilityExceptionInput,
   LeaveRequestInput,
   LeaveRequestStatus,
   StaffMemberInput,
-} from "./types";
-import { mapLeaveRequest, mapStaffAvailability, mapStaffMember } from "./types";
+} from './types';
+import { mapLeaveRequest, mapStaffAvailability, mapStaffMember } from './types';
 
 // No controller lists venues (see types.ts's file header) — reuses the
 // account query's cache entry via `select` rather than issuing a second
@@ -17,13 +17,13 @@ import { mapLeaveRequest, mapStaffAvailability, mapStaffMember } from "./types";
 export function useVenues() {
   return useQuery({
     ...currentAccountQueryOptions,
-    select: (account) => account.venues.map((v) => ({ id: v.venueId, name: v.name })),
+    select: account => account.venues.map(v => ({ id: v.venueId, name: v.name })),
   });
 }
 
 export function useStaffMembers(venueId: string) {
   return useQuery({
-    queryKey: ["staff", "list", venueId],
+    queryKey: ['staff', 'list', venueId],
     queryFn: async () => (await api.fetchStaffMembers(venueId)).map(mapStaffMember),
     enabled: !!venueId,
   });
@@ -31,7 +31,7 @@ export function useStaffMembers(venueId: string) {
 
 export function useStaffMember(staffId: string | null) {
   return useQuery({
-    queryKey: ["staff", "detail", staffId],
+    queryKey: ['staff', 'detail', staffId],
     queryFn: async () => mapStaffMember(await api.fetchStaffMember(staffId!)),
     enabled: !!staffId,
   });
@@ -39,8 +39,9 @@ export function useStaffMember(staffId: string | null) {
 
 export function useStaffAvailability(staffId: string, from: string, to: string) {
   return useQuery({
-    queryKey: ["staff", "availability", staffId, from, to],
-    queryFn: async () => mapStaffAvailability(await api.fetchStaffAvailability(staffId, from, to)),
+    queryKey: ['staff', 'availability', staffId, from, to],
+    queryFn: async () =>
+      mapStaffAvailability(await api.fetchStaffAvailability(staffId, from, to)),
     enabled: !!staffId,
   });
 }
@@ -50,12 +51,11 @@ export function useSaveStaffMember() {
   return useMutation({
     mutationFn: (input: StaffMemberInput) =>
       input.id ? api.updateStaffMember(input.id, input) : api.createStaffMember(input),
-    onSuccess: (dto) => {
+    onSuccess: dto => {
       queryClient.invalidateQueries({
-        predicate: (query) =>
-          query.queryKey[0] === "staff" && query.queryKey[1] === "list",
+        predicate: query => query.queryKey[0] === 'staff' && query.queryKey[1] === 'list',
       });
-      queryClient.invalidateQueries({ queryKey: ["staff", "detail", dto.id] });
+      queryClient.invalidateQueries({ queryKey: ['staff', 'detail', dto.id] });
     },
   });
 }
@@ -66,7 +66,7 @@ export function useAddAvailabilityException(staffId: string) {
     mutationFn: (input: AvailabilityExceptionInput) =>
       api.setStandingUnavailability(staffId, input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["staff", "detail", staffId] });
+      queryClient.invalidateQueries({ queryKey: ['staff', 'detail', staffId] });
     },
   });
 }
@@ -77,7 +77,7 @@ export function useRemoveAvailabilityException(staffId: string) {
     mutationFn: (exceptionId: string) =>
       api.removeStandingUnavailability(staffId, exceptionId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["staff", "detail", staffId] });
+      queryClient.invalidateQueries({ queryKey: ['staff', 'detail', staffId] });
     },
   });
 }
@@ -88,7 +88,7 @@ export function useCreateLeaveRequest(staffId: string) {
     mutationFn: async (input: LeaveRequestInput) =>
       mapLeaveRequest(await api.submitLeaveRequest(staffId, input)),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["staff", "detail", staffId] });
+      queryClient.invalidateQueries({ queryKey: ['staff', 'detail', staffId] });
     },
   });
 }
@@ -107,12 +107,12 @@ export function useUpdateLeaveRequestStatus(staffId: string) {
       status: LeaveRequestStatus;
     }) =>
       mapLeaveRequest(
-        await (status === "approved"
+        await (status === 'approved'
           ? api.approveLeaveRequest(leaveRequestId)
           : api.declineLeaveRequest(leaveRequestId)),
       ),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["staff", "detail", staffId] });
+      queryClient.invalidateQueries({ queryKey: ['staff', 'detail', staffId] });
     },
   });
 }

@@ -1,15 +1,10 @@
-import { DateTime } from "luxon";
+import { DateTime } from 'luxon';
 
-import { apiClient } from "~/lib/api-client";
+import { apiClient } from '~/lib/api-client';
 
-import { MOCK_STAFF } from "./mock-data";
-import type {
-  BudgetSummaryDto,
-  ShiftDto,
-  ShiftInput,
-  StaffMemberDto,
-} from "./types";
-import { toShiftRequestDto } from "./types";
+import { MOCK_STAFF } from './mock-data';
+import type { BudgetSummaryDto, ShiftDto, ShiftInput, StaffMemberDto } from './types';
+import { toShiftRequestDto } from './types';
 
 // Roster-grid staff (role/title/rate) isn't backed by any of the 8
 // controllers covered in this pass — no controller returns that shape (see
@@ -17,10 +12,10 @@ import { toShiftRequestDto } from "./types";
 // useCurrentAccount() (see hooks.ts's useVenues), not from here. Everything
 // else below calls the real RosterController endpoints.
 
-const staffStore: StaffMemberDto[] = MOCK_STAFF.map((s) => ({ ...s }));
+const staffStore: StaffMemberDto[] = MOCK_STAFF.map(s => ({ ...s }));
 
 function delay<T>(value: T, ms = 100 + Math.random() * 150): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), ms));
+  return new Promise(resolve => setTimeout(() => resolve(value), ms));
 }
 
 function previousWeekIso(weekStartIso: string): string {
@@ -38,7 +33,7 @@ function previousWeekIso(weekStartIso: string): string {
 // account data — every mock staff member shows up for every real venue.
 export async function fetchStaffMembers(venueId: string): Promise<StaffMemberDto[]> {
   void venueId;
-  return delay(staffStore.map((s) => ({ ...s })));
+  return delay(staffStore.map(s => ({ ...s })));
 }
 
 // ---------------------------------------------------------------------------
@@ -51,7 +46,7 @@ export function fetchShifts(venueId: string, weekStartIso: string): Promise<Shif
 }
 
 export function createShift(input: ShiftInput): Promise<ShiftDto> {
-  return apiClient.post<ShiftDto>("/api/shifts", toShiftRequestDto(input));
+  return apiClient.post<ShiftDto>('/api/shifts', toShiftRequestDto(input));
 }
 
 export function updateShift(shiftId: string, input: ShiftInput): Promise<ShiftDto> {
@@ -67,9 +62,14 @@ export function deleteShift(shiftId: string, venueId: string): Promise<void> {
 // Budget — RosterController
 // ---------------------------------------------------------------------------
 
-export function fetchBudgetSummary(venueId: string, weekStartIso: string): Promise<BudgetSummaryDto> {
+export function fetchBudgetSummary(
+  venueId: string,
+  weekStartIso: string,
+): Promise<BudgetSummaryDto> {
   const params = new URLSearchParams({ weekStart: weekStartIso });
-  return apiClient.get<BudgetSummaryDto>(`/api/venues/${venueId}/roster/budget-summary?${params}`);
+  return apiClient.get<BudgetSummaryDto>(
+    `/api/venues/${venueId}/roster/budget-summary?${params}`,
+  );
 }
 
 export function saveForecastSalesTarget(
@@ -85,13 +85,19 @@ export function saveForecastSalesTarget(
 // Copy previous week — RosterController
 // ---------------------------------------------------------------------------
 
-export function fetchPreviousWeekRoster(venueId: string, weekStartIso: string): Promise<ShiftDto[]> {
+export function fetchPreviousWeekRoster(
+  venueId: string,
+  weekStartIso: string,
+): Promise<ShiftDto[]> {
   // Reuses fetchShifts against the prior week — "no previous week" naturally
   // resolves to an empty array, not an error.
   return fetchShifts(venueId, previousWeekIso(weekStartIso));
 }
 
-export function duplicateRoster(venueId: string, weekStartIso: string): Promise<ShiftDto[]> {
+export function duplicateRoster(
+  venueId: string,
+  weekStartIso: string,
+): Promise<ShiftDto[]> {
   return apiClient.post<ShiftDto[]>(`/api/venues/${venueId}/roster/duplicate`, {
     sourceWeekStart: previousWeekIso(weekStartIso),
     targetWeekStart: weekStartIso,

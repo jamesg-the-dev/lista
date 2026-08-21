@@ -1,16 +1,16 @@
-import { AlertTriangleIcon } from "lucide-react";
+import { AlertTriangleIcon } from 'lucide-react';
 
-import { Badge } from "~/components/ui/badge";
+import { Badge } from '~/components/ui/badge';
 import {
   Popover,
   PopoverContent,
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
-} from "~/components/ui/popover";
+} from '~/components/ui/popover';
 
-import { VIOLATION_TYPE_META } from "../types";
-import type { ComplianceViolation } from "../types";
+import { VIOLATION_TYPE_META } from '../types';
+import type { ComplianceViolation } from '../types';
 
 interface ComplianceBadgeProps {
   violations: ComplianceViolation[];
@@ -22,7 +22,7 @@ interface ComplianceBadgeProps {
 export function ComplianceBadge({ violations }: ComplianceBadgeProps) {
   if (violations.length === 0) return null;
 
-  const hasBlocking = violations.some((v) => v.severity === "blocking");
+  const hasBlocking = violations.some(v => v.severity === 'blocking');
 
   return (
     <Popover>
@@ -30,11 +30,11 @@ export function ComplianceBadge({ violations }: ComplianceBadgeProps) {
         render={
           <button
             type="button"
-            aria-label={`${violations.length} compliance ${violations.length === 1 ? "issue" : "issues"}`}
+            aria-label={`${violations.length} compliance ${violations.length === 1 ? 'issue' : 'issues'}`}
           />
         }
       >
-        <Badge variant={hasBlocking ? "destructive" : "outline"} className="shadow-sm">
+        <Badge variant={hasBlocking ? 'destructive' : 'outline'} className="shadow-sm">
           <AlertTriangleIcon data-icon="inline-start" />
           {violations.length}
         </Badge>
@@ -44,23 +44,23 @@ export function ComplianceBadge({ violations }: ComplianceBadgeProps) {
           <PopoverTitle>Compliance</PopoverTitle>
         </PopoverHeader>
         <div className="flex flex-col gap-3">
-          {violations.map((v) => (
+          {violations.map(v => (
             <div key={v.type} className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
-                <Badge variant={v.severity === "blocking" ? "destructive" : "outline"}>
-                  {v.severity === "blocking" ? "Blocking" : "Warning"}
+                <Badge variant={v.severity === 'blocking' ? 'destructive' : 'outline'}>
+                  {v.severity === 'blocking' ? 'Blocking' : 'Warning'}
                 </Badge>
                 <span className="text-xs font-medium">
                   {VIOLATION_TYPE_META[v.type].label}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground">{v.message}</p>
-              {v.severity === "blocking" && (
-                <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">{v.message}</p>
+              {v.severity === 'blocking' && (
+                <p className="text-muted-foreground text-xs">
                   {v.acknowledged ? (
                     <>Overridden: "{v.overrideReason}"</>
                   ) : (
-                    "Not yet overridden"
+                    'Not yet overridden'
                   )}
                 </p>
               )}
