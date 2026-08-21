@@ -59,28 +59,14 @@ function formatDate(d: Date): string {
 }
 
 function EmptyNote({ text }: { text: string }) {
-  return (
-    <p className="text-xs italic" style={{ color: 'var(--muted-foreground)' }}>
-      {text}
-    </p>
-  );
+  return <p className="text-xs text-muted-foreground italic">{text}</p>;
 }
 
 function ErrorBlock({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div
-      className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-10 text-center"
-      style={{
-        borderColor: 'var(--destructive)',
-        background: 'var(--destructive-tint)',
-      }}
-    >
-      <p className="text-sm font-medium" style={{ color: 'var(--destructive)' }}>
-        Couldn't load this profile
-      </p>
-      <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
-        {message}
-      </p>
+    <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-destructive bg-destructive-tint p-10 text-center">
+      <p className="text-sm font-medium text-destructive">Couldn't load this profile</p>
+      <p className="text-xs text-muted-foreground">{message}</p>
       <Button variant="outline" size="sm" onClick={onRetry}>
         Retry
       </Button>
@@ -88,34 +74,15 @@ function ErrorBlock({ message, onRetry }: { message: string; onRetry: () => void
   );
 }
 
-const STATUS_META: Record<
-  LeaveRequestStatus,
-  { label: string; color: string; tint: string }
-> = {
-  requested: {
-    label: 'Requested',
-    color: 'var(--muted-foreground)',
-    tint: 'var(--muted)',
-  },
-  approved: {
-    label: 'Approved',
-    color: 'var(--success)',
-    tint: 'var(--success-tint)',
-  },
-  declined: {
-    label: 'Declined',
-    color: 'var(--destructive)',
-    tint: 'var(--destructive-tint)',
-  },
+const STATUS_META: Record<LeaveRequestStatus, { label: string; className: string }> = {
+  requested: { label: 'Requested', className: 'bg-muted text-muted-foreground' },
+  approved: { label: 'Approved', className: 'bg-success-tint text-success' },
+  declined: { label: 'Declined', className: 'bg-destructive-tint text-destructive' },
 };
 
 function StatusBadge({ status }: { status: LeaveRequestStatus }) {
   const meta = STATUS_META[status];
-  return (
-    <Badge color={meta.color} style={{ background: meta.tint }}>
-      {meta.label}
-    </Badge>
-  );
+  return <Badge className={meta.className}>{meta.label}</Badge>;
 }
 
 function AvailabilitySection({
@@ -152,8 +119,7 @@ function AvailabilitySection({
         {exceptions.map(ex => (
           <div
             key={ex.id}
-            className="flex items-center justify-between rounded-lg border px-3 py-2"
-            style={{ borderColor: 'var(--border)' }}
+            className="flex items-center justify-between rounded-lg border border-border px-3 py-2"
           >
             <span className="text-sm">
               <strong>{DAY_LABELS[ex.dayOfWeek]}</strong>{' '}
@@ -172,10 +138,7 @@ function AvailabilitySection({
           </div>
         ))}
       </div>
-      <div
-        className="flex flex-wrap items-end gap-3 rounded-lg border p-3"
-        style={{ borderColor: 'var(--border)' }}
-      >
+      <div className="flex flex-wrap items-end gap-3 rounded-lg border border-border p-3">
         <form.Subscribe selector={state => state.values}>
           {values => (
             <>
@@ -284,20 +247,14 @@ function LeaveRequestsSection({
         {leaveRequests.map(lr => (
           <div
             key={lr.id}
-            className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
-            style={{ borderColor: 'var(--border)' }}
+            className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2"
           >
             <div className="min-w-0">
               <p className="text-sm font-medium">
                 {formatDate(lr.startDate)} – {formatDate(lr.endDate)}
               </p>
               {lr.reason && (
-                <p
-                  className="truncate text-xs"
-                  style={{ color: 'var(--muted-foreground)' }}
-                >
-                  {lr.reason}
-                </p>
+                <p className="truncate text-xs text-muted-foreground">{lr.reason}</p>
               )}
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -336,10 +293,7 @@ function LeaveRequestsSection({
           </div>
         ))}
       </div>
-      <div
-        className="flex flex-wrap items-end gap-3 rounded-lg border p-3"
-        style={{ borderColor: 'var(--border)' }}
-      >
+      <div className="flex flex-wrap items-end gap-3 rounded-lg border border-border p-3">
         <form.Subscribe selector={state => state.values}>
           {values => (
             <>
@@ -409,27 +363,16 @@ export default function StaffProfile({ staffId, venues, onBack }: StaffProfilePr
 
   const staff = staffQuery.data;
 
-  const themeStyle = {
-    background: 'var(--background)',
-    color: 'var(--foreground)',
-  } as const;
-
   return (
-    <div className="flex min-h-screen w-full flex-col font-sans" style={themeStyle}>
-      <header
-        className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b px-6 py-4"
-        style={{ background: 'var(--card)', borderColor: 'var(--border)' }}
-      >
+    <div className="flex min-h-screen w-full flex-col bg-background font-sans text-foreground">
+      <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-border bg-card px-6 py-4">
         <div className="flex min-w-0 items-center gap-4">
           <Button variant="ghost" size="sm" onClick={onBack}>
             <ArrowLeftIcon size={14} />
             Back
           </Button>
-          <div className="min-w-0 border-l pl-4" style={{ borderColor: 'var(--border)' }}>
-            <p
-              className="font-sans text-xs font-semibold tracking-widest uppercase"
-              style={{ color: 'var(--muted-foreground)' }}
-            >
+          <div className="min-w-0 border-l border-border pl-4">
+            <p className="font-sans text-xs font-semibold tracking-widest text-muted-foreground uppercase">
               Staff profile
             </p>
             <p className="truncate text-base font-medium">{staff?.name ?? '…'}</p>
@@ -469,14 +412,7 @@ export default function StaffProfile({ staffId, venues, onBack }: StaffProfilePr
           {!staffQuery.isLoading && !staffQuery.isError && staff && syncedStaffId && (
             <>
               {saveMutation.isError && (
-                <div
-                  className="rounded-lg border px-4 py-3 text-sm"
-                  style={{
-                    borderColor: 'var(--destructive)',
-                    background: 'var(--destructive-tint)',
-                    color: 'var(--destructive)',
-                  }}
-                >
+                <div className="rounded-lg border border-destructive bg-destructive-tint px-4 py-3 text-sm text-destructive">
                   {saveMutation.error instanceof Error
                     ? saveMutation.error.message
                     : "Couldn't save this profile."}

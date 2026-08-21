@@ -61,10 +61,7 @@ export default function LabourCostDashboard() {
 
   if (venuesQuery.isLoading) {
     return (
-      <div
-        className="flex min-h-screen w-full items-center justify-center"
-        style={{ background: 'var(--background)' }}
-      >
+      <div className="flex min-h-screen w-full items-center justify-center bg-background">
         <Spinner className="size-6" />
       </div>
     );
@@ -72,10 +69,7 @@ export default function LabourCostDashboard() {
 
   if (venuesQuery.isError) {
     return (
-      <div
-        className="flex min-h-screen w-full items-center justify-center p-6"
-        style={{ background: 'var(--background)' }}
-      >
+      <div className="flex min-h-screen w-full items-center justify-center bg-background p-6">
         <Empty>
           <EmptyTitle>Couldn't load the dashboard</EmptyTitle>
           <EmptyDescription>
@@ -89,48 +83,28 @@ export default function LabourCostDashboard() {
   const venue = mustFindVenue(venues, activeVenueId);
 
   return (
-    <div
-      className="flex min-h-screen w-full flex-col font-sans"
-      style={{ background: 'var(--background)', color: 'var(--foreground)' }}
-    >
+    <div className="flex min-h-screen w-full flex-col bg-background font-sans text-foreground">
       {/* Top bar */}
-      <header
-        className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4 border-b px-6 py-4"
-        style={{ background: 'var(--card)', borderColor: 'var(--border)' }}
-      >
+      <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4 border-b border-border bg-card px-6 py-4">
         <div className="flex min-w-0 items-center gap-4">
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
                 <Button
                   variant="outline"
-                  className="h-auto gap-2 rounded-lg px-3 py-2"
-                  style={{ background: 'var(--muted)' }}
+                  className="h-auto gap-2 rounded-lg bg-muted px-3 py-2"
                 />
               }
             >
-              <span
-                className="h-2 w-2 shrink-0 rounded-full"
-                style={{ background: 'var(--foreground)' }}
-              />
+              <span className="h-2 w-2 shrink-0 rounded-full bg-foreground" />
               <div className="text-left">
                 <p className="font-sans text-sm leading-tight font-semibold uppercase">
                   {venue.name}
                 </p>
               </div>
-              <ChevronDownIcon
-                size={14}
-                className="ml-1 shrink-0"
-                style={{ color: 'var(--muted-foreground)' }}
-              />
+              <ChevronDownIcon size={14} className="ml-1 shrink-0 text-muted-foreground" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent
-              className="w-64"
-              style={{
-                background: 'var(--muted)',
-                borderColor: 'var(--border)',
-              }}
-            >
+            <DropdownMenuContent className="w-64 bg-muted">
               {venues.map(v => (
                 <DropdownMenuItem
                   key={v.id}
@@ -144,20 +118,14 @@ export default function LabourCostDashboard() {
                     <p className="text-sm font-medium">{v.name}</p>
                   </div>
                   {v.id === activeVenueId && (
-                    <span
-                      className="h-1.5 w-1.5 rounded-full"
-                      style={{ background: 'var(--foreground)' }}
-                    />
+                    <span className="h-1.5 w-1.5 rounded-full bg-foreground" />
                   )}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <div
-            className="hidden border-l pl-4 md:block"
-            style={{ borderColor: 'var(--border)' }}
-          >
+          <div className="hidden border-l border-border pl-4 md:block">
             <h1 className="font-sans text-sm font-semibold tracking-wide uppercase">
               Labour cost dashboard
             </h1>
@@ -167,23 +135,17 @@ export default function LabourCostDashboard() {
 
       <main className="flex flex-1 flex-col gap-6 px-6 py-6">
         {/* Week-over-week trend */}
-        <section
-          className="rounded-lg border p-5"
-          style={{ borderColor: 'var(--border)', background: 'var(--card)' }}
-        >
+        <section className="rounded-lg border border-border bg-card p-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="font-sans text-sm font-semibold">
                 Week-over-week labour cost
               </h2>
-              <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+              <p className="text-xs text-muted-foreground">
                 {venue.name} — trailing {trailingWeeks} weeks
               </p>
             </div>
-            <div
-              className="flex items-center gap-1 rounded-lg border p-0.5"
-              style={{ borderColor: 'var(--border)' }}
-            >
+            <div className="flex items-center gap-1 rounded-lg border border-border p-0.5">
               {TRAILING_WINDOW_OPTIONS.map(weeks => (
                 <Button
                   key={weeks}
@@ -202,10 +164,7 @@ export default function LabourCostDashboard() {
 
         {/* Cost by role + forecast-vs-actual, for a selected week */}
         <div className="grid gap-6 lg:grid-cols-2">
-          <section
-            className="rounded-lg border p-5"
-            style={{ borderColor: 'var(--border)', background: 'var(--card)' }}
-          >
+          <section className="rounded-lg border border-border bg-card p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <h2 className="font-sans text-sm font-semibold">Cost by pay tier</h2>
               {trend.length > 0 && effectiveWeekIso && (
@@ -235,10 +194,7 @@ export default function LabourCostDashboard() {
             />
           </section>
 
-          <section
-            className="rounded-lg border p-5"
-            style={{ borderColor: 'var(--border)', background: 'var(--card)' }}
-          >
+          <section className="rounded-lg border border-border bg-card p-5">
             <h2 className="mb-4 font-sans text-sm font-semibold">Forecast vs actual</h2>
             <ForecastActualStub
               summary={forecastQuery.data}
@@ -247,7 +203,7 @@ export default function LabourCostDashboard() {
           </section>
         </div>
 
-        <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+        <p className="text-xs text-muted-foreground">
           Figures shown are illustrative for demo purposes — not authoritative payroll or
           legal advice.
         </p>

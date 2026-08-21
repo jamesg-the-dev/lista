@@ -33,31 +33,31 @@ interface BudgetBarProps {
 // "near" is distinguished by intensity (outline vs solid), not a new color.
 const STATUS_STYLE: Record<
   BudgetStatus,
-  { dot: string; text: string; chipBg: string; chipBorder: string | null }
+  { dot: string; text: string; container: string; deltaBg: string }
 > = {
   no_target: {
-    dot: 'var(--muted-foreground)',
-    text: 'var(--muted-foreground)',
-    chipBg: 'transparent',
-    chipBorder: 'var(--border)',
+    dot: 'bg-muted-foreground',
+    text: 'text-muted-foreground',
+    container: 'border-border bg-muted',
+    deltaBg: 'bg-transparent',
   },
   under: {
-    dot: 'var(--success)',
-    text: 'var(--success)',
-    chipBg: 'var(--success-tint)',
-    chipBorder: null,
+    dot: 'bg-success',
+    text: 'text-success',
+    container: 'border-border bg-success-tint',
+    deltaBg: 'bg-success-tint',
   },
   near: {
-    dot: 'var(--destructive)',
-    text: 'var(--destructive)',
-    chipBg: 'transparent',
-    chipBorder: 'var(--destructive)',
+    dot: 'bg-destructive',
+    text: 'text-destructive',
+    container: 'border-destructive bg-muted',
+    deltaBg: 'bg-transparent',
   },
   over: {
-    dot: 'var(--destructive)',
-    text: 'var(--destructive)',
-    chipBg: 'var(--destructive-tint)',
-    chipBorder: null,
+    dot: 'bg-destructive',
+    text: 'text-destructive',
+    container: 'border-border bg-destructive-tint',
+    deltaBg: 'bg-destructive-tint',
   },
 };
 
@@ -93,39 +93,22 @@ export function BudgetBar({ summary, onSaveTarget, savingTarget }: BudgetBarProp
 
   return (
     <div
-      className="flex items-center gap-2 rounded-lg border px-3 py-2"
-      style={{
-        borderColor: style.chipBorder ?? 'var(--border)',
-        background: style.chipBg === 'transparent' ? 'var(--muted)' : style.chipBg,
-      }}
+      className={`flex items-center gap-2 rounded-lg border px-3 py-2 ${style.container}`}
     >
-      <span
-        className="live-dot h-1.5 w-1.5 rounded-full"
-        style={{ background: style.dot }}
-      />
+      <span className={`live-dot h-1.5 w-1.5 rounded-full ${style.dot}`} />
       <div className="flex flex-col leading-tight">
         <span className="font-sans text-lg font-semibold tabular-nums">
           {currency(weeklyTotal)}
         </span>
         <span
-          className="font-sans text-[10px] font-medium tracking-wide uppercase"
-          style={{ color: style.text }}
+          className={`font-sans text-[10px] font-medium tracking-wide uppercase ${style.text}`}
         >
           {STATUS_LABEL[status]}
         </span>
       </div>
       {delta !== null && (
         <span
-          className="rounded px-1.5 py-0.5 font-sans text-xs font-medium tabular-nums"
-          style={{
-            color: style.text,
-            background:
-              status === 'over'
-                ? 'var(--destructive-tint)'
-                : status === 'under'
-                  ? 'var(--success-tint)'
-                  : 'transparent',
-          }}
+          className={`rounded px-1.5 py-0.5 font-sans text-xs font-medium tabular-nums ${style.text} ${style.deltaBg}`}
         >
           {delta < 0 ? '−' : '+'}
           {currency(Math.abs(delta))}

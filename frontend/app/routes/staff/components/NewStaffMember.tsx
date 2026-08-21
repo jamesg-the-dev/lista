@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { ArrowLeftIcon } from 'lucide-react';
 
@@ -31,27 +30,16 @@ export default function NewStaffMember({
     },
   });
 
-  const themeStyle: CSSProperties = {
-    background: 'var(--background)',
-    color: 'var(--foreground)',
-  };
-
   return (
-    <div className="flex min-h-screen w-full flex-col font-sans" style={themeStyle}>
-      <header
-        className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b px-6 py-4"
-        style={{ background: 'var(--card)', borderColor: 'var(--border)' }}
-      >
+    <div className="flex min-h-screen w-full flex-col bg-background font-sans text-foreground">
+      <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-border bg-card px-6 py-4">
         <div className="flex min-w-0 items-center gap-4">
           <Button variant="ghost" size="sm" onClick={onBack}>
             <ArrowLeftIcon size={14} />
             Back
           </Button>
-          <div className="min-w-0 border-l pl-4" style={{ borderColor: 'var(--border)' }}>
-            <p
-              className="font-sans text-xs font-semibold tracking-widest uppercase"
-              style={{ color: 'var(--muted-foreground)' }}
-            >
+          <div className="min-w-0 border-l border-border pl-4">
+            <p className="font-sans text-xs font-semibold tracking-widest text-muted-foreground uppercase">
               Add staff member
             </p>
             <p className="truncate text-base font-medium">New staff member</p>
@@ -71,14 +59,7 @@ export default function NewStaffMember({
       <main className="flex-1 px-6 py-6">
         <div className="mx-auto flex max-w-2xl flex-col gap-8">
           {saveMutation.isError && (
-            <div
-              className="rounded-lg border px-4 py-3 text-sm"
-              style={{
-                borderColor: 'var(--destructive)',
-                background: 'var(--destructive-tint)',
-                color: 'var(--destructive)',
-              }}
-            >
+            <div className="rounded-lg border border-destructive bg-destructive-tint px-4 py-3 text-sm text-destructive">
               {saveMutation.error instanceof Error
                 ? saveMutation.error.message
                 : "Couldn't save this profile."}
@@ -87,7 +68,7 @@ export default function NewStaffMember({
 
           <StaffMemberForm form={form} venues={venues} />
 
-          <p className="text-xs italic" style={{ color: 'var(--muted-foreground)' }}>
+          <p className="text-xs text-muted-foreground italic">
             Save this profile first to add standing availability or leave requests.
           </p>
         </div>

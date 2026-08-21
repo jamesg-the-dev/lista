@@ -420,6 +420,14 @@ route directory.
     alongside role identity — see `docs/design-system.md` § Color philosophy)
     keep the same custom hex in both themes rather than shadcn's per-theme
     default, since they're signal colors, not chrome.
+  * Never use inline `style={{ }}` with `var(--token)` for colors,
+    backgrounds, or borders. Every semantic color token is registered in
+    `@theme` (`frontend/app/app.css`) and must be used as a Tailwind
+    utility class (e.g. `bg-card`, `text-muted-foreground`,
+    `border-border`). Inline styles are reserved for genuinely
+    dynamic/computed values that can't be expressed as a static class
+    (e.g. a chart bar's pixel height, a percentage width) — see
+    `docs/design-system.md` § Inline styles vs Tailwind utilities.
 
 * **How to write backend code:** think like a senior .NET developer —
   favour these conventions (CQRS/MediatR, DDD aggregates, async all the way

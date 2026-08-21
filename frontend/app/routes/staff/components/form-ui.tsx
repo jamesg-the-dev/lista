@@ -5,15 +5,10 @@
 export function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div className="mb-3">
-      <p
-        className="font-sans text-xs font-semibold tracking-widest uppercase"
-        style={{ color: 'var(--muted-foreground)' }}
-      >
+      <p className="font-sans text-xs font-semibold tracking-widest text-muted-foreground uppercase">
         {title}
       </p>
-      <p className="mt-0.5 text-xs" style={{ color: 'var(--muted-foreground)' }}>
-        {subtitle}
-      </p>
+      <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
     </div>
   );
 }

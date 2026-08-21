@@ -59,31 +59,25 @@ export function TrendChart({ points, loading }: TrendChartProps) {
                   : `${formatWeekLabel(p.weekStart)} — ${currency2(p.totalCost)}`
               }
             >
-              <p
-                className="font-sans text-[10px] font-medium tabular-nums"
-                style={{ color: 'var(--muted-foreground)' }}
-              >
+              <p className="font-sans text-[10px] font-medium tabular-nums text-muted-foreground">
                 {isClosed ? '—' : currency(p.totalCost)}
               </p>
               <div className="flex h-31 items-end">
                 <div
-                  className="w-6 rounded-t"
-                  style={{
-                    height: `${h}px`,
-                    background: isClosed
-                      ? 'transparent'
+                  className={`w-6 rounded-t ${
+                    isClosed
+                      ? 'border border-dashed border-border'
                       : isCurrent
-                        ? 'var(--foreground)'
-                        : 'var(--muted)',
-                    border: isClosed ? '1px dashed var(--border)' : undefined,
-                  }}
+                        ? 'bg-foreground'
+                        : 'bg-muted'
+                  }`}
+                  style={{ height: `${h}px` }}
                 />
               </div>
               <p
-                className="font-sans text-[11px] font-medium tabular-nums"
-                style={{
-                  color: isCurrent ? 'var(--foreground)' : 'var(--muted-foreground)',
-                }}
+                className={`font-sans text-[11px] font-medium tabular-nums ${
+                  isCurrent ? 'text-foreground' : 'text-muted-foreground'
+                }`}
               >
                 {formatWeekLabel(p.weekStart)}
               </p>

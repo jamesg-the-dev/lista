@@ -31,14 +31,8 @@ export function ForecastActualStub({ summary, loading }: ForecastActualStubProps
 
   return (
     <div className="flex gap-3">
-      <div
-        className="flex flex-1 flex-col justify-between rounded-lg border p-4"
-        style={{ borderColor: 'var(--border)', background: 'var(--muted)' }}
-      >
-        <p
-          className="font-sans text-[10px] font-semibold tracking-wide uppercase"
-          style={{ color: 'var(--muted-foreground)' }}
-        >
+      <div className="flex flex-1 flex-col justify-between rounded-lg border border-border bg-muted p-4">
+        <p className="font-sans text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
           Forecast
         </p>
         <p className="mt-2 font-sans text-2xl font-semibold tabular-nums">
@@ -47,21 +41,17 @@ export function ForecastActualStub({ summary, loading }: ForecastActualStubProps
       </div>
 
       <div
-        className="flex flex-1 flex-col justify-between rounded-lg border border-dashed p-4"
+        className="flex flex-1 flex-col justify-between rounded-lg border border-dashed border-border p-4"
         style={{
-          borderColor: 'var(--border)',
           backgroundImage:
             'repeating-linear-gradient(45deg, var(--muted) 0, var(--muted) 6px, transparent 6px, transparent 12px)',
         }}
       >
-        <p
-          className="flex items-center gap-1.5 font-sans text-[10px] font-semibold tracking-wide uppercase"
-          style={{ color: 'var(--muted-foreground)' }}
-        >
+        <p className="flex items-center gap-1.5 font-sans text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
           <ClockIcon size={12} />
           Actual — not yet available
         </p>
-        <p className="mt-2 text-xs" style={{ color: 'var(--muted-foreground)' }}>
+        <p className="mt-2 text-xs text-muted-foreground">
           Unlocks once staff clock in/out (GPS-verified time tracking) goes live. Shown
           here so it's obvious this isn't a working comparison yet — not a silently-empty
           number.

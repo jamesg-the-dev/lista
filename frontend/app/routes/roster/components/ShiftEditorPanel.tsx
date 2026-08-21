@@ -122,21 +122,11 @@ export function ShiftEditorPanel({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="flex flex-col p-0"
-        style={{ background: 'var(--card)', borderColor: 'var(--border)' }}
-      >
+      <SheetContent side="right" className="flex flex-col border-border bg-card p-0">
         {panel && staff && roleMeta && rateInfo && (
           <>
-            <SheetHeader
-              className="gap-0 border-b px-6 py-5"
-              style={{ borderColor: 'var(--border)' }}
-            >
-              <p
-                className="font-sans text-xs font-semibold tracking-widest uppercase"
-                style={{ color: 'var(--muted-foreground)' }}
-              >
+            <SheetHeader className="gap-0 border-b border-border px-6 py-5">
+              <p className="font-sans text-xs font-semibold tracking-widest text-muted-foreground uppercase">
                 {panel.shift ? 'Edit shift' : 'Add shift'}
               </p>
               <SheetTitle className="mt-0.5 text-base font-medium">
@@ -151,9 +141,7 @@ export function ShiftEditorPanel({
             <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-6 py-5">
               <div className="grid grid-cols-2 gap-3">
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
-                    Start
-                  </span>
+                  <span className="text-xs text-muted-foreground">Start</span>
                   <InputGroup className="h-9 rounded-lg">
                     <InputGroupInput
                       type="time"
@@ -168,9 +156,7 @@ export function ShiftEditorPanel({
                   </InputGroup>
                 </label>
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
-                    End
-                  </span>
+                  <span className="text-xs text-muted-foreground">End</span>
                   <InputGroup className="h-9 rounded-lg">
                     <InputGroupInput
                       type="time"
@@ -186,13 +172,13 @@ export function ShiftEditorPanel({
                 </label>
               </div>
               {!canSave && (
-                <p className="-mt-3 text-xs" style={{ color: 'var(--destructive)' }}>
+                <p className="-mt-3 text-xs text-destructive">
                   Shift end must be after start.
                 </p>
               )}
 
               <label className="flex flex-col gap-1.5">
-                <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+                <span className="text-xs text-muted-foreground">
                   Unpaid break (minutes)
                 </span>
                 <Input
@@ -209,33 +195,21 @@ export function ShiftEditorPanel({
                   (see the getRateInfo import above); once saved, the grid
                   cell and compliance badges read the server's own
                   awardBreakdown instead. */}
-              <div
-                className="rounded-lg border p-4 font-sans text-sm font-medium tabular-nums"
-                style={{
-                  borderColor: 'var(--border)',
-                  background: 'var(--background)',
-                }}
-              >
-                <p
-                  className="mb-3 font-sans text-[11px] font-semibold tracking-widest uppercase"
-                  style={{ color: 'var(--muted-foreground)' }}
-                >
+              <div className="rounded-lg border border-border bg-background p-4 font-sans text-sm font-medium tabular-nums">
+                <p className="mb-3 font-sans text-[11px] font-semibold tracking-widest text-muted-foreground uppercase">
                   Award rate breakdown
                 </p>
                 <div className="mb-1.5 flex justify-between">
-                  <span style={{ color: 'var(--muted-foreground)' }}>Base rate</span>
+                  <span className="text-muted-foreground">Base rate</span>
                   <span>{currency2(staff.rate)}/hr</span>
                 </div>
                 <div className="mb-1.5 flex justify-between">
-                  <span style={{ color: 'var(--muted-foreground)' }}>Paid hours</span>
+                  <span className="text-muted-foreground">Paid hours</span>
                   <span>{formatHoursDuration(rateInfo.paidHrs)}</span>
                 </div>
-                <div
-                  className="mb-3 flex justify-between border-b border-dashed pb-3"
-                  style={{ borderColor: 'var(--border)' }}
-                >
-                  <span style={{ color: 'var(--foreground)' }}>{rateInfo.label}</span>
-                  <span style={{ color: 'var(--foreground)' }}>
+                <div className="mb-3 flex justify-between border-b border-dashed border-border pb-3">
+                  <span className="text-foreground">{rateInfo.label}</span>
+                  <span className="text-foreground">
                     ×{rateInfo.multiplier.toFixed(2)}
                   </span>
                 </div>
@@ -313,10 +287,7 @@ export function ShiftEditorPanel({
               )}
             </div>
 
-            <SheetFooter
-              className="flex-row gap-3 border-t px-6 py-5"
-              style={{ borderColor: 'var(--border)' }}
-            >
+            <SheetFooter className="flex-row gap-3 border-t border-border px-6 py-5">
               {panel.shift && (
                 <Button
                   variant="destructive"

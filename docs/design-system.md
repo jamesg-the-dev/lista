@@ -40,15 +40,41 @@ reusing role colors or `--destructive` for an unrelated meaning.
 
 ## Color tokens
 
-The canonical source of truth is `frontend/src/index.css`. **Light is the
+The canonical source of truth is `frontend/app/app.css`. **Light is the
 default theme**, set on bare `:root` using shadcn/ui's stock light
 palette; dark is fully available via the `.dark` class combined with the
 `@custom-variant dark (&:is(.dark *))` declared at the top of the file.
-Component code should reach for shadcn's names (`bg-card`,
-`text-muted-foreground`, `border-border`, ...) or `var(--name)` directly,
-not reinvent local tokens — see `RosterBuilder.tsx` for the `var(--name)`
-usage pattern (it predates shadcn's Tailwind utilities being wired up for
-this screen).
+Every semantic color token in this table is registered in the `@theme
+inline` block as a `--color-*` mapping, which is what makes it available
+as a Tailwind utility class. Component code must reach for the Tailwind
+utility (`bg-card`, `text-muted-foreground`, `border-border`, ...), never
+reinvent local tokens or fall back to inline `style={{ color: 'var(--...)'
+}}`. See § Inline styles vs Tailwind utilities below for the full rule —
+this was previously two competing patterns in the codebase (Tailwind
+utilities in most screens, raw `var(--name)` inline styles in others, e.g.
+`RosterBuilder.tsx`/`route.tsx`) and has been consolidated onto Tailwind
+utilities everywhere.
+
+### Inline styles vs Tailwind utilities
+
+Never use inline `style={{ }}` with `var(--token)` for colors,
+backgrounds, or borders. Every semantic color token above is registered
+in `@theme` (`frontend/app/app.css`) and must be used as a Tailwind
+utility class instead (e.g. `bg-card`, `text-muted-foreground`,
+`border-border`). This isn't just style preference — an inline style
+value can't respond to Tailwind's `hover:`/`dark:`/responsive variants,
+so reaching for `style={{ background: 'var(--card)' }}` silently breaks
+those the moment someone tries to add one.
+
+Inline `style={{ }}` is reserved for genuinely dynamic/computed values
+that can't be expressed as a static class — a percentage width driven by
+data, a pixel height computed from a chart value, a CSS gradient string
+built at runtime. Even then, prefer merging any *static* color/border
+classes on the same element into `className` and keeping `style` scoped
+to only the computed property. If a value is one of a small, known set of
+options (e.g. a status that's always one of 3–4 states), that's a lookup
+table into Tailwind class names, not a lookup table into CSS values passed
+through `style` — see `BudgetBar.tsx`'s `STATUS_STYLE` for the pattern.
 
 | shadcn variable | `:root` (light) | `.dark` | Use |
 |---|---|---|---|

@@ -41,14 +41,10 @@ export default function Login() {
   }
 
   return (
-    <div
-      className="flex min-h-screen w-full items-center justify-center p-6"
-      style={{ background: 'var(--background)', color: 'var(--foreground)' }}
-    >
+    <div className="flex min-h-screen w-full items-center justify-center bg-background p-6 text-foreground">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-lg border p-6"
-        style={{ borderColor: 'var(--border)', background: 'var(--card)' }}
+        className="w-full max-w-sm rounded-lg border border-border bg-card p-6"
       >
         <h1 className="mb-6 font-sans text-sm font-semibold tracking-wide uppercase">
           Sign in
