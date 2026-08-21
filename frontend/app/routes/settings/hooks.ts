@@ -3,7 +3,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { currentAccountQueryOptions } from '~/lib/account/hooks';
 
 import * as api from './api';
-import type { AwardPayTabValue, TradingHourSession, VenueProfileTabValue } from './types';
+import type {
+  AwardPayTabValue,
+  RosterRulesTabValue,
+  TradingHourSession,
+  VenueProfileTabValue,
+} from './types';
 import { mapVenueProfile } from './types';
 
 // Same sourcing as staff/hooks.ts's useVenues — no controller lists venues
@@ -78,6 +83,64 @@ export function useUpdateAwardConfiguration(venueId: string) {
       queryClient.invalidateQueries({
         queryKey: ['settings', 'award-configuration', venueId],
       });
+    },
+  });
+}
+
+export function useActiveRosterComplianceConfiguration(venueId: string) {
+  return useQuery({
+    queryKey: ['settings', 'roster-compliance-configuration', venueId],
+    queryFn: () => api.fetchActiveRosterComplianceConfiguration(venueId),
+    enabled: !!venueId,
+  });
+}
+
+export function useRosterComplianceConfigurationHistory(venueId: string) {
+  return useQuery({
+    queryKey: ['settings', 'roster-compliance-configuration', venueId, 'history'],
+    queryFn: () => api.fetchRosterComplianceConfigurationHistory(venueId),
+    enabled: !!venueId,
+  });
+}
+
+export function useUpdateRosterComplianceConfiguration(venueId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (value: RosterRulesTabValue) =>
+      api.updateRosterComplianceConfiguration(venueId, value),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['settings', 'roster-compliance-configuration', venueId],
+      });
+    },
+  });
+}
+
+// System-wide reference data keyed by state, not by venue — same treatment
+// as useAvailableAwards.
+export function usePublicHolidays(state: string, from: string, to: string) {
+  return useQuery({
+    queryKey: ['settings', 'public-holidays', state, from, to],
+    queryFn: () => api.fetchPublicHolidays(state, from, to),
+    enabled: !!state,
+  });
+}
+
+export function useVenueHolidayOverrides(venueId: string) {
+  return useQuery({
+    queryKey: ['settings', 'holiday-overrides', venueId],
+    queryFn: () => api.fetchVenueHolidayOverrides(venueId),
+    enabled: !!venueId,
+  });
+}
+
+export function useAddVenueHolidayOverride(venueId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ overrideDate, name }: { overrideDate: string; name: string }) =>
+      api.addVenueHolidayOverride(venueId, overrideDate, name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['settings', 'holiday-overrides', venueId] });
     },
   });
 }

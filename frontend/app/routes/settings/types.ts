@@ -457,3 +457,196 @@ export function toUpdateAwardConfigurationRequestDto(value: AwardPayTabValue) {
     penaltyToggles: toPenaltyRateToggleInputDtos(value.penaltyToggles),
   };
 }
+
+// ---------------------------------------------------------------------------
+// Roster Rules & Compliance — backed by RosterComplianceController
+// (backend/src/RosterApp.Api/Controllers/RosterComplianceController.cs) and
+// GetActiveRosterComplianceConfigurationQuery /
+// GetRosterComplianceConfigurationHistoryQuery /
+// UpdateRosterComplianceConfigurationCommand / GetPublicHolidaysQuery /
+// GetVenueHolidayOverridesQuery / AddVenueHolidayOverrideCommand. See
+// docs/features/FEATURE_SETTINGS_ROSTER_RULES_COMPLIANCE.md for the feature
+// spec.
+//
+// The backend stores shift-length/rest/overtime figures in minutes; the form
+// works in hours (decimal) to match the settings UI mockup — converted at
+// the DTO boundary the same way TradingHourSession converts "HH:mm" <->
+// "HH:mm:ss" above. Minor rule time-of-day fields reuse that same
+// fromWireTime/toWireTime pair directly (TimeOnly wire format is identical).
+// ---------------------------------------------------------------------------
+
+/** Mirrors backend RosterComplianceConfiguration.MinimumRestBetweenShiftsMinutesFloor (600 minutes) — a hard legal floor, never editable below this. */
+export const MIN_REST_BETWEEN_SHIFTS_FLOOR_HOURS = 10;
+
+function minutesToHours(minutes: number): number {
+  return Math.round((minutes / 60) * 100) / 100;
+}
+function hoursToMinutes(hours: number): number {
+  return Math.round(hours * 60);
+}
+
+export interface MealBreakRuleDto {
+  afterHoursWorked: number;
+  breakDurationMinutes: number;
+  isPaid: boolean;
+}
+
+export interface MinorRosterRuleDto {
+  maxDailyHours: number;
+  maxWeeklyHours: number;
+  earliestStartTime: string; // TimeOnly wire, "HH:mm:ss"
+  latestFinishTime: string;
+}
+
+export interface RosterComplianceConfigurationDto {
+  id: string;
+  venueId: string;
+  effectiveFromUtc: string;
+  effectiveToUtc: string | null;
+  minShiftLengthMinutes: number;
+  maxShiftLengthMinutes: number;
+  minRestBetweenShiftsMinutes: number;
+  weeklyOvertimeThresholdMinutes: number;
+  minorRules: MinorRosterRuleDto;
+  mealBreakRules: MealBreakRuleDto[];
+  createdByManagerId: string;
+  createdAtUtc: string;
+}
+
+// `key` is a client-only React identity, never sent to the backend — same
+// rationale as TradingHourSession.key: UpdateRosterComplianceConfigurationCommand
+// replaces the whole meal-break rule list in one call.
+export interface MealBreakRuleRow {
+  key: string;
+  afterHoursWorked: number;
+  breakDurationMinutes: number;
+  isPaid: boolean;
+}
+
+export interface MinorRosterRuleFormValue {
+  maxDailyHours: number;
+  maxWeeklyHours: number;
+  earliestStartTime: string; // "HH:mm" — matches <input type="time">'s value format
+  latestFinishTime: string;
+}
+
+export interface RosterRulesTabValue {
+  minShiftLengthHours: number;
+  maxShiftLengthHours: number;
+  minRestBetweenShiftsHours: number;
+  weeklyOvertimeThresholdHours: number;
+  minorRules: MinorRosterRuleFormValue;
+  mealBreakRules: MealBreakRuleRow[];
+}
+
+function newRowKey(): string {
+  return crypto.randomUUID();
+}
+
+export function blankMealBreakRuleRow(): MealBreakRuleRow {
+  return { key: newRowKey(), afterHoursWorked: 5, breakDurationMinutes: 30, isPaid: false };
+}
+
+// Sensible pre-filled defaults so a new venue isn't starting from a blank,
+// intimidating settings page (§2 AC4) — matches the spec's own UI mockup
+// figures, and the backend's RosterComplianceThresholds.Default fallback
+// used by IRosterComplianceValidator before any config is saved.
+export function blankRosterRulesTabValue(): RosterRulesTabValue {
+  return {
+    minShiftLengthHours: 3,
+    maxShiftLengthHours: 12,
+    minRestBetweenShiftsHours: MIN_REST_BETWEEN_SHIFTS_FLOOR_HOURS,
+    weeklyOvertimeThresholdHours: 38,
+    minorRules: {
+      maxDailyHours: 8,
+      maxWeeklyHours: 38,
+      earliestStartTime: '06:00',
+      latestFinishTime: '22:00',
+    },
+    mealBreakRules: [blankMealBreakRuleRow()],
+  };
+}
+
+// A venue with no config yet (config is null) starts from the blank
+// defaults above rather than nulling out the whole tab — same "nothing to
+// cancel back to until the owner saves for the first time" rationale as
+// toAwardPayTabValue.
+export function toRosterRulesTabValue(
+  config: RosterComplianceConfigurationDto | null,
+): RosterRulesTabValue {
+  if (!config) {
+    return blankRosterRulesTabValue();
+  }
+
+  return {
+    minShiftLengthHours: minutesToHours(config.minShiftLengthMinutes),
+    maxShiftLengthHours: minutesToHours(config.maxShiftLengthMinutes),
+    minRestBetweenShiftsHours: minutesToHours(config.minRestBetweenShiftsMinutes),
+    weeklyOvertimeThresholdHours: minutesToHours(config.weeklyOvertimeThresholdMinutes),
+    minorRules: {
+      maxDailyHours: config.minorRules.maxDailyHours,
+      maxWeeklyHours: config.minorRules.maxWeeklyHours,
+      earliestStartTime: fromWireTime(config.minorRules.earliestStartTime),
+      latestFinishTime: fromWireTime(config.minorRules.latestFinishTime),
+    },
+    mealBreakRules:
+      config.mealBreakRules.length > 0
+        ? config.mealBreakRules.map(rule => ({
+            key: newRowKey(),
+            afterHoursWorked: rule.afterHoursWorked,
+            breakDurationMinutes: rule.breakDurationMinutes,
+            isPaid: rule.isPaid,
+          }))
+        : [blankMealBreakRuleRow()],
+  };
+}
+
+// Request body for PUT /api/venues/{id}/roster-compliance-configuration
+// (UpdateRosterComplianceConfigurationCommand).
+export function toUpdateRosterComplianceConfigurationRequestDto(value: RosterRulesTabValue) {
+  return {
+    minShiftLengthMinutes: hoursToMinutes(value.minShiftLengthHours),
+    maxShiftLengthMinutes: hoursToMinutes(value.maxShiftLengthHours),
+    minRestBetweenShiftsMinutes: hoursToMinutes(value.minRestBetweenShiftsHours),
+    weeklyOvertimeThresholdMinutes: hoursToMinutes(value.weeklyOvertimeThresholdHours),
+    minorRules: {
+      maxDailyHours: value.minorRules.maxDailyHours,
+      maxWeeklyHours: value.minorRules.maxWeeklyHours,
+      earliestStartTime: toWireTime(value.minorRules.earliestStartTime),
+      latestFinishTime: toWireTime(value.minorRules.latestFinishTime),
+    },
+    mealBreakRules: value.mealBreakRules.map(rule => ({
+      afterHoursWorked: rule.afterHoursWorked,
+      breakDurationMinutes: rule.breakDurationMinutes,
+      isPaid: rule.isPaid,
+    })),
+  };
+}
+
+// Public holidays — system-maintained reference data (§2 AC3), read-only to
+// owners. DateOnly serializes as "yyyy-MM-dd" by default, which already
+// matches <input type="date">'s value format and the Calendar component's
+// ISO date strings, so no conversion is needed at this boundary.
+export interface PublicHolidayDto {
+  id: string;
+  state: string; // AustralianState wire member name
+  date: string; // DateOnly, "yyyy-MM-dd"
+  name: string;
+  isNational: boolean;
+}
+
+// Venue-specific closures — additive only (§6): a real public holiday can't
+// be deleted, only supplemented.
+export interface VenueHolidayOverrideDto {
+  id: string;
+  venueId: string;
+  overrideDate: string; // DateOnly, "yyyy-MM-dd"
+  name: string;
+  createdByManagerId: string;
+  createdAtUtc: string;
+}
+
+// Request body for POST /api/venues/{id}/holiday-overrides (AddVenueHolidayOverrideCommand).
+export function toAddVenueHolidayOverrideRequestDto(overrideDate: string, name: string) {
+  return { overrideDate, name };
+}

@@ -6,6 +6,7 @@ using RosterApp.Application.AwardConfig;
 using RosterApp.Application.Common;
 using RosterApp.Application.LabourCost;
 using RosterApp.Application.Rostering;
+using RosterApp.Application.RosterCompliance;
 using RosterApp.Application.Staffing;
 using RosterApp.Application.Tenancy;
 using RosterApp.Application.Timekeeping;
@@ -17,6 +18,7 @@ using RosterApp.Infrastructure.ComplianceValidator;
 using RosterApp.Infrastructure.LabourCost;
 using RosterApp.Infrastructure.Persistence;
 using RosterApp.Infrastructure.Rostering;
+using RosterApp.Infrastructure.RosterCompliance;
 using RosterApp.Infrastructure.Staffing;
 using RosterApp.Infrastructure.Tenancy;
 using RosterApp.Infrastructure.Timekeeping;
@@ -49,6 +51,13 @@ public static class DependencyInjection
         services.AddScoped<IAwardConfigurationRepository, AwardConfigurationRepository>();
         services.AddScoped<IAwardConfigurationLookup, AwardConfigurationLookup>();
         services.AddScoped<IAwardReferenceDataLookup, AwardReferenceDataLookup>();
+
+        services.AddScoped<IRosterComplianceConfigurationRepository, RosterComplianceConfigurationRepository>();
+        services.AddScoped<IRosterComplianceConfigurationLookup, RosterComplianceConfigurationLookup>();
+        services.AddScoped<IPublicHolidayLookup, PublicHolidayLookup>();
+        services.AddScoped<IVenueHolidayOverrideRepository, VenueHolidayOverrideRepository>();
+        services.AddScoped<IVenueHolidayOverrideLookup, VenueHolidayOverrideLookup>();
+        services.AddScoped<IRosterComplianceThresholdsLookup, RosterComplianceThresholdsLookup>();
 
         services.AddScoped<IStaffMemberRepository, StaffMemberRepository>();
         services.AddScoped<IStandingUnavailabilityRepository, StandingUnavailabilityRepository>();

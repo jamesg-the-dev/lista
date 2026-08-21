@@ -6,6 +6,7 @@ public enum ComplianceViolationType
     MissingBreak,
     SpanOfHoursExceeded,
     MaxConsecutiveDays,
+    ShiftBelowMinimumLength,
 }
 
 public enum ComplianceSeverity

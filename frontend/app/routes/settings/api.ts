@@ -4,13 +4,19 @@ import type {
   AwardConfigurationDto,
   AwardDto,
   AwardPayTabValue,
+  PublicHolidayDto,
+  RosterComplianceConfigurationDto,
+  RosterRulesTabValue,
   TradingHourSession,
+  VenueHolidayOverrideDto,
   VenueProfileDto,
   VenueProfileTabValue,
 } from './types';
 import {
+  toAddVenueHolidayOverrideRequestDto,
   toTradingHourSessionInputDto,
   toUpdateAwardConfigurationRequestDto,
+  toUpdateRosterComplianceConfigurationRequestDto,
   toUpdateVenueProfileRequestDto,
 } from './types';
 
@@ -72,5 +78,57 @@ export function updateAwardConfiguration(
   return apiClient.put<AwardConfigurationDto>(
     `/api/venues/${venueId}/award-configuration`,
     toUpdateAwardConfigurationRequestDto(value),
+  );
+}
+
+// Backed by RosterComplianceController.
+
+export function fetchActiveRosterComplianceConfiguration(
+  venueId: string,
+): Promise<RosterComplianceConfigurationDto | null> {
+  return apiClient.get<RosterComplianceConfigurationDto | null>(
+    `/api/venues/${venueId}/roster-compliance-configuration`,
+  );
+}
+
+export function fetchRosterComplianceConfigurationHistory(
+  venueId: string,
+): Promise<RosterComplianceConfigurationDto[]> {
+  return apiClient.get<RosterComplianceConfigurationDto[]>(
+    `/api/venues/${venueId}/roster-compliance-configuration/history`,
+  );
+}
+
+export function updateRosterComplianceConfiguration(
+  venueId: string,
+  value: RosterRulesTabValue,
+): Promise<RosterComplianceConfigurationDto> {
+  return apiClient.put<RosterComplianceConfigurationDto>(
+    `/api/venues/${venueId}/roster-compliance-configuration`,
+    toUpdateRosterComplianceConfigurationRequestDto(value),
+  );
+}
+
+export function fetchPublicHolidays(
+  state: string,
+  from: string,
+  to: string,
+): Promise<PublicHolidayDto[]> {
+  const params = new URLSearchParams({ state, from, to });
+  return apiClient.get<PublicHolidayDto[]>(`/api/public-holidays?${params.toString()}`);
+}
+
+export function fetchVenueHolidayOverrides(venueId: string): Promise<VenueHolidayOverrideDto[]> {
+  return apiClient.get<VenueHolidayOverrideDto[]>(`/api/venues/${venueId}/holiday-overrides`);
+}
+
+export function addVenueHolidayOverride(
+  venueId: string,
+  overrideDate: string,
+  name: string,
+): Promise<VenueHolidayOverrideDto> {
+  return apiClient.post<VenueHolidayOverrideDto>(
+    `/api/venues/${venueId}/holiday-overrides`,
+    toAddVenueHolidayOverrideRequestDto(overrideDate, name),
   );
 }

@@ -12,14 +12,16 @@ import { useVenueContextStore } from '~/lib/venue-context';
 
 import AwardPayTab from './components/AwardPayTab';
 import ComingSoonTab from './components/ComingSoonTab';
+import RosterRulesTab from './components/RosterRulesTab';
 import VenueProfileTab from './components/VenueProfileTab';
 import { useVenues } from './hooks';
 
 // Settings → Venue Profile / Award & Pay / Roster Rules / Staff & Roles, per
-// docs/features/feature-order.md. Venue Profile and Award & Pay have a
-// backend (see docs/features/FEATURE_SETTINGS_VENUE_PROFILE.md and
-// FEATURE_SETTINGS_AWARD_PAY_CONFIG.md); the remaining two render
-// ComingSoonTab until their own build-order steps land.
+// docs/features/feature-order.md. Venue Profile, Award & Pay, and Roster
+// Rules have a backend (see docs/features/FEATURE_SETTINGS_VENUE_PROFILE.md,
+// FEATURE_SETTINGS_AWARD_PAY_CONFIG.md and
+// FEATURE_SETTINGS_ROSTER_RULES_COMPLIANCE.md); Staff & Roles renders
+// ComingSoonTab until its own build-order step lands.
 const SETTINGS_TABS = [
   { value: 'venue-profile', label: 'Venue Profile' },
   { value: 'award-pay', label: 'Award & Pay' },
@@ -102,10 +104,7 @@ export default function SettingsRoute() {
             </TabsContent>
 
             <TabsContent value="roster-rules" className="mt-6">
-              <ComingSoonTab
-                title="Roster Rules & Compliance"
-                description="Hard vs. soft rule distinction, minor rostering rules and public holiday reference data."
-              />
+              {activeVenueId && <RosterRulesTab venueId={activeVenueId} />}
             </TabsContent>
 
             <TabsContent value="staff-roles" className="mt-6">

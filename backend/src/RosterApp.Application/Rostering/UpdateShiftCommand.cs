@@ -43,6 +43,7 @@ public sealed class UpdateShiftCommandValidator : AbstractValidator<UpdateShiftC
 public sealed class UpdateShiftCommandHandler(
     IAwardRateCalculator awardRateCalculator,
     IRosterComplianceValidator complianceValidator,
+    IRosterComplianceThresholdsLookup complianceThresholdsLookup,
     IShiftRepository shiftRepository,
     IRosterLookup rosterLookup,
     IUnitOfWork unitOfWork
@@ -82,7 +83,8 @@ public sealed class UpdateShiftCommandHandler(
             excludeShiftId: shift.Id,
             cancellationToken);
 
-        var violations = await complianceValidator.ValidateAsync(shift, adjacentShifts, cancellationToken);
+        var thresholds = await complianceThresholdsLookup.GetActiveThresholdsAsync(request.VenueId, cancellationToken);
+        var violations = await complianceValidator.ValidateAsync(shift, adjacentShifts, thresholds, cancellationToken);
         shift.SetComplianceViolations(violations);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);

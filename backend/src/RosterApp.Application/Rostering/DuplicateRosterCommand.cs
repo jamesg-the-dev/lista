@@ -34,6 +34,7 @@ public sealed class DuplicateRosterCommandHandler(
     IRosterLookup rosterLookup,
     IAwardRateCalculator awardRateCalculator,
     IRosterComplianceValidator complianceValidator,
+    IRosterComplianceThresholdsLookup complianceThresholdsLookup,
     IShiftRepository shiftRepository,
     IUnitOfWork unitOfWork
 ) : IRequestHandler<DuplicateRosterCommand, IReadOnlyList<ShiftDto>>
@@ -47,6 +48,8 @@ public sealed class DuplicateRosterCommandHandler(
             request.VenueId,
             request.SourceWeekStart,
             cancellationToken);
+
+        var thresholds = await complianceThresholdsLookup.GetActiveThresholdsAsync(request.VenueId, cancellationToken);
 
         var offsetDays = request.TargetWeekStart.DayNumber - request.SourceWeekStart.DayNumber;
         var createdShifts = new List<Shift>();
@@ -84,7 +87,7 @@ public sealed class DuplicateRosterCommandHandler(
                 excludeShiftId: null,
                 cancellationToken);
 
-            var violations = await complianceValidator.ValidateAsync(shift, adjacentShifts, cancellationToken);
+            var violations = await complianceValidator.ValidateAsync(shift, adjacentShifts, thresholds, cancellationToken);
             shift.SetComplianceViolations(violations);
 
             shiftRepository.Add(shift);

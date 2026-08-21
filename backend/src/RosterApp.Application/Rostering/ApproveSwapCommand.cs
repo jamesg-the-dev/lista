@@ -24,6 +24,7 @@ public sealed class ApproveSwapCommandHandler(
     IRosterLookup rosterLookup,
     IAwardRateCalculator awardRateCalculator,
     IRosterComplianceValidator complianceValidator,
+    IRosterComplianceThresholdsLookup complianceThresholdsLookup,
     ICurrentTenantContext tenantContext,
     IUnitOfWork unitOfWork
 ) : IRequestHandler<ApproveSwapCommand, ShiftDto>
@@ -80,7 +81,8 @@ public sealed class ApproveSwapCommandHandler(
             excludeShiftId: shift.Id,
             cancellationToken);
 
-        var violations = await complianceValidator.ValidateAsync(shift, adjacentShifts, cancellationToken);
+        var thresholds = await complianceThresholdsLookup.GetActiveThresholdsAsync(shift.VenueId, cancellationToken);
+        var violations = await complianceValidator.ValidateAsync(shift, adjacentShifts, thresholds, cancellationToken);
         shift.SetComplianceViolations(violations);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);

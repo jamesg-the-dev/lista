@@ -9,6 +9,8 @@ public class HospitalityGeneralAwardComplianceValidatorTests
 
     private readonly HospitalityGeneralAwardComplianceValidator _validator = new();
 
+    private static readonly RosterComplianceThresholds DefaultThresholds = RosterComplianceThresholds.Default;
+
     private static Shift BuildShift(
         DateOnly date,
         TimeOnly start,
@@ -22,7 +24,7 @@ public class HospitalityGeneralAwardComplianceValidatorTests
     {
         var shift = BuildShift(new DateOnly(2026, 8, 24), new TimeOnly(9, 0), new TimeOnly(15, 0), unpaidBreakMinutes: 30);
 
-        var violations = await _validator.ValidateAsync(shift, [], CancellationToken.None);
+        var violations = await _validator.ValidateAsync(shift, [], DefaultThresholds, CancellationToken.None);
 
         Assert.Empty(violations);
     }
@@ -32,7 +34,7 @@ public class HospitalityGeneralAwardComplianceValidatorTests
     {
         var shift = BuildShift(new DateOnly(2026, 8, 24), new TimeOnly(6, 0), new TimeOnly(19, 0), unpaidBreakMinutes: 30);
 
-        var violations = await _validator.ValidateAsync(shift, [], CancellationToken.None);
+        var violations = await _validator.ValidateAsync(shift, [], DefaultThresholds, CancellationToken.None);
 
         Assert.Contains(
             violations,
@@ -44,7 +46,7 @@ public class HospitalityGeneralAwardComplianceValidatorTests
     {
         var shift = BuildShift(new DateOnly(2026, 8, 24), new TimeOnly(9, 0), new TimeOnly(15, 0), unpaidBreakMinutes: 0);
 
-        var violations = await _validator.ValidateAsync(shift, [], CancellationToken.None);
+        var violations = await _validator.ValidateAsync(shift, [], DefaultThresholds, CancellationToken.None);
 
         Assert.Contains(violations, v => v.Type == ComplianceViolationType.MissingBreak);
     }
@@ -54,7 +56,7 @@ public class HospitalityGeneralAwardComplianceValidatorTests
     {
         var shift = BuildShift(new DateOnly(2026, 8, 24), new TimeOnly(9, 0), new TimeOnly(15, 0), unpaidBreakMinutes: 30);
 
-        var violations = await _validator.ValidateAsync(shift, [], CancellationToken.None);
+        var violations = await _validator.ValidateAsync(shift, [], DefaultThresholds, CancellationToken.None);
 
         Assert.DoesNotContain(violations, v => v.Type == ComplianceViolationType.MissingBreak);
     }
@@ -65,7 +67,7 @@ public class HospitalityGeneralAwardComplianceValidatorTests
         var previous = BuildShift(new DateOnly(2026, 8, 23), new TimeOnly(18, 0), new TimeOnly(23, 0));
         var shift = BuildShift(new DateOnly(2026, 8, 24), new TimeOnly(6, 0), new TimeOnly(14, 0));
 
-        var violations = await _validator.ValidateAsync(shift, [previous], CancellationToken.None);
+        var violations = await _validator.ValidateAsync(shift, [previous], DefaultThresholds, CancellationToken.None);
 
         Assert.Contains(violations, v => v.Type == ComplianceViolationType.InsufficientRest);
     }
@@ -76,7 +78,7 @@ public class HospitalityGeneralAwardComplianceValidatorTests
         var previous = BuildShift(new DateOnly(2026, 8, 23), new TimeOnly(9, 0), new TimeOnly(17, 0));
         var shift = BuildShift(new DateOnly(2026, 8, 24), new TimeOnly(9, 0), new TimeOnly(17, 0));
 
-        var violations = await _validator.ValidateAsync(shift, [previous], CancellationToken.None);
+        var violations = await _validator.ValidateAsync(shift, [previous], DefaultThresholds, CancellationToken.None);
 
         Assert.DoesNotContain(violations, v => v.Type == ComplianceViolationType.InsufficientRest);
     }
@@ -88,7 +90,29 @@ public class HospitalityGeneralAwardComplianceValidatorTests
             new DateOnly(2026, 8, 23), new TimeOnly(18, 0), new TimeOnly(23, 0), employeeId: Guid.NewGuid());
         var shift = BuildShift(new DateOnly(2026, 8, 24), new TimeOnly(6, 0), new TimeOnly(14, 0));
 
-        var violations = await _validator.ValidateAsync(shift, [otherEmployeeShift], CancellationToken.None);
+        var violations = await _validator.ValidateAsync(shift, [otherEmployeeShift], DefaultThresholds, CancellationToken.None);
+
+        Assert.DoesNotContain(violations, v => v.Type == ComplianceViolationType.InsufficientRest);
+    }
+
+    [Fact]
+    public async Task ValidateAsync_ShiftShorterThanConfiguredMinimum_RaisesShiftBelowMinimumLength()
+    {
+        var shift = BuildShift(new DateOnly(2026, 8, 24), new TimeOnly(9, 0), new TimeOnly(10, 0));
+
+        var violations = await _validator.ValidateAsync(shift, [], DefaultThresholds, CancellationToken.None);
+
+        Assert.Contains(violations, v => v.Type == ComplianceViolationType.ShiftBelowMinimumLength);
+    }
+
+    [Fact]
+    public async Task ValidateAsync_CustomThresholds_UsesConfiguredRestMinimumInsteadOfDefault()
+    {
+        var tightThresholds = DefaultThresholds with { MinRestBetweenShiftsMinutes = 480 }; // 8 hours
+        var previous = BuildShift(new DateOnly(2026, 8, 23), new TimeOnly(15, 0), new TimeOnly(23, 0));
+        var shift = BuildShift(new DateOnly(2026, 8, 24), new TimeOnly(7, 0), new TimeOnly(15, 0)); // 8 hours rest
+
+        var violations = await _validator.ValidateAsync(shift, [previous], tightThresholds, CancellationToken.None);
 
         Assert.DoesNotContain(violations, v => v.Type == ComplianceViolationType.InsufficientRest);
     }
@@ -102,7 +126,7 @@ public class HospitalityGeneralAwardComplianceValidatorTests
             .ToList();
         var shift = BuildShift(anchor, new TimeOnly(9, 0), new TimeOnly(13, 0));
 
-        var violations = await _validator.ValidateAsync(shift, context, CancellationToken.None);
+        var violations = await _validator.ValidateAsync(shift, context, DefaultThresholds, CancellationToken.None);
 
         Assert.Contains(violations, v => v.Type == ComplianceViolationType.MaxConsecutiveDays);
     }
@@ -116,7 +140,7 @@ public class HospitalityGeneralAwardComplianceValidatorTests
             .ToList();
         var shift = BuildShift(anchor, new TimeOnly(9, 0), new TimeOnly(13, 0));
 
-        var violations = await _validator.ValidateAsync(shift, context, CancellationToken.None);
+        var violations = await _validator.ValidateAsync(shift, context, DefaultThresholds, CancellationToken.None);
 
         Assert.DoesNotContain(violations, v => v.Type == ComplianceViolationType.MaxConsecutiveDays);
     }

@@ -5,7 +5,14 @@ namespace RosterApp.Infrastructure.ComplianceValidator;
 
 /// <summary>
 /// MA000009 (Hospitality Industry General Award) only, MVP rule set:
-/// insufficient rest, missing break, span-of-hours, max consecutive days.
+/// shift length, insufficient rest, missing break, and max consecutive days.
+/// Shift-length, rest, and break thresholds are venue-configurable (see
+/// RosterApp.Domain.RosterCompliance.RosterComplianceConfiguration,
+/// FEATURE_SETTINGS_ROSTER_RULES_COMPLIANCE.md) and resolved by the caller
+/// via IRosterComplianceThresholdsLookup, falling back to
+/// RosterComplianceThresholds.Default for a venue that hasn't configured
+/// its roster rules yet. MaxConsecutiveDays has no corresponding
+/// configuration field (out of that feature's scope) and stays hardcoded.
 /// Figures are illustrative for UI/architecture purposes only — not sourced
 /// from Fair Work's Pay Calculator or verified against a licensed
 /// award-interpretation feed. Do not ship real payroll/compliance decisions
@@ -16,52 +23,72 @@ namespace RosterApp.Infrastructure.ComplianceValidator;
 /// </summary>
 public sealed class HospitalityGeneralAwardComplianceValidator : IRosterComplianceValidator
 {
-    private const int MinimumRestHours = 10;
-    private const int MaxSpanOfHoursMinutes = 12 * 60;
-    private const int BreakRequiredAfterMinutes = 5 * 60;
     private const int MaxConsecutiveDays = 6;
 
     public Task<IReadOnlyList<ComplianceViolation>> ValidateAsync(
         Shift proposedShift,
         IReadOnlyList<Shift> staffMemberContext,
+        RosterComplianceThresholds thresholds,
         CancellationToken cancellationToken)
     {
         var violations = new List<ComplianceViolation>();
 
-        CheckSpanOfHours(proposedShift, violations);
-        CheckMissingBreak(proposedShift, violations);
-        CheckInsufficientRest(proposedShift, staffMemberContext, violations);
+        CheckShiftLength(proposedShift, thresholds, violations);
+        CheckMissingBreak(proposedShift, thresholds, violations);
+        CheckInsufficientRest(proposedShift, staffMemberContext, thresholds, violations);
         CheckMaxConsecutiveDays(proposedShift, staffMemberContext, violations);
 
         return Task.FromResult<IReadOnlyList<ComplianceViolation>>(violations);
     }
 
-    private static void CheckSpanOfHours(Shift shift, List<ComplianceViolation> violations)
+    private static void CheckShiftLength(Shift shift, RosterComplianceThresholds thresholds, List<ComplianceViolation> violations)
     {
         var spanMinutes = (shift.End.ToTimeSpan() - shift.Start.ToTimeSpan()).TotalMinutes;
-        if (spanMinutes > MaxSpanOfHoursMinutes)
+
+        if (spanMinutes < thresholds.MinShiftLengthMinutes)
+        {
+            violations.Add(new ComplianceViolation(
+                ComplianceViolationType.ShiftBelowMinimumLength,
+                ComplianceSeverity.Warning,
+                $"Shift is {spanMinutes / 60:0.#} hours, below the {thresholds.MinShiftLengthMinutes / 60m:0.#}-hour minimum shift length."));
+        }
+
+        if (spanMinutes > thresholds.MaxShiftLengthMinutes)
         {
             violations.Add(new ComplianceViolation(
                 ComplianceViolationType.SpanOfHoursExceeded,
                 ComplianceSeverity.Warning,
-                $"Shift spans {spanMinutes / 60:0.#} hours, more than the {MaxSpanOfHoursMinutes / 60}-hour span-of-hours guideline."));
+                $"Shift spans {spanMinutes / 60:0.#} hours, more than the {thresholds.MaxShiftLengthMinutes / 60m:0.#}-hour maximum shift length."));
         }
     }
 
-    private static void CheckMissingBreak(Shift shift, List<ComplianceViolation> violations)
+    private static void CheckMissingBreak(Shift shift, RosterComplianceThresholds thresholds, List<ComplianceViolation> violations)
     {
         var workedMinutes = (shift.End.ToTimeSpan() - shift.Start.ToTimeSpan()).TotalMinutes - shift.UnpaidBreakMinutes;
-        if (workedMinutes > BreakRequiredAfterMinutes && shift.UnpaidBreakMinutes == 0)
+
+        // The most demanding applicable rule (highest AfterHoursWorked actually crossed) —
+        // avoids raising one violation per configured rule when several apply.
+        var applicableRule = thresholds.MealBreakRules
+            .Where(r => workedMinutes > (double)r.AfterHoursWorked * 60)
+            .OrderByDescending(r => r.AfterHoursWorked)
+            .FirstOrDefault();
+
+        if (applicableRule is not null && shift.UnpaidBreakMinutes < applicableRule.BreakDurationMinutes)
         {
             violations.Add(new ComplianceViolation(
                 ComplianceViolationType.MissingBreak,
                 ComplianceSeverity.Warning,
-                $"Shift exceeds {BreakRequiredAfterMinutes / 60} hours worked with no unpaid break recorded."));
+                $"Shift exceeds {applicableRule.AfterHoursWorked:0.#} hours worked with less than the required {applicableRule.BreakDurationMinutes}-minute unpaid break recorded."));
         }
     }
 
-    private static void CheckInsufficientRest(Shift shift, IReadOnlyList<Shift> context, List<ComplianceViolation> violations)
+    private static void CheckInsufficientRest(
+        Shift shift,
+        IReadOnlyList<Shift> context,
+        RosterComplianceThresholds thresholds,
+        List<ComplianceViolation> violations)
     {
+        var minimumRestHours = thresholds.MinRestBetweenShiftsMinutes / 60.0;
         var shiftStart = shift.ShiftDate.ToDateTime(shift.Start);
         var shiftEnd = shift.ShiftDate.ToDateTime(shift.End);
 
@@ -89,12 +116,12 @@ public sealed class HospitalityGeneralAwardComplianceValidator : IRosterComplian
                 continue; // overlapping shifts — not a rest-between-shifts concern
             }
 
-            if (restHours < MinimumRestHours)
+            if (restHours < minimumRestHours)
             {
                 violations.Add(new ComplianceViolation(
                     ComplianceViolationType.InsufficientRest,
                     ComplianceSeverity.Warning,
-                    $"Only {restHours:0.#} hours rest before/after another shift for this employee — less than the {MinimumRestHours}-hour minimum."));
+                    $"Only {restHours:0.#} hours rest before/after another shift for this employee — less than the {minimumRestHours:0.#}-hour minimum."));
                 return; // one flagged pair is enough; don't add a duplicate per adjacent shift
             }
         }

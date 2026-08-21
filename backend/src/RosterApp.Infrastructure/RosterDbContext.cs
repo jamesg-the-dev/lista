@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using RosterApp.Domain.Auditing;
 using RosterApp.Domain.AwardConfig;
 using RosterApp.Domain.Rostering;
+using RosterApp.Domain.RosterCompliance;
 using RosterApp.Domain.Staffing;
 using RosterApp.Domain.Tenancy;
 using RosterApp.Domain.Timekeeping;
@@ -31,6 +32,9 @@ public sealed class RosterDbContext(DbContextOptions<RosterDbContext> options) :
     public DbSet<AwardClassificationDefinition> AwardClassificationDefinitions => Set<AwardClassificationDefinition>();
     public DbSet<AwardRate> AwardRates => Set<AwardRate>();
     public DbSet<AwardConfiguration> AwardConfigurations => Set<AwardConfiguration>();
+    public DbSet<RosterComplianceConfiguration> RosterComplianceConfigurations => Set<RosterComplianceConfiguration>();
+    public DbSet<PublicHoliday> PublicHolidays => Set<PublicHoliday>();
+    public DbSet<VenueHolidayOverride> VenueHolidayOverrides => Set<VenueHolidayOverride>();
 
     // TODO: global query filter for tenant scoping (VenueId / OrganisationId) once
     // more venue-scoped aggregates exist (Shift is the first candidate in Phase 1).
