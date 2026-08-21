@@ -13,7 +13,16 @@
 // Address — structured, not free text (see CLAUDE.md's Address VO).
 // ---------------------------------------------------------------------------
 
-export const AUSTRALIAN_STATES = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'] as const;
+export const AUSTRALIAN_STATES = [
+  'NSW',
+  'VIC',
+  'QLD',
+  'WA',
+  'SA',
+  'TAS',
+  'ACT',
+  'NT',
+] as const;
 export type AustralianState = (typeof AUSTRALIAN_STATES)[number];
 
 export const STATE_DEFAULT_TIMEZONE: Record<AustralianState, string> = {
@@ -170,7 +179,9 @@ export function blankSession(dayOfWeek: number, isClosed: boolean): TradingHourS
 // Ensures every day of the week has at least one row to render, even if the
 // venue has never set trading hours for that day (falls back to a closed
 // placeholder the owner can open up).
-export function toTradingHoursFormValue(dtos: TradingHourSessionDto[]): TradingHourSession[] {
+export function toTradingHoursFormValue(
+  dtos: TradingHourSessionDto[],
+): TradingHourSession[] {
   const sessions = dtos.map(dto => ({
     key: newSessionKey(),
     dayOfWeek: mapDayOfWeek(dto.dayOfWeek),
@@ -282,5 +293,167 @@ export function toUpdateVenueProfileRequestDto(value: VenueProfileTabValue) {
     postcode: value.postcode,
     country: 'AU',
     timezone: value.timezone,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Award & Pay Config — backed by AwardConfigurationController
+// (backend/src/RosterApp.Api/Controllers/AwardConfigurationController.cs)
+// and GetAvailableAwardsQuery / GetActiveAwardConfigurationQuery /
+// GetAwardConfigurationHistoryQuery / UpdateAwardConfigurationCommand. See
+// docs/features/FEATURE_SETTINGS_AWARD_PAY_CONFIG.md for the feature spec.
+//
+// RoleAwardMapping (the "map your venue's roles to award classifications"
+// sub-feature the spec describes) is deferred until Staff & Roles
+// introduces a real Role entity to hang it off — see the backend's
+// AwardConfiguration domain doc comments. AwardPayTab therefore only
+// renders the venue-level config form below; the role-mapping table isn't
+// built yet.
+// ---------------------------------------------------------------------------
+
+export const PAY_PERIOD_ITEMS = [
+  { value: 'Weekly', label: 'Weekly' },
+  { value: 'Fortnightly', label: 'Fortnightly' },
+] as const;
+export type PayPeriod = (typeof PAY_PERIOD_ITEMS)[number]['value'];
+
+export const DAY_OF_WEEK_ITEMS = [
+  { value: 'Monday', label: 'Monday' },
+  { value: 'Tuesday', label: 'Tuesday' },
+  { value: 'Wednesday', label: 'Wednesday' },
+  { value: 'Thursday', label: 'Thursday' },
+  { value: 'Friday', label: 'Friday' },
+  { value: 'Saturday', label: 'Saturday' },
+  { value: 'Sunday', label: 'Sunday' },
+] as const;
+export type DayOfWeekName = (typeof DAY_OF_WEEK_ITEMS)[number]['value'];
+
+// Exact C# PenaltyType member names (wire format) — matches
+// RosterApp.Domain.AwardConfig.PenaltyType.
+export const PENALTY_TYPE_ITEMS = [
+  { value: 'Saturday', label: 'Saturday' },
+  { value: 'Sunday', label: 'Sunday' },
+  { value: 'PublicHoliday', label: 'Public Holiday' },
+  { value: 'EveningAfter7pm', label: 'Evening (after 7pm)' },
+  { value: 'EarlyMorningBefore7am', label: 'Early morning (before 7am)' },
+] as const;
+export type PenaltyType = (typeof PENALTY_TYPE_ITEMS)[number]['value'];
+
+export interface AwardDto {
+  id: string;
+  awardCode: string;
+  name: string;
+  jurisdiction: string;
+  minimumCasualLoadingPercent: number | null;
+}
+
+export interface PenaltyRateToggleDto {
+  penaltyType: string; // PenaltyType wire member name
+  isEnabled: boolean;
+}
+
+export interface AwardConfigurationDto {
+  id: string;
+  venueId: string;
+  awardId: string;
+  effectiveFromUtc: string;
+  effectiveToUtc: string | null;
+  casualLoadingPercent: number;
+  superannuationRatePercent: number;
+  statutoryMinimumSuperannuationPercent: number;
+  meetsSuperannuationMinimum: boolean;
+  payPeriod: string; // PayPeriod wire member name
+  payPeriodCutoffDay: string; // DayOfWeekName wire member name
+  createdByManagerId: string;
+  createdAtUtc: string;
+  penaltyToggles: PenaltyRateToggleDto[];
+}
+
+// One toggle per PenaltyType, fixed cardinality (the UI always shows all
+// five as checkboxes — see the spec's mockup) — a keyed record is simpler
+// for the form to read/write per-checkbox than an array keyed by hunting
+// for a matching PenaltyType each render.
+export type PenaltyToggleFormValue = Record<PenaltyType, boolean>;
+
+function defaultPenaltyToggles(): PenaltyToggleFormValue {
+  return {
+    Saturday: false,
+    Sunday: false,
+    PublicHoliday: false,
+    EveningAfter7pm: false,
+    EarlyMorningBefore7am: false,
+  };
+}
+
+function toPenaltyToggleFormValue(dtos: PenaltyRateToggleDto[]): PenaltyToggleFormValue {
+  const toggles = defaultPenaltyToggles();
+  for (const dto of dtos) {
+    if (dto.penaltyType in toggles) {
+      toggles[dto.penaltyType as PenaltyType] = dto.isEnabled;
+    }
+  }
+  return toggles;
+}
+
+function toPenaltyRateToggleInputDtos(value: PenaltyToggleFormValue) {
+  return PENALTY_TYPE_ITEMS.map(item => ({
+    penaltyType: item.value,
+    isEnabled: value[item.value],
+  }));
+}
+
+export interface AwardPayTabValue {
+  awardId: string;
+  casualLoadingPercent: number;
+  superannuationRatePercent: number;
+  confirmBelowMinimumSuper: boolean;
+  payPeriod: PayPeriod;
+  payPeriodCutoffDay: DayOfWeekName;
+  penaltyToggles: PenaltyToggleFormValue;
+}
+
+export function blankAwardPayTabValue(): AwardPayTabValue {
+  return {
+    awardId: '',
+    casualLoadingPercent: 0,
+    superannuationRatePercent: 0,
+    confirmBelowMinimumSuper: false,
+    payPeriod: 'Weekly',
+    payPeriodCutoffDay: 'Sunday',
+    penaltyToggles: defaultPenaltyToggles(),
+  };
+}
+
+// A venue with no config yet (config is null) starts from a blank form
+// rather than nulling out the whole tab — there's nothing to "cancel" back
+// to until the owner saves for the first time.
+export function toAwardPayTabValue(
+  config: AwardConfigurationDto | null,
+): AwardPayTabValue {
+  if (!config) {
+    return blankAwardPayTabValue();
+  }
+
+  return {
+    awardId: config.awardId,
+    casualLoadingPercent: config.casualLoadingPercent,
+    superannuationRatePercent: config.superannuationRatePercent,
+    confirmBelowMinimumSuper: false,
+    payPeriod: config.payPeriod as PayPeriod,
+    payPeriodCutoffDay: config.payPeriodCutoffDay as DayOfWeekName,
+    penaltyToggles: toPenaltyToggleFormValue(config.penaltyToggles),
+  };
+}
+
+// Request body for PUT /api/venues/{id}/award-configuration (UpdateAwardConfigurationCommand).
+export function toUpdateAwardConfigurationRequestDto(value: AwardPayTabValue) {
+  return {
+    awardId: value.awardId,
+    casualLoadingPercent: value.casualLoadingPercent,
+    superannuationRatePercent: value.superannuationRatePercent,
+    confirmBelowMinimumSuper: value.confirmBelowMinimumSuper,
+    payPeriod: value.payPeriod,
+    payPeriodCutoffDay: value.payPeriodCutoffDay,
+    penaltyToggles: toPenaltyRateToggleInputDtos(value.penaltyToggles),
   };
 }

@@ -15,13 +15,16 @@ namespace RosterApp.Application.Common;
 /// actually bites — its spec calls for Owner-only edit with Manager/Staff
 /// read-only, but there's no Owner/Manager/Staff distinction to enforce
 /// (ICurrentTenantContext only has IsManager/IsStaff). Every subsequent
-/// settings feature (Award & Pay Config, Roster Rules & Compliance, Staff &
-/// Roles) has the same Owner-only requirement, so this needs a real
-/// permission-tier model soon, not a one-off fix on a single command. When
-/// it's built: the domain needs room for multiple venue owners, multiple
-/// managers, and multiple staff per organisation, and Managers should be
-/// modelled as a kind of Staff for data-access purposes rather than a
-/// separate population.
+/// settings feature (Award &amp; Pay Config, Roster Rules &amp; Compliance,
+/// Staff &amp; Roles) has the same Owner-only requirement, so this needs a
+/// real permission-tier model soon, not a one-off fix on a single command.
+/// UpdateAwardConfigurationCommand (RosterApp.Application.AwardConfig) is
+/// the concrete instance for Award &amp; Pay Config — any authenticated
+/// Manager can call it today, with Owner-only enforcement deferred until
+/// this behavior is built out. When it's built: the domain needs room for
+/// multiple venue owners, multiple managers, and multiple staff per
+/// organisation, and Managers should be modelled as a kind of Staff for
+/// data-access purposes rather than a separate population.
 /// </summary>
 public sealed class AuthorizationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull

@@ -10,13 +10,15 @@ import { Button } from '~/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { useVenueContextStore } from '~/lib/venue-context';
 
+import AwardPayTab from './components/AwardPayTab';
 import ComingSoonTab from './components/ComingSoonTab';
 import VenueProfileTab from './components/VenueProfileTab';
 import { useVenues } from './hooks';
 
 // Settings → Venue Profile / Award & Pay / Roster Rules / Staff & Roles, per
-// docs/features/feature-order.md. Only Venue Profile has a backend yet (see
-// docs/features/FEATURE_SETTINGS_VENUE_PROFILE.md); the other three render
+// docs/features/feature-order.md. Venue Profile and Award & Pay have a
+// backend (see docs/features/FEATURE_SETTINGS_VENUE_PROFILE.md and
+// FEATURE_SETTINGS_AWARD_PAY_CONFIG.md); the remaining two render
 // ComingSoonTab until their own build-order steps land.
 const SETTINGS_TABS = [
   { value: 'venue-profile', label: 'Venue Profile' },
@@ -49,7 +51,10 @@ export default function SettingsRoute() {
                   {activeVenue?.name ?? 'Loading venue…'}
                 </p>
               </div>
-              <ChevronDownIcon size={14} className="text-muted-foreground ml-1 shrink-0" />
+              <ChevronDownIcon
+                size={14}
+                className="text-muted-foreground ml-1 shrink-0"
+              />
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-muted w-64">
               {(venuesQuery.data ?? []).map(v => (
@@ -93,10 +98,7 @@ export default function SettingsRoute() {
             </TabsContent>
 
             <TabsContent value="award-pay" className="mt-6">
-              <ComingSoonTab
-                title="Award & Pay Config"
-                description="Versioned award rates and role→award mapping — payroll recalculation always uses the rate active on the shift date."
-              />
+              {activeVenueId && <AwardPayTab venueId={activeVenueId} />}
             </TabsContent>
 
             <TabsContent value="roster-rules" className="mt-6">

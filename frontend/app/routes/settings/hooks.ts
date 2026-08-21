@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { currentAccountQueryOptions } from '~/lib/account/hooks';
 
 import * as api from './api';
-import type { TradingHourSession, VenueProfileTabValue } from './types';
+import type { AwardPayTabValue, TradingHourSession, VenueProfileTabValue } from './types';
 import { mapVenueProfile } from './types';
 
 // Same sourcing as staff/hooks.ts's useVenues — no controller lists venues
@@ -41,6 +41,43 @@ export function useUpdateVenueTradingHours(venueId: string) {
       api.updateVenueTradingHours(venueId, sessions),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settings', 'venue-profile', venueId] });
+    },
+  });
+}
+
+// Award reference data — system-maintained, doesn't vary per venue, so it's
+// cached under its own key without a venueId in it.
+export function useAvailableAwards() {
+  return useQuery({
+    queryKey: ['settings', 'awards'],
+    queryFn: api.fetchAvailableAwards,
+  });
+}
+
+export function useActiveAwardConfiguration(venueId: string) {
+  return useQuery({
+    queryKey: ['settings', 'award-configuration', venueId],
+    queryFn: () => api.fetchActiveAwardConfiguration(venueId),
+    enabled: !!venueId,
+  });
+}
+
+export function useAwardConfigurationHistory(venueId: string) {
+  return useQuery({
+    queryKey: ['settings', 'award-configuration', venueId, 'history'],
+    queryFn: () => api.fetchAwardConfigurationHistory(venueId),
+    enabled: !!venueId,
+  });
+}
+
+export function useUpdateAwardConfiguration(venueId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (value: AwardPayTabValue) => api.updateAwardConfiguration(venueId, value),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['settings', 'award-configuration', venueId],
+      });
     },
   });
 }

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RosterApp.Application.Account;
+using RosterApp.Application.AwardConfig;
 using RosterApp.Application.Common;
 using RosterApp.Application.LabourCost;
 using RosterApp.Application.Rostering;
@@ -11,6 +12,7 @@ using RosterApp.Application.Timekeeping;
 using RosterApp.Infrastructure.Account;
 using RosterApp.Infrastructure.Auditing;
 using RosterApp.Infrastructure.AwardCalculator;
+using RosterApp.Infrastructure.AwardConfig;
 using RosterApp.Infrastructure.ComplianceValidator;
 using RosterApp.Infrastructure.LabourCost;
 using RosterApp.Infrastructure.Persistence;
@@ -43,6 +45,10 @@ public static class DependencyInjection
         services.AddScoped<IRosterComplianceValidator, HospitalityGeneralAwardComplianceValidator>();
         services.AddScoped<IVenueRepository, VenueRepository>();
         services.AddScoped<IVenueLookup, VenueLookup>();
+
+        services.AddScoped<IAwardConfigurationRepository, AwardConfigurationRepository>();
+        services.AddScoped<IAwardConfigurationLookup, AwardConfigurationLookup>();
+        services.AddScoped<IAwardReferenceDataLookup, AwardReferenceDataLookup>();
 
         services.AddScoped<IStaffMemberRepository, StaffMemberRepository>();
         services.AddScoped<IStandingUnavailabilityRepository, StandingUnavailabilityRepository>();
