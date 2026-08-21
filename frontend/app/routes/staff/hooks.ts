@@ -11,9 +11,6 @@ import type {
 } from './types';
 import { mapLeaveRequest, mapStaffAvailability, mapStaffMember } from './types';
 
-// No controller lists venues (see types.ts's file header) — reuses the
-// account query's cache entry via `select` rather than issuing a second
-// request, and maps AccountVenueDto's shape down to this route's Venue type.
 export function useVenues() {
   return useQuery({
     ...currentAccountQueryOptions,

@@ -291,7 +291,6 @@ export function ShiftEditorPanel({
               {panel.shift && (
                 <Button
                   variant="destructive"
-                  size="lg"
                   onClick={onDelete}
                   disabled={saving}
                 >
@@ -300,7 +299,6 @@ export function ShiftEditorPanel({
               )}
               <Button
                 variant="default"
-                size="lg"
                 className="flex-1 font-semibold"
                 onClick={onSave}
                 disabled={!canSave || saving}

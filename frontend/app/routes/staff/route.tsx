@@ -70,7 +70,6 @@ export default function StaffRoute() {
 
         <Button
           variant="default"
-          size="lg"
           className="font-semibold"
           onClick={() => navigate('/staff/new')}
         >
