@@ -6,10 +6,10 @@ import {
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router";
 
-import { Button } from "~/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -19,6 +19,9 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "~/components/ui/sidebar";
+import { NavUser } from "./NavUser";
+import { useCurrentAccount } from "~/lib/account/hooks";
+import { Button } from "../ui/button";
 import { cn } from "~/lib/utils";
 
 const navItems = [
@@ -30,28 +33,32 @@ const navItems = [
 export function AppSidebar() {
   const { pathname } = useLocation();
   const { state, toggleSidebar } = useSidebar();
+  const user = {
+    ...useCurrentAccount().data!,
+    avatar: "",
+  };
 
   return (
-    <Sidebar collapsible="icon">
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={toggleSidebar}
-        className="absolute top-1/2 right-0 z-20 hidden size-6 -translate-y-1/2 translate-x-1/2 rounded-full bg-background p-0 shadow-sm active:not-aria-[haspopup]:-translate-y-1/2 md:flex"
-      >
-        <ChevronLeftIcon
-          className={cn(
-            "size-3.5 transition-transform",
-            state === "collapsed" && "rotate-180"
-          )}
-        />
-        <span className="sr-only">Toggle Sidebar</span>
-      </Button>
+    <Sidebar variant="floating" collapsible="icon">
       <SidebarHeader>
         <span className="px-2 text-sm font-semibold group-data-[collapsible=icon]:hidden">
           Hospo Roster
         </span>
       </SidebarHeader>
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={toggleSidebar}
+        className="absolute top-1/2 right-1.75 z-20 hidden size-6 -translate-y-1/2 translate-x-1/2 rounded-full bg-background p-0 shadow-sm active:not-aria-[haspopup]:-translate-y-1/2 md:flex"
+      >
+        <ChevronLeftIcon
+          className={cn(
+            "size-3.5 transition-transform",
+            state === "collapsed" && "rotate-180",
+          )}
+        />
+        <span className="sr-only">Toggle Sidebar</span>
+      </Button>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
@@ -74,6 +81,9 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <NavUser user={user} />
+      </SidebarFooter>
     </Sidebar>
   );
 }

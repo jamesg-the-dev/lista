@@ -126,18 +126,13 @@ export function mapStaffMember(dto: StaffMemberDto): StaffMember {
   };
 }
 
-export function mustFindStaff(staff: StaffMember[], staffId: string): StaffMember {
+export function mustFindStaff(
+  staff: StaffMember[],
+  staffId: string,
+): StaffMember {
   const member = staff.find((s) => s.id === staffId);
   if (!member) throw new Error(`Unknown staff id: ${staffId}`);
   return member;
-}
-
-export function initials(name: string): string {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2);
 }
 
 // ---------------------------------------------------------------------------
@@ -147,7 +142,15 @@ export function initials(name: string): string {
 // between the two at the UI boundary.
 // ---------------------------------------------------------------------------
 
-export const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+export const DAY_LABELS = [
+  "Mon",
+  "Tue",
+  "Wed",
+  "Thu",
+  "Fri",
+  "Sat",
+  "Sun",
+] as const;
 export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export function dateForDay(weekStart: DateTime, dayOfWeek: number): DateTime {
@@ -214,7 +217,9 @@ export function getRateInfo(
   if (endDT <= startDT) endDT = endDT.plus({ days: 1 });
 
   const grossHrs = Interval.fromDateTimes(startDT, endDT).length("hours");
-  const breakHrs = Duration.fromObject({ minutes: unpaidBreakMinutes }).as("hours");
+  const breakHrs = Duration.fromObject({ minutes: unpaidBreakMinutes }).as(
+    "hours",
+  );
   const paidHrs = Math.max(0, grossHrs - breakHrs);
 
   let multiplier = 1;
@@ -299,7 +304,10 @@ export function unmapViolationType(value: ComplianceViolationType): string {
   return VIOLATION_TYPE_WIRE_TABLE[value];
 }
 
-export const VIOLATION_TYPE_META: Record<ComplianceViolationType, { label: string }> = {
+export const VIOLATION_TYPE_META: Record<
+  ComplianceViolationType,
+  { label: string }
+> = {
   insufficient_rest: { label: "Insufficient rest" },
   missing_break: { label: "Missing break" },
   span_of_hours_exceeded: { label: "Span of hours exceeded" },
@@ -332,7 +340,9 @@ export interface ComplianceViolation {
   overrideReason: string | null;
 }
 
-export function mapComplianceViolation(dto: ComplianceViolationDto): ComplianceViolation {
+export function mapComplianceViolation(
+  dto: ComplianceViolationDto,
+): ComplianceViolation {
   return {
     type: mapViolationType(dto.type),
     severity: mapSeverity(dto.severity),

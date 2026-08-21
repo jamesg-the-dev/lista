@@ -19,14 +19,7 @@ import { useVenueContextStore } from "~/lib/venue-context";
 import { useStaffMembers, useVenues } from "../hooks";
 import { CLASSIFICATION_META, EMPLOYMENT_TYPE_META } from "../types";
 import type { StaffMember } from "../types";
-
-function initials(name: string): string {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2);
-}
+import { initials } from "~/lib/utils";
 
 function StaffRow({
   staff,
