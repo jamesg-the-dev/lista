@@ -37,19 +37,3 @@ public sealed class SetVenueForecastSalesTargetCommandHandler(
         return VenueDto.FromDomain(venue);
     }
 }
-
-/// <summary>
-/// Write-side port for the Venue aggregate — first Tenancy write command,
-/// so this is the first port in this namespace. Follows the same
-/// tracked-entity repository shape as IShiftRepository/IStaffMemberRepository.
-/// </summary>
-public interface IVenueRepository
-{
-    Task<Venue?> GetByIdAsync(Guid venueId, CancellationToken cancellationToken);
-}
-
-public sealed record VenueDto(Guid Id, Guid OrganisationId, string Name, decimal? ForecastSalesTarget)
-{
-    public static VenueDto FromDomain(Venue venue) =>
-        new(venue.Id, venue.OrganisationId, venue.Name, venue.ForecastSalesTarget);
-}

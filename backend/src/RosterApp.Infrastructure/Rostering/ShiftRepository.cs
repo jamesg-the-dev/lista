@@ -12,4 +12,9 @@ public sealed class ShiftRepository(RosterDbContext dbContext) : IShiftRepositor
     public void Add(Shift shift) => dbContext.Shifts.Add(shift);
 
     public void Remove(Shift shift) => dbContext.Shifts.Remove(shift);
+
+    public Task<bool> HasFuturePublishedShiftsAsync(Guid venueId, DateOnly onOrAfter, CancellationToken cancellationToken) =>
+        dbContext.Shifts.AnyAsync(
+            s => s.VenueId == venueId && s.ShiftDate >= onOrAfter && s.Status == ShiftStatus.Published,
+            cancellationToken);
 }

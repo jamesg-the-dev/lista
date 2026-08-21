@@ -42,6 +42,7 @@ public static class DependencyInjection
         services.AddScoped<IAwardRateCalculator, HospitalityGeneralAwardRateCalculator>();
         services.AddScoped<IRosterComplianceValidator, HospitalityGeneralAwardComplianceValidator>();
         services.AddScoped<IVenueRepository, VenueRepository>();
+        services.AddScoped<IVenueLookup, VenueLookup>();
 
         services.AddScoped<IStaffMemberRepository, StaffMemberRepository>();
         services.AddScoped<IStandingUnavailabilityRepository, StandingUnavailabilityRepository>();

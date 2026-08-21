@@ -14,4 +14,7 @@ public interface IShiftRepository
     Task<Shift?> GetByIdAsync(Guid shiftId, CancellationToken cancellationToken);
     void Add(Shift shift);
     void Remove(Shift shift);
+
+    /// <summary>Backs DeactivateVenueCommandHandler's "can't deactivate a venue with a published future roster" check.</summary>
+    Task<bool> HasFuturePublishedShiftsAsync(Guid venueId, DateOnly onOrAfter, CancellationToken cancellationToken);
 }
