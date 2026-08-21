@@ -79,7 +79,7 @@ namespace RosterApp.Infrastructure.Migrations
                 table: "Venues",
                 type: "boolean",
                 nullable: false,
-                defaultValue: false);
+                defaultValue: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "Timezone",

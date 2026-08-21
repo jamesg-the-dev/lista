@@ -2,6 +2,7 @@ import {
   CalendarDaysIcon,
   ChevronLeftIcon,
   LineChartIcon,
+  SettingsIcon,
   UsersIcon,
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router';
@@ -28,6 +29,7 @@ const navItems = [
   { title: 'Roster', url: '/roster', icon: CalendarDaysIcon },
   { title: 'Dashboard', url: '/dashboard', icon: LineChartIcon },
   { title: 'Staff', url: '/staff', icon: UsersIcon },
+  { title: 'Settings', url: '/settings', icon: SettingsIcon },
 ];
 
 export function AppSidebar() {

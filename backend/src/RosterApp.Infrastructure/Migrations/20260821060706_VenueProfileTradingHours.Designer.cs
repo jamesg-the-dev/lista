@@ -12,7 +12,7 @@ using RosterApp.Infrastructure;
 namespace RosterApp.Infrastructure.Migrations
 {
     [DbContext(typeof(RosterDbContext))]
-    [Migration("20260821055706_VenueProfileTradingHours")]
+    [Migration("20260821060706_VenueProfileTradingHours")]
     partial class VenueProfileTradingHours
     {
         /// <inheritdoc />
@@ -374,7 +374,9 @@ namespace RosterApp.Infrastructure.Migrations
                         .HasColumnType("numeric(10,2)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
 
                     b.Property<string>("Name")
                         .IsRequired()

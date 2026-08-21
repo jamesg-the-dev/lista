@@ -14,7 +14,11 @@ public sealed class VenueConfiguration : IEntityTypeConfiguration<Venue>
         builder.Property(v => v.Id).ValueGeneratedNever();
         builder.Property(v => v.Name).IsRequired().HasMaxLength(200);
         builder.Property(v => v.Timezone).IsRequired().HasMaxLength(100);
-        builder.Property(v => v.IsActive).IsRequired();
+        // Explicit default (not just IsRequired) so a migration backfilling
+        // this column on pre-existing venue rows marks them active — the
+        // concept of an inactive venue didn't exist before this column, so
+        // every row that predates it is implicitly active.
+        builder.Property(v => v.IsActive).IsRequired().HasDefaultValue(true);
         builder.Property(v => v.CreatedByManagerId).IsRequired();
         builder.Property(v => v.ForecastSalesTarget).HasPrecision(10, 2);
         builder.HasIndex(v => v.OrganisationId);

@@ -371,7 +371,9 @@ namespace RosterApp.Infrastructure.Migrations
                         .HasColumnType("numeric(10,2)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
 
                     b.Property<string>("Name")
                         .IsRequired()
