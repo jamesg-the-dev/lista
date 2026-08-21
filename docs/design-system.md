@@ -178,10 +178,9 @@ value per role for `:root` while keeping the current values in `.dark`.
 Single-font system — **Plus Jakarta Sans** (400/500/600/700) for
 everything: headers, venue names, nav labels, uppercase tracked labels,
 body text, staff names, form labels, buttons, and the numeric figures
-(shift costs, the weekly total, the award rate breakdown panel). Chosen
-for legibility at small sizes in a dense grid. There is no separate
-display or mono face — hierarchy is carried by **weight and size**
-instead of a typeface switch:
+(shift costs, the weekly total, the award rate breakdown panel). There is
+no separate display or mono face — hierarchy is carried by **weight and
+size** instead of a typeface switch:
 
 - Headers, eyebrow labels, nav labels, and uppercase tracked text use
   **semibold** (avatar/chip role letters use **bold**, since they're a
@@ -235,9 +234,17 @@ bar chart underneath for at-a-glance distribution across the week.
   fall outside Tailwind's default palette.
 - Component primitives (button, dialog, dropdown, etc.) come from
   shadcn/ui on Base UI — see `CLAUDE.md` § Stack decisions for why, and
-  `frontend/components.json` for the exact config (style: `base-mira`).
-  Component source lives in `frontend/src/components/ui/`; restyle with
-  the tokens above rather than shadcn's defaults.
+  `frontend/components.json` for the exact config (style: `base-vega`).
+  Component source lives in `frontend/app/components/ui/`; restyle with
+  the color tokens above, but leave sizing (height, padding, font size) at
+  shadcn's stock defaults — an earlier pass hand-shrunk every primitive
+  (e.g. `Input` at `h-7`/`px-2 py-0.5` instead of the stock `h-9`/
+  `px-2.5 py-1`) for a denser look, but that was reverted by re-running
+  `npx shadcn@latest add <component> --overwrite` for the whole `ui/`
+  layer. Don't reintroduce custom height/padding overrides on these
+  primitives; if a screen genuinely needs a smaller control, that's a
+  shadcn `size` variant (e.g. `Button`'s `sm`/`xs`), not a hand-edited
+  default.
 - Light is the default theme (`:root`), dark is fully available via the
   `.dark` class and the `@custom-variant dark` in `index.css` — both are
   real token sets now, not a hypothetical. Don't add per-component
