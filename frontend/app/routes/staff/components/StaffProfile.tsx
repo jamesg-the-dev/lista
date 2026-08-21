@@ -1,9 +1,23 @@
 import { useState } from 'react';
+import { useForm } from '@tanstack/react-form';
 import { ArrowLeftIcon, XIcon } from 'lucide-react';
 
+import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
+import { Checkbox } from '~/components/ui/checkbox';
+import { Field, FieldLabel } from '~/components/ui/field';
+import { Input } from '~/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '~/components/ui/select';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Textarea } from '~/components/ui/textarea';
+import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group';
 
 import {
   useAddAvailabilityException,
@@ -22,9 +36,13 @@ import type {
   TimeBlock,
   Venue,
 } from '../types';
-import { FieldLabel, SectionHeader, inputStyle } from './form-ui';
-import StaffMemberForm, { toStaffMemberFormValue } from './StaffMemberForm';
-import type { StaffMemberFormValue } from './StaffMemberForm';
+import { SectionHeader } from './form-ui';
+import StaffMemberForm, {
+  blankStaffMemberForm,
+  toStaffMemberFormValue,
+} from './StaffMemberForm';
+
+const DAY_ITEMS = DAY_LABELS.map((label, i) => ({ value: String(i), label }));
 
 interface StaffProfileProps {
   staffId: string;
@@ -94,12 +112,9 @@ const STATUS_META: Record<
 function StatusBadge({ status }: { status: LeaveRequestStatus }) {
   const meta = STATUS_META[status];
   return (
-    <span
-      className="shrink-0 rounded px-2 py-1 font-sans text-xs font-medium"
-      style={{ color: meta.color, background: meta.tint }}
-    >
+    <Badge color={meta.color} style={{ background: meta.tint }}>
       {meta.label}
-    </span>
+    </Badge>
   );
 }
 
@@ -112,25 +127,17 @@ function AvailabilitySection({
 }) {
   const addMutation = useAddAvailabilityException(staffId);
   const removeMutation = useRemoveAvailabilityException(staffId);
-  const [dayOfWeek, setDayOfWeek] = useState<DayOfWeek>(0);
-  const [allDay, setAllDay] = useState(true);
-  const [blocks, setBlocks] = useState<TimeBlock[]>([]);
 
-  function toggleBlock(block: TimeBlock) {
-    setBlocks(b => (b.includes(block) ? b.filter(x => x !== block) : [...b, block]));
-  }
-
-  function handleAdd() {
-    addMutation.mutate(
-      { dayOfWeek, blocks: allDay ? 'all_day' : blocks },
-      {
-        onSuccess: () => {
-          setBlocks([]);
-          setAllDay(true);
-        },
-      },
-    );
-  }
+  const form = useForm({
+    defaultValues: { dayOfWeek: 0 as DayOfWeek, allDay: true, blocks: [] as TimeBlock[] },
+    onSubmit: async ({ value }) => {
+      await addMutation.mutateAsync({
+        dayOfWeek: value.dayOfWeek,
+        blocks: value.allDay ? 'all_day' : value.blocks,
+      });
+      form.reset();
+    },
+  });
 
   return (
     <section>
@@ -169,58 +176,75 @@ function AvailabilitySection({
         className="flex flex-wrap items-end gap-3 rounded-lg border p-3"
         style={{ borderColor: 'var(--border)' }}
       >
-        <label className="flex flex-col gap-1.5">
-          <FieldLabel>Day</FieldLabel>
-          <select
-            value={dayOfWeek}
-            onChange={e => setDayOfWeek(Number(e.target.value) as DayOfWeek)}
-            className="rounded-lg border px-3 py-2 font-sans text-sm font-medium outline-none"
-            style={inputStyle}
-          >
-            {DAY_LABELS.map((d, i) => (
-              <option key={d} value={i}>
-                {d}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex items-center gap-1.5 pb-2.5 text-xs">
-          <input
-            type="checkbox"
-            checked={allDay}
-            onChange={e => setAllDay(e.target.checked)}
-          />
-          All day
-        </label>
-        {!allDay && (
-          <div className="flex gap-1.5 pb-1">
-            {(Object.keys(TIME_BLOCK_META) as TimeBlock[]).map(b => {
-              const active = blocks.includes(b);
-              return (
-                <button
-                  key={b}
-                  type="button"
-                  onClick={() => toggleBlock(b)}
-                  className="rounded-lg px-2.5 py-1.5 font-sans text-xs font-medium"
-                  style={{
-                    background: active ? 'var(--foreground)' : 'var(--muted)',
-                    color: active ? 'var(--background)' : 'var(--muted-foreground)',
-                  }}
+        <form.Subscribe selector={state => state.values}>
+          {values => (
+            <>
+              <Field className="w-auto">
+                <FieldLabel htmlFor="availability-day">Day</FieldLabel>
+                <Select
+                  items={DAY_ITEMS}
+                  value={String(values.dayOfWeek)}
+                  onValueChange={v =>
+                    form.setFieldValue('dayOfWeek', Number(v) as DayOfWeek)
+                  }
                 >
-                  {TIME_BLOCK_META[b].label}
-                </button>
-              );
-            })}
-          </div>
-        )}
-        <Button
-          size="sm"
-          className="ml-auto"
-          onClick={handleAdd}
-          disabled={addMutation.isPending || (!allDay && blocks.length === 0)}
-        >
-          Add exception
-        </Button>
+                  <SelectTrigger id="availability-day">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {DAY_ITEMS.map(item => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field orientation="horizontal" className="w-auto pb-2.5">
+                <Checkbox
+                  id="availability-all-day"
+                  checked={values.allDay}
+                  onCheckedChange={checked =>
+                    form.setFieldValue('allDay', checked === true)
+                  }
+                />
+                <FieldLabel
+                  htmlFor="availability-all-day"
+                  className="text-xs font-normal"
+                >
+                  All day
+                </FieldLabel>
+              </Field>
+              {!values.allDay && (
+                <ToggleGroup
+                  className="pb-1"
+                  variant="outline"
+                  multiple
+                  value={values.blocks}
+                  onValueChange={v => form.setFieldValue('blocks', v as TimeBlock[])}
+                >
+                  {(Object.keys(TIME_BLOCK_META) as TimeBlock[]).map(b => (
+                    <ToggleGroupItem key={b} value={b}>
+                      {TIME_BLOCK_META[b].label}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              )}
+              <Button
+                size="sm"
+                className="ml-auto"
+                onClick={() => form.handleSubmit()}
+                disabled={
+                  addMutation.isPending || (!values.allDay && values.blocks.length === 0)
+                }
+              >
+                Add exception
+              </Button>
+            </>
+          )}
+        </form.Subscribe>
       </div>
     </section>
   );
@@ -235,27 +259,19 @@ function LeaveRequestsSection({
 }) {
   const createMutation = useCreateLeaveRequest(staffId);
   const statusMutation = useUpdateLeaveRequestStatus(staffId);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [reason, setReason] = useState('');
 
-  function handleCreate() {
-    if (!startDate || !endDate) return;
-    createMutation.mutate(
-      {
-        startDate: new Date(`${startDate}T00:00:00Z`),
-        endDate: new Date(`${endDate}T00:00:00Z`),
-        reason: reason.trim() || null,
-      },
-      {
-        onSuccess: () => {
-          setStartDate('');
-          setEndDate('');
-          setReason('');
-        },
-      },
-    );
-  }
+  const form = useForm({
+    defaultValues: { startDate: '', endDate: '', reason: '' },
+    onSubmit: async ({ value }) => {
+      if (!value.startDate || !value.endDate) return;
+      await createMutation.mutateAsync({
+        startDate: new Date(`${value.startDate}T00:00:00Z`),
+        endDate: new Date(`${value.endDate}T00:00:00Z`),
+        reason: value.reason.trim() || null,
+      });
+      form.reset();
+    },
+  });
 
   return (
     <section>
@@ -324,42 +340,49 @@ function LeaveRequestsSection({
         className="flex flex-wrap items-end gap-3 rounded-lg border p-3"
         style={{ borderColor: 'var(--border)' }}
       >
-        <label className="flex flex-col gap-1.5">
-          <FieldLabel>Start</FieldLabel>
-          <input
-            type="date"
-            value={startDate}
-            onChange={e => setStartDate(e.target.value)}
-            className="rounded-lg border px-3 py-2 font-sans text-sm font-medium tabular-nums outline-none"
-            style={inputStyle}
-          />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <FieldLabel>End</FieldLabel>
-          <input
-            type="date"
-            value={endDate}
-            onChange={e => setEndDate(e.target.value)}
-            className="rounded-lg border px-3 py-2 font-sans text-sm font-medium tabular-nums outline-none"
-            style={inputStyle}
-          />
-        </label>
-        <label className="flex min-w-[180px] flex-1 flex-col gap-1.5">
-          <FieldLabel>Reason (optional)</FieldLabel>
-          <Textarea
-            rows={1}
-            value={reason}
-            onChange={e => setReason(e.target.value)}
-            placeholder="e.g. Annual leave"
-          />
-        </label>
-        <Button
-          size="sm"
-          onClick={handleCreate}
-          disabled={createMutation.isPending || !startDate || !endDate}
-        >
-          Request leave
-        </Button>
+        <form.Subscribe selector={state => state.values}>
+          {values => (
+            <>
+              <Field className="w-auto">
+                <FieldLabel htmlFor="leave-start">Start</FieldLabel>
+                <Input
+                  id="leave-start"
+                  type="date"
+                  value={values.startDate}
+                  onChange={e => form.setFieldValue('startDate', e.target.value)}
+                />
+              </Field>
+              <Field className="w-auto">
+                <FieldLabel htmlFor="leave-end">End</FieldLabel>
+                <Input
+                  id="leave-end"
+                  type="date"
+                  value={values.endDate}
+                  onChange={e => form.setFieldValue('endDate', e.target.value)}
+                />
+              </Field>
+              <Field className="min-w-[180px] flex-1">
+                <FieldLabel htmlFor="leave-reason">Reason (optional)</FieldLabel>
+                <Textarea
+                  id="leave-reason"
+                  rows={1}
+                  value={values.reason}
+                  onChange={e => form.setFieldValue('reason', e.target.value)}
+                  placeholder="e.g. Annual leave"
+                />
+              </Field>
+              <Button
+                size="sm"
+                onClick={() => form.handleSubmit()}
+                disabled={
+                  createMutation.isPending || !values.startDate || !values.endDate
+                }
+              >
+                Request leave
+              </Button>
+            </>
+          )}
+        </form.Subscribe>
       </div>
     </section>
   );
@@ -369,19 +392,19 @@ export default function StaffProfile({ staffId, venues, onBack }: StaffProfilePr
   const staffQuery = useStaffMember(staffId);
   const saveMutation = useSaveStaffMember();
 
-  const [form, setForm] = useState<StaffMemberFormValue | null>(null);
+  const form = useForm({
+    defaultValues: blankStaffMemberForm(''),
+    onSubmit: async ({ value }) => {
+      await saveMutation.mutateAsync({ id: staffId, ...value });
+    },
+  });
   // Reset the form when the loaded staff record changes, following React's
   // "adjust state during render" pattern instead of an Effect — avoids an
   // extra render pass just to sync from query data.
   const [syncedStaffId, setSyncedStaffId] = useState<string | null>(null);
   if (staffQuery.data && staffQuery.data.id !== syncedStaffId) {
     setSyncedStaffId(staffQuery.data.id);
-    setForm(toStaffMemberFormValue(staffQuery.data));
-  }
-
-  function handleSave() {
-    if (!form) return;
-    saveMutation.mutate({ id: staffId, ...form });
+    form.reset(toStaffMemberFormValue(staffQuery.data));
   }
 
   const staff = staffQuery.data;
@@ -416,9 +439,12 @@ export default function StaffProfile({ staffId, venues, onBack }: StaffProfilePr
           variant="default"
           size="lg"
           className="font-semibold"
-          onClick={handleSave}
+          onClick={() => form.handleSubmit()}
           disabled={
-            saveMutation.isPending || staffQuery.isLoading || staffQuery.isError || !form
+            saveMutation.isPending ||
+            staffQuery.isLoading ||
+            staffQuery.isError ||
+            !syncedStaffId
           }
         >
           {saveMutation.isPending ? 'Saving…' : 'Save'}
@@ -440,7 +466,7 @@ export default function StaffProfile({ staffId, venues, onBack }: StaffProfilePr
             />
           )}
 
-          {!staffQuery.isLoading && !staffQuery.isError && staff && form && (
+          {!staffQuery.isLoading && !staffQuery.isError && staff && syncedStaffId && (
             <>
               {saveMutation.isError && (
                 <div
@@ -457,7 +483,7 @@ export default function StaffProfile({ staffId, venues, onBack }: StaffProfilePr
                 </div>
               )}
 
-              <StaffMemberForm value={form} onChange={setForm} venues={venues} />
+              <StaffMemberForm form={form} venues={venues} />
 
               <AvailabilitySection staffId={staffId} exceptions={staff.unavailability} />
               <LeaveRequestsSection

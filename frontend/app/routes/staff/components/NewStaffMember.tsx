@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import type { CSSProperties } from 'react';
+import { useForm } from '@tanstack/react-form';
 import { ArrowLeftIcon } from 'lucide-react';
 
 import { Button } from '~/components/ui/button';
@@ -7,7 +7,6 @@ import { Button } from '~/components/ui/button';
 import { useSaveStaffMember } from '../hooks';
 import type { Venue } from '../types';
 import StaffMemberForm, { blankStaffMemberForm } from './StaffMemberForm';
-import type { StaffMemberFormValue } from './StaffMemberForm';
 
 interface NewStaffMemberProps {
   venues: Venue[];
@@ -22,14 +21,15 @@ export default function NewStaffMember({
   onBack,
   onCreated,
 }: NewStaffMemberProps) {
-  const [form, setForm] = useState<StaffMemberFormValue>(() =>
-    blankStaffMemberForm(defaultVenueId),
-  );
   const saveMutation = useSaveStaffMember();
 
-  function handleSave() {
-    saveMutation.mutate({ id: null, ...form }, { onSuccess: dto => onCreated(dto.id) });
-  }
+  const form = useForm({
+    defaultValues: blankStaffMemberForm(defaultVenueId),
+    onSubmit: async ({ value }) => {
+      const dto = await saveMutation.mutateAsync({ id: null, ...value });
+      onCreated(dto.id);
+    },
+  });
 
   const themeStyle: CSSProperties = {
     background: 'var(--background)',
@@ -61,7 +61,7 @@ export default function NewStaffMember({
           variant="default"
           size="lg"
           className="font-semibold"
-          onClick={handleSave}
+          onClick={() => form.handleSubmit()}
           disabled={saveMutation.isPending}
         >
           {saveMutation.isPending ? 'Saving…' : 'Save'}
@@ -85,7 +85,7 @@ export default function NewStaffMember({
             </div>
           )}
 
-          <StaffMemberForm value={form} onChange={setForm} venues={venues} />
+          <StaffMemberForm form={form} venues={venues} />
 
           <p className="text-xs italic" style={{ color: 'var(--muted-foreground)' }}>
             Save this profile first to add standing availability or leave requests.

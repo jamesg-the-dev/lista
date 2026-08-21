@@ -1,10 +1,24 @@
-import type { ChangeEvent } from 'react';
+import type {
+  FormAsyncValidateOrFn,
+  FormValidateOrFn,
+  ReactFormExtendedApi,
+} from '@tanstack/react-form';
 
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '~/components/ui/field';
 import { Input } from '~/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '~/components/ui/select';
+import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group';
 
 import { CLASSIFICATION_META, EMPLOYMENT_TYPE_META } from '../types';
 import type { AwardClassification, EmploymentType, StaffMember, Venue } from '../types';
-import { FieldLabel, SectionHeader, inputStyle } from './form-ui';
+import { SectionHeader } from './form-ui';
 
 // Fields shared by the "add staff member" and "edit staff profile" screens —
 // name/contact details and the fields that drive IAwardRateCalculator and
@@ -45,139 +59,191 @@ export function toStaffMemberFormValue(staff: StaffMember): StaffMemberFormValue
   };
 }
 
+const EMPLOYMENT_TYPE_ITEMS = (Object.keys(EMPLOYMENT_TYPE_META) as EmploymentType[]).map(
+  value => ({ value, label: EMPLOYMENT_TYPE_META[value].label }),
+);
+
+const CLASSIFICATION_ITEMS = (
+  Object.keys(CLASSIFICATION_META) as AwardClassification[]
+).map(value => ({
+  value,
+  label: `${CLASSIFICATION_META[value].label} — ${CLASSIFICATION_META[value].description}`,
+}));
+
+// The form instance is owned by the screen that also owns the save mutation
+// (NewStaffMember.tsx / StaffProfile.tsx) so the header Save button can
+// trigger form.handleSubmit() — this component only renders fields against
+// it, per TanStack Form's documented pattern of splitting a form across
+// components (https://ui.shadcn.com/docs/forms/tanstack-form).
+type StaffMemberFormApi = ReactFormExtendedApi<
+  StaffMemberFormValue,
+  FormValidateOrFn<StaffMemberFormValue> | undefined,
+  FormValidateOrFn<StaffMemberFormValue> | undefined,
+  FormAsyncValidateOrFn<StaffMemberFormValue> | undefined,
+  FormValidateOrFn<StaffMemberFormValue> | undefined,
+  FormAsyncValidateOrFn<StaffMemberFormValue> | undefined,
+  FormValidateOrFn<StaffMemberFormValue> | undefined,
+  FormAsyncValidateOrFn<StaffMemberFormValue> | undefined,
+  FormValidateOrFn<StaffMemberFormValue> | undefined,
+  FormAsyncValidateOrFn<StaffMemberFormValue> | undefined,
+  FormAsyncValidateOrFn<StaffMemberFormValue> | undefined,
+  unknown
+>;
+
 interface StaffMemberFormProps {
-  value: StaffMemberFormValue;
-  onChange: (value: StaffMemberFormValue) => void;
+  form: StaffMemberFormApi;
   venues: Venue[];
 }
 
-export default function StaffMemberForm({
-  value,
-  onChange,
-  venues,
-}: StaffMemberFormProps) {
-  function set<K extends keyof StaffMemberFormValue>(
-    key: K,
-    fieldValue: StaffMemberFormValue[K],
-  ) {
-    onChange({ ...value, [key]: fieldValue });
-  }
-
-  function toggleVenue(venueId: string) {
-    set(
-      'venueIds',
-      value.venueIds.includes(venueId)
-        ? value.venueIds.filter(id => id !== venueId)
-        : [...value.venueIds, venueId],
-    );
-  }
-
+export default function StaffMemberForm({ form, venues }: StaffMemberFormProps) {
   return (
     <section>
       <SectionHeader
         title="Profile"
         subtitle="Name, contact details and the fields that drive award pay and compliance checks."
       />
-      <div className="mb-3 grid grid-cols-2 gap-3">
-        <label className="col-span-2 flex flex-col gap-1.5">
-          <FieldLabel>Name</FieldLabel>
-          <Input
-            value={value.name}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => set('name', e.target.value)}
-            placeholder="Full name"
-          />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <FieldLabel>Email</FieldLabel>
-          <Input
-            type="email"
-            value={value.email}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => set('email', e.target.value)}
-            placeholder="name@example.com"
-          />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <FieldLabel>Phone</FieldLabel>
-          <Input
-            value={value.phone}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => set('phone', e.target.value)}
-            placeholder="04xx xxx xxx"
-          />
-        </label>
-      </div>
-
-      <div className="mb-3 grid grid-cols-2 gap-3">
-        <label className="flex flex-col gap-1.5">
-          <FieldLabel>Employment type</FieldLabel>
-          <select
-            value={value.employmentType}
-            onChange={e => set('employmentType', e.target.value as EmploymentType)}
-            className="rounded-lg border px-3 py-2 font-sans text-sm font-medium outline-none"
-            style={inputStyle}
-          >
-            {(Object.keys(EMPLOYMENT_TYPE_META) as EmploymentType[]).map(et => (
-              <option key={et} value={et}>
-                {EMPLOYMENT_TYPE_META[et].label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <FieldLabel>Max weekly hours</FieldLabel>
-          <input
-            type="number"
-            min="0"
-            step="1"
-            value={value.maxWeeklyHours}
-            onChange={e => set('maxWeeklyHours', Number(e.target.value) || 0)}
-            className="rounded-lg border px-3 py-2 font-sans text-sm font-medium tabular-nums outline-none"
-            style={inputStyle}
-          />
-        </label>
-      </div>
-
-      <label className="mb-3 flex flex-col gap-1.5">
-        <FieldLabel>Pay tier / classification (MA000009)</FieldLabel>
-        <select
-          value={value.classification}
-          onChange={e => set('classification', e.target.value as AwardClassification)}
-          className="rounded-lg border px-3 py-2 font-sans text-sm font-medium outline-none"
-          style={inputStyle}
-        >
-          {(Object.keys(CLASSIFICATION_META) as AwardClassification[]).map(c => (
-            <option key={c} value={c}>
-              {CLASSIFICATION_META[c].label} — {CLASSIFICATION_META[c].description}
-            </option>
-          ))}
-        </select>
-        <span className="text-[11px]" style={{ color: 'var(--muted-foreground)' }}>
-          Levels shown are illustrative for demo purposes — not authoritative payroll
-          advice.
-        </span>
-      </label>
-
-      <div>
-        <FieldLabel>Venue(s) assigned</FieldLabel>
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
-          {venues.map(v => {
-            const active = value.venueIds.includes(v.id);
-            return (
-              <button
-                key={v.id}
-                type="button"
-                onClick={() => toggleVenue(v.id)}
-                className="rounded-lg px-2.5 py-1.5 font-sans text-xs font-medium"
-                style={{
-                  background: active ? 'var(--foreground)' : 'var(--muted)',
-                  color: active ? 'var(--background)' : 'var(--muted-foreground)',
-                }}
-              >
-                {v.name}
-              </button>
-            );
-          })}
+      <FieldGroup>
+        <div className="grid grid-cols-2 gap-3">
+          <form.Field name="name">
+            {field => (
+              <Field className="col-span-2">
+                <FieldLabel htmlFor="staff-name">Name</FieldLabel>
+                <Input
+                  id="staff-name"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={e => field.handleChange(e.target.value)}
+                  placeholder="Full name"
+                />
+              </Field>
+            )}
+          </form.Field>
+          <form.Field name="email">
+            {field => (
+              <Field>
+                <FieldLabel htmlFor="staff-email">Email</FieldLabel>
+                <Input
+                  id="staff-email"
+                  type="email"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={e => field.handleChange(e.target.value)}
+                  placeholder="name@example.com"
+                />
+              </Field>
+            )}
+          </form.Field>
+          <form.Field name="phone">
+            {field => (
+              <Field>
+                <FieldLabel htmlFor="staff-phone">Phone</FieldLabel>
+                <Input
+                  id="staff-phone"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={e => field.handleChange(e.target.value)}
+                  placeholder="04xx xxx xxx"
+                />
+              </Field>
+            )}
+          </form.Field>
         </div>
-      </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <form.Field name="employmentType">
+            {field => (
+              <Field>
+                <FieldLabel htmlFor="staff-employment-type">Employment type</FieldLabel>
+                <Select
+                  items={EMPLOYMENT_TYPE_ITEMS}
+                  value={field.state.value}
+                  onValueChange={value => value !== null && field.handleChange(value)}
+                >
+                  <SelectTrigger id="staff-employment-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {EMPLOYMENT_TYPE_ITEMS.map(item => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </Field>
+            )}
+          </form.Field>
+          <form.Field name="maxWeeklyHours">
+            {field => (
+              <Field>
+                <FieldLabel htmlFor="staff-max-hours">Max weekly hours</FieldLabel>
+                <Input
+                  id="staff-max-hours"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={field.state.value}
+                  onChange={e => field.handleChange(Number(e.target.value) || 0)}
+                />
+              </Field>
+            )}
+          </form.Field>
+        </div>
+
+        <form.Field name="classification">
+          {field => (
+            <Field>
+              <FieldLabel htmlFor="staff-classification">
+                Pay tier / classification (MA000009)
+              </FieldLabel>
+              <Select
+                items={CLASSIFICATION_ITEMS}
+                value={field.state.value}
+                onValueChange={value => value !== null && field.handleChange(value)}
+              >
+                <SelectTrigger id="staff-classification">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {CLASSIFICATION_ITEMS.map(item => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <FieldDescription>
+                Levels shown are illustrative for demo purposes — not authoritative
+                payroll advice.
+              </FieldDescription>
+            </Field>
+          )}
+        </form.Field>
+
+        <form.Field name="venueIds">
+          {field => (
+            <Field>
+              <FieldLabel>Venue(s) assigned</FieldLabel>
+              <ToggleGroup
+                multiple
+                variant="outline"
+                value={field.state.value}
+                onValueChange={field.handleChange}
+              >
+                {venues.map(v => (
+                  <ToggleGroupItem key={v.id} value={v.id}>
+                    {v.name}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </Field>
+          )}
+        </form.Field>
+      </FieldGroup>
     </section>
   );
 }

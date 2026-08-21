@@ -376,6 +376,11 @@ route directory.
   for how server data, cross-cutting client state, and local state are
   each handled — don't default to Context or a single global store.
 
+* **Forms: TanStack Form for complicated forms, `useState` otherwise.**
+  `@tanstack/react-form` is the standard once a form crosses the
+  complexity bar defined in § State management & data layer → §4 Forms
+  below — don't default to it for a single input, switch, or checkbox.
+
 * **Component layer: shadcn/ui.** Chosen over a fully-styled library (MUI,
   Ant Design) because those fight a custom design system — every component
   ships its own opinionated look and you spend more effort overriding it
@@ -598,6 +603,65 @@ than scattering `set()` calls through components.
 Default here first: form inputs, a modal's open state, which tab is
 active, hover/focus state. Only escalate to Zustand once local state
 genuinely can't reach where it's needed.
+
+### 4. Forms → TanStack Form, but only for complicated forms
+
+TanStack Form (`@tanstack/react-form`) is the standard for **complicated**
+forms. Plain `useState`/`useReducer` (§3 above) remains the default for
+everything else — adopting TanStack Form is not a blanket replacement for
+local state, it's an escalation for a specific shape of problem.
+
+**A form is "complicated" — and should use TanStack Form — when at least
+one of these is true:**
+
+* It has **three or more fields** that need to be read together at submit
+  time (a single insert/update payload built from multiple inputs).
+* A field's **visibility or validity depends on another field's value**
+  (e.g. a "blocks" toggle group that only appears when an "all day"
+  checkbox is unchecked).
+* The **submit action lives outside the fields themselves** — e.g. a Save
+  button in a page header, separate from the field-rendering component,
+  or a mutation owned by a parent that a shared field component doesn't
+  have access to.
+* The same field-rendering component is **reused across more than one
+  screen** with a different owner of the submit action (e.g. a shared
+  "create" and "edit" form where each screen owns its own mutation).
+
+**A single, self-contained control is not a form — keep it on `useState`:**
+one switch, one checkbox, one text input, a search box, a filter toggle.
+These commit immediately or have no cross-field relationship to anything
+else, so `useState` is simpler and correct. Don't reach for TanStack Form
+just because a component happens to render an `<Input>`.
+
+**Pattern, once a form qualifies:**
+
+* The screen that owns the mutation (the `useMutation` call) owns the
+  `useForm()` instance — not the field-rendering component. This matters
+  because the "submit" trigger (e.g. a header Save button) is often in a
+  different component than the fields.
+* Field-rendering components receive the `form` instance itself as a prop
+  (typed via `ReactFormExtendedApi<...>` from `@tanstack/react-form`, with
+  each validator generic parameter as `FormValidateOrFn<T> | undefined` /
+  `FormAsyncValidateOrFn<T> | undefined` rather than narrowed to
+  `undefined` — narrowing breaks assignability from a real `useForm()`
+  call) — never a `value`/`onChange` pair.
+* Use `form.Field` per field for forms with many independent fields (isolates
+  re-renders per keystroke). Use `form.Subscribe` (reading `state.values`,
+  writing via `form.setFieldValue`) for compact inline forms that need
+  derived cross-field UI, like a field toggling another field's visibility
+  or a submit button's disabled state depending on several fields at once.
+* Compose fields with shadcn's `Field` / `FieldLabel` / `FieldGroup` /
+  `FieldDescription` (`~/components/ui/field`) for layout — same as any
+  other shadcn form, per the shadcn skill's forms guidance.
+* Don't add a validation library (e.g. zod) by default. Only add validators
+  when there's an actual validation rule to express; wiring `form.Field`/
+  `form.Subscribe` for value/submit handling doesn't require one.
+* Reference implementation: `frontend/app/routes/staff/components/
+  StaffMemberForm.tsx` (per-field `form.Field`, shared between create and
+  edit) plus `NewStaffMember.tsx` and `StaffProfile.tsx` (each owns a
+  `useForm()` instance and its own mutation; `StaffProfile.tsx`'s
+  `AvailabilitySection`/`LeaveRequestsSection` show the `form.Subscribe`
+  pattern for compact inline forms).
 
 ### Types: wire type vs view model
 

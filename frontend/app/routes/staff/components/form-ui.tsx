@@ -1,22 +1,6 @@
-import type { CSSProperties, ReactNode } from 'react';
-
-// Small presentational primitives shared between StaffMemberForm.tsx and the
+// Small presentational primitive shared between StaffMemberForm.tsx and the
 // availability/leave sections in StaffProfile.tsx — kept here rather than
 // duplicated in each.
-
-export const inputStyle: CSSProperties = {
-  borderColor: 'var(--border)',
-  background: 'var(--input)',
-  color: 'var(--foreground)',
-};
-
-export function FieldLabel({ children }: { children: ReactNode }) {
-  return (
-    <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
-      {children}
-    </span>
-  );
-}
 
 export function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
   return (
