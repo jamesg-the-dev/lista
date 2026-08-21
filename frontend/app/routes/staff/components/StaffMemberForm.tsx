@@ -4,6 +4,7 @@ import type {
   ReactFormExtendedApi,
 } from '@tanstack/react-form';
 
+import { DatePickerSimple } from '~/components/ui/date-picker';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '~/components/ui/field';
 import { Input } from '~/components/ui/input';
 import {
@@ -17,7 +18,13 @@ import {
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group';
 
 import { CLASSIFICATION_META, EMPLOYMENT_TYPE_META } from '../types';
-import type { AwardClassification, EmploymentType, StaffMember, Venue } from '../types';
+import type {
+  AwardClassification,
+  EmploymentType,
+  PermissionLevel,
+  StaffMember,
+  Venue,
+} from '../types';
 import { SectionHeader } from './form-ui';
 
 // Fields shared by the "add staff member" and "edit staff profile" screens —
@@ -25,14 +32,25 @@ import { SectionHeader } from './form-ui';
 // IRosterComplianceValidator. Standing availability and leave requests are
 // NOT part of this shape — they only make sense once a staff record exists,
 // so they stay owned by StaffProfile.tsx.
+//
+// permissionLevel and primaryRoleId are carried through (read on edit,
+// defaulted on create) but deliberately NOT rendered as fields here —
+// they're edited from Settings → Staff & Roles instead (StaffEditDrawer),
+// which is where Role data and the permission-tier picker actually live.
+// This form still needs to round-trip both values so saving a profile edit
+// here doesn't silently wipe out a permission level or role assignment set
+// from that other screen.
 export interface StaffMemberFormValue {
   name: string;
   email: string;
   phone: string;
+  dateOfBirth: Date;
   employmentType: EmploymentType;
   classification: AwardClassification;
   maxWeeklyHours: number;
   venueIds: string[];
+  permissionLevel: PermissionLevel;
+  primaryRoleId: string | null;
 }
 
 export function blankStaffMemberForm(defaultVenueId: string): StaffMemberFormValue {
@@ -40,10 +58,13 @@ export function blankStaffMemberForm(defaultVenueId: string): StaffMemberFormVal
     name: '',
     email: '',
     phone: '',
+    dateOfBirth: new Date(0), // deliberately invalid placeholder — the date picker forces an explicit choice before submit
     employmentType: 'casual',
     classification: 'level_1',
     maxWeeklyHours: 20,
     venueIds: defaultVenueId ? [defaultVenueId] : [],
+    permissionLevel: 'staff',
+    primaryRoleId: null,
   };
 }
 
@@ -52,10 +73,13 @@ export function toStaffMemberFormValue(staff: StaffMember): StaffMemberFormValue
     name: staff.name,
     email: staff.email,
     phone: staff.phone,
+    dateOfBirth: staff.dateOfBirth,
     employmentType: staff.employmentType,
     classification: staff.classification,
     maxWeeklyHours: staff.maxWeeklyHours,
     venueIds: staff.venueIds,
+    permissionLevel: staff.permissionLevel,
+    primaryRoleId: staff.primaryRoleId,
   };
 }
 
@@ -148,6 +172,22 @@ export default function StaffMemberForm({ form, venues }: StaffMemberFormProps) 
             )}
           </form.Field>
         </div>
+
+        <form.Field name="dateOfBirth">
+          {field => (
+            <DatePickerSimple
+              id="staff-date-of-birth"
+              label="Date of birth"
+              value={field.state.value.getTime() === 0 ? undefined : field.state.value}
+              onChange={date => date && field.handleChange(date)}
+              className="max-w-xs"
+            />
+          )}
+        </form.Field>
+        <FieldDescription className="-mt-2">
+          Collected for compliance — minor rostering rules (max hours, latest finish time)
+          apply automatically below 18, not for marketing.
+        </FieldDescription>
 
         <div className="grid grid-cols-2 gap-3">
           <form.Field name="employmentType">

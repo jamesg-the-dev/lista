@@ -10,10 +10,13 @@ public sealed record CreateStaffMemberCommand(
     string Name,
     string Email,
     string Phone,
+    DateOnly DateOfBirth,
     string EmploymentType,
     string Classification,
     int MaxWeeklyHours,
-    IReadOnlyList<Guid> VenueIds
+    IReadOnlyList<Guid> VenueIds,
+    string PermissionLevel,
+    Guid? PrimaryRoleId
 ) : IRequest<StaffMemberDto>;
 
 /// <summary>
@@ -29,6 +32,7 @@ public sealed class CreateStaffMemberCommandValidator : AbstractValidator<Create
 {
     public CreateStaffMemberCommandValidator(
         IStaffUniquenessChecker uniquenessChecker,
+        IRoleLookup roleLookup,
         ICurrentTenantContext tenantContext)
     {
         RuleFor(c => c.Name).NotEmpty().MaximumLength(200);
@@ -38,6 +42,9 @@ public sealed class CreateStaffMemberCommandValidator : AbstractValidator<Create
             .MaximumLength(30)
             .Must(phone => PhoneNumber.TryCreateMobile(phone, out _, out _))
             .WithMessage("Phone number must be a valid Australian mobile number.");
+        RuleFor(c => c.DateOfBirth)
+            .LessThan(DateOnly.FromDateTime(DateTime.UtcNow))
+            .WithMessage("Date of birth must be in the past.");
         RuleFor(c => c.EmploymentType)
             .Must(EnumWireValidation.IsDefinedName<EmploymentType>)
             .WithMessage("Invalid employment type.");
@@ -46,6 +53,13 @@ public sealed class CreateStaffMemberCommandValidator : AbstractValidator<Create
             .WithMessage("Invalid classification.");
         RuleFor(c => c.MaxWeeklyHours).GreaterThan(0).LessThanOrEqualTo(76);
         RuleFor(c => c.VenueIds).NotEmpty();
+        RuleFor(c => c.PermissionLevel)
+            .Must(EnumWireValidation.IsDefinedName<PermissionLevel>)
+            .WithMessage("Invalid permission level.");
+
+        RuleFor(c => c.PrimaryRoleId)
+            .MustAsync(async (roleId, ct) => roleId is null || await roleLookup.GetRoleAsync(roleId.Value, ct) is not null)
+            .WithMessage("Primary role does not exist.");
 
         RuleFor(c => c.Email)
             .MustAsync(async (email, ct) =>
@@ -82,10 +96,13 @@ public sealed class CreateStaffMemberCommandHandler(
             request.Name,
             request.Email,
             request.Phone,
+            request.DateOfBirth,
             Enum.Parse<EmploymentType>(request.EmploymentType),
             Enum.Parse<AwardClassification>(request.Classification),
             request.MaxWeeklyHours,
-            request.VenueIds
+            request.VenueIds,
+            Enum.Parse<PermissionLevel>(request.PermissionLevel),
+            request.PrimaryRoleId
         );
 
         staffMemberRepository.Add(staff);

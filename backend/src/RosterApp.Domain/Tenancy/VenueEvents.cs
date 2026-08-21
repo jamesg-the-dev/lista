@@ -9,3 +9,5 @@ public sealed record VenueProfileUpdated(Guid VenueId, Guid OrganisationId, Date
 public sealed record VenueTradingHoursUpdated(Guid VenueId, Guid OrganisationId, DateTime OccurredAtUtc) : IDomainEvent;
 
 public sealed record VenueDeactivated(Guid VenueId, Guid OrganisationId, DateTime OccurredAtUtc) : IDomainEvent;
+
+public sealed record VenueAvailabilitySettingsUpdated(Guid VenueId, Guid OrganisationId, DateTime OccurredAtUtc) : IDomainEvent;

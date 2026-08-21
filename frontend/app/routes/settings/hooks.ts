@@ -7,9 +7,10 @@ import type {
   AwardPayTabValue,
   RosterRulesTabValue,
   TradingHourSession,
+  VenueAvailabilitySettings,
   VenueProfileTabValue,
 } from './types';
-import { mapVenueProfile } from './types';
+import { mapRole, mapVenueProfile } from './types';
 
 // Same sourcing as staff/hooks.ts's useVenues — no controller lists venues
 // on its own, so useCurrentAccount() remains the allowed source per
@@ -141,6 +142,71 @@ export function useAddVenueHolidayOverride(venueId: string) {
       api.addVenueHolidayOverride(venueId, overrideDate, name),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settings', 'holiday-overrides', venueId] });
+    },
+  });
+}
+
+export function useUpdateVenueAvailabilitySettings(venueId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (value: VenueAvailabilitySettings) =>
+      api.updateVenueAvailabilitySettings(venueId, value),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['settings', 'venue-profile', venueId] });
+    },
+  });
+}
+
+export function useRolesForVenue(venueId: string) {
+  return useQuery({
+    queryKey: ['settings', 'roles', venueId],
+    queryFn: async () => (await api.fetchRolesForVenue(venueId)).map(mapRole),
+    enabled: !!venueId,
+  });
+}
+
+export function useCreateRole(venueId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ displayName, colorTag }: { displayName: string; colorTag: string | null }) =>
+      api.createRole(venueId, displayName, colorTag),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['settings', 'roles', venueId] });
+    },
+  });
+}
+
+export function useDeactivateRole(venueId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (roleId: string) => api.deactivateRole(roleId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['settings', 'roles', venueId] });
+    },
+  });
+}
+
+// Award reference data, not venue-scoped — same treatment as useAvailableAwards.
+export function useAwardClassifications(awardId: string | undefined) {
+  return useQuery({
+    queryKey: ['settings', 'award-classifications', awardId],
+    queryFn: () => api.fetchAwardClassifications(awardId!),
+    enabled: !!awardId,
+  });
+}
+
+export function useSetRoleAwardMapping(venueId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      roleId,
+      awardClassificationId,
+    }: {
+      roleId: string;
+      awardClassificationId: string;
+    }) => api.setRoleAwardMapping(venueId, roleId, awardClassificationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['settings', 'roles', venueId] });
     },
   });
 }

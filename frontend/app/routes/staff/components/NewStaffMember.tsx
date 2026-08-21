@@ -45,14 +45,18 @@ export default function NewStaffMember({
             <p className="truncate text-base font-medium">New staff member</p>
           </div>
         </div>
-        <Button
-          variant="default"
-          className="font-semibold"
-          onClick={() => form.handleSubmit()}
-          disabled={saveMutation.isPending}
-        >
-          {saveMutation.isPending ? 'Saving…' : 'Save'}
-        </Button>
+        <form.Subscribe selector={state => state.values.dateOfBirth.getTime() === 0}>
+          {dateOfBirthUnset => (
+            <Button
+              variant="default"
+              className="font-semibold"
+              onClick={() => form.handleSubmit()}
+              disabled={saveMutation.isPending || dateOfBirthUnset}
+            >
+              {saveMutation.isPending ? 'Saving…' : 'Save'}
+            </Button>
+          )}
+        </form.Subscribe>
       </header>
 
       <main className="flex-1 px-6 py-6">

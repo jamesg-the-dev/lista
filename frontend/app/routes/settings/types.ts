@@ -215,6 +215,68 @@ export function toTradingHourSessionInputDto(session: TradingHourSession) {
 // Venue profile.
 // ---------------------------------------------------------------------------
 
+// Venue-level self-service toggle for staff availability requests (§2 AC5,
+// §3) — a plain in-place setting, not versioned like AwardConfiguration,
+// since it's a workflow choice rather than a compliance/pay figure.
+export const SELF_SERVICE_MODE_ITEMS = [
+  { value: 'disabled', label: 'Disabled', description: "Staff can't submit availability requests" },
+  { value: 'requires_approval', label: 'Requires manager approval', description: 'Default — every request needs sign-off' },
+  { value: 'auto_approved', label: 'Auto-approved', description: 'Requests apply immediately, no approval step' },
+] as const;
+export type SelfServiceMode = (typeof SELF_SERVICE_MODE_ITEMS)[number]['value'];
+
+const SELF_SERVICE_MODE_TABLE: Record<string, SelfServiceMode> = {
+  Disabled: 'disabled',
+  RequiresApproval: 'requires_approval',
+  AutoApproved: 'auto_approved',
+};
+const SELF_SERVICE_MODE_REVERSE: Record<SelfServiceMode, string> = {
+  disabled: 'Disabled',
+  requires_approval: 'RequiresApproval',
+  auto_approved: 'AutoApproved',
+};
+
+function mapSelfServiceMode(wire: string): SelfServiceMode {
+  const mapped = SELF_SERVICE_MODE_TABLE[wire];
+  if (mapped === undefined) {
+    throw new Error(`Unknown SelfServiceMode wire value: ${wire}`);
+  }
+  return mapped;
+}
+function unmapSelfServiceMode(value: SelfServiceMode): string {
+  return SELF_SERVICE_MODE_REVERSE[value];
+}
+
+export interface VenueAvailabilitySettingsDto {
+  selfServiceMode: string; // SelfServiceMode wire member name
+  advanceNoticeDays: number;
+}
+
+export interface VenueAvailabilitySettings {
+  selfServiceMode: SelfServiceMode;
+  advanceNoticeDays: number;
+}
+
+function mapVenueAvailabilitySettings(
+  dto: VenueAvailabilitySettingsDto,
+): VenueAvailabilitySettings {
+  return {
+    selfServiceMode: mapSelfServiceMode(dto.selfServiceMode),
+    advanceNoticeDays: dto.advanceNoticeDays,
+  };
+}
+
+// Request body for PUT /api/venues/{id}/availability-settings
+// (UpdateVenueAvailabilitySettingsCommand).
+export function toUpdateVenueAvailabilitySettingsRequestDto(
+  value: VenueAvailabilitySettings,
+) {
+  return {
+    selfServiceMode: unmapSelfServiceMode(value.selfServiceMode),
+    advanceNoticeDays: value.advanceNoticeDays,
+  };
+}
+
 export interface VenueProfileDto {
   id: string;
   organisationId: string;
@@ -225,6 +287,7 @@ export interface VenueProfileDto {
   isActive: boolean;
   forecastSalesTarget: number | null;
   tradingHours: TradingHourSessionDto[];
+  availabilitySettings: VenueAvailabilitySettingsDto;
 }
 
 export interface VenueProfile {
@@ -236,6 +299,7 @@ export interface VenueProfile {
   timezone: string;
   isActive: boolean;
   tradingHours: TradingHourSession[];
+  availabilitySettings: VenueAvailabilitySettings;
 }
 
 export function mapVenueProfile(dto: VenueProfileDto): VenueProfile {
@@ -248,6 +312,7 @@ export function mapVenueProfile(dto: VenueProfileDto): VenueProfile {
     timezone: dto.timezone,
     isActive: dto.isActive,
     tradingHours: toTradingHoursFormValue(dto.tradingHours),
+    availabilitySettings: mapVenueAvailabilitySettings(dto.availabilitySettings),
   };
 }
 
@@ -649,4 +714,97 @@ export interface VenueHolidayOverrideDto {
 // Request body for POST /api/venues/{id}/holiday-overrides (AddVenueHolidayOverrideCommand).
 export function toAddVenueHolidayOverrideRequestDto(overrideDate: string, name: string) {
   return { overrideDate, name };
+}
+
+// ---------------------------------------------------------------------------
+// Staff & Roles — backed by RoleController and AwardConfigurationController's
+// classification/role-award-mapping endpoints (backend/src/RosterApp.Api/
+// Controllers/RoleController.cs, AwardConfigurationController.cs). See
+// docs/features/FEATURE_SETTINGS_STAFF_ROLES.md for the feature spec.
+//
+// StaffMember itself (permission level, pay rate override, primary role)
+// stays owned by the `staff` route's types.ts/api.ts/hooks.ts — this route
+// imports those directly rather than duplicating the DTO shape, since
+// StaffMember is core data the `staff` route already owns per CLAUDE.md's
+// route-ownership convention.
+// ---------------------------------------------------------------------------
+
+// A small fixed swatch palette for Role.ColorTag — distinct from the 4
+// semantic role-identity colors in docs/design-system.md (Kitchen/Floor/
+// Bar/Manager), which stay reserved for that specific fixed vocabulary.
+// Custom venue-defined roles need more than 4 distinguishable colors, so
+// this is a separate, purely decorative palette scoped to Role chips.
+export const ROLE_COLOR_SWATCHES = [
+  { value: '#4C9A8E', twClass: 'bg-[#4C9A8E]' },
+  { value: '#C9A227', twClass: 'bg-[#C9A227]' },
+  { value: '#B85C2E', twClass: 'bg-[#B85C2E]' },
+  { value: '#7D8CC4', twClass: 'bg-[#7D8CC4]' },
+  { value: '#A24C6B', twClass: 'bg-[#A24C6B]' },
+  { value: '#5C8AC9', twClass: 'bg-[#5C8AC9]' },
+] as const;
+
+export interface RoleDto {
+  id: string;
+  venueId: string;
+  displayName: string;
+  colorTag: string | null;
+  isActive: boolean;
+  createdByManagerId: string;
+  createdAtUtc: string;
+  mappedAwardClassificationId: string | null;
+  mappedAwardClassificationName: string | null;
+}
+
+export interface Role {
+  id: string;
+  venueId: string;
+  displayName: string;
+  colorTag: string | null;
+  isActive: boolean;
+  mappedAwardClassificationId: string | null;
+  mappedAwardClassificationName: string | null;
+}
+
+export function mapRole(dto: RoleDto): Role {
+  return {
+    id: dto.id,
+    venueId: dto.venueId,
+    displayName: dto.displayName,
+    colorTag: dto.colorTag,
+    isActive: dto.isActive,
+    mappedAwardClassificationId: dto.mappedAwardClassificationId,
+    mappedAwardClassificationName: dto.mappedAwardClassificationName,
+  };
+}
+
+// Request body for POST /api/venues/{id}/roles (CreateRoleCommand).
+export function toCreateRoleRequestDto(displayName: string, colorTag: string | null) {
+  return { displayName, colorTag };
+}
+
+export interface AwardClassificationDto {
+  id: string;
+  awardId: string;
+  name: string;
+  description: string | null;
+}
+
+// Request body for PUT /api/venues/{id}/role-award-mappings/{roleId}
+// (SetRoleAwardMappingCommand).
+export function toSetRoleAwardMappingRequestDto(awardClassificationId: string) {
+  return { awardClassificationId };
+}
+
+// Response shape for the same endpoint — not itself mapped to a view model
+// anywhere (RoleDto's flattened mappedAwardClassificationId/Name is what
+// every screen actually reads), but the PUT response still needs a type.
+export interface RoleAwardMappingDto {
+  id: string;
+  venueId: string;
+  roleId: string;
+  awardClassificationId: string;
+  effectiveFromUtc: string;
+  effectiveToUtc: string | null;
+  createdByManagerId: string;
+  createdAtUtc: string;
 }

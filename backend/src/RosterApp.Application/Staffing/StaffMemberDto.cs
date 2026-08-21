@@ -8,14 +8,24 @@ namespace RosterApp.Application.Staffing;
 /// the Configurations' HasConversion&lt;string&gt;()) — not as a number. See
 /// CLAUDE.md § Wire format for enums.
 /// </summary>
+public sealed record PayRateOverrideDto(decimal OverrideHourlyRate, string Reason, DateTime EffectiveFromUtc, Guid SetByManagerId)
+{
+    public static PayRateOverrideDto FromDomain(PayRateOverride override_) =>
+        new(override_.OverrideHourlyRate, override_.Reason, override_.EffectiveFromUtc, override_.SetByManagerId);
+}
+
 public sealed record StaffMemberDto(
     Guid Id,
     string Name,
     string Email,
     string Phone,
+    DateOnly DateOfBirth,
     string EmploymentType,
     string Classification,
     int MaxWeeklyHours,
+    string PermissionLevel,
+    Guid? PrimaryRoleId,
+    PayRateOverrideDto? PayRateOverride,
     IReadOnlyList<Guid> VenueIds,
     IReadOnlyList<AvailabilityExceptionDto> Unavailability,
     IReadOnlyList<LeaveRequestDto> LeaveRequests)
@@ -28,9 +38,13 @@ public sealed record StaffMemberDto(
             staff.Name,
             staff.Email,
             staff.Phone.Value,
+            staff.DateOfBirth,
             staff.EmploymentType.ToString(),
             staff.Classification.ToString(),
             staff.MaxWeeklyHours,
+            staff.PermissionLevel.ToString(),
+            staff.PrimaryRoleId,
+            staff.PayRateOverride is null ? null : PayRateOverrideDto.FromDomain(staff.PayRateOverride),
             staff.VenueIds,
             unavailability.Select(AvailabilityExceptionDto.FromDomain).ToList(),
             leaveRequests.Select(LeaveRequestDto.FromDomain).ToList());

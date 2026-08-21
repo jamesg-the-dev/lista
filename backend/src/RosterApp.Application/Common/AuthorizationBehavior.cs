@@ -25,6 +25,20 @@ namespace RosterApp.Application.Common;
 /// multiple venue owners, multiple managers, and multiple staff per
 /// organisation, and Managers should be modelled as a kind of Staff for
 /// data-access purposes rather than a separate population.
+///
+/// Staff &amp; Roles (RosterApp.Application.Staffing/AwardConfig) is the next
+/// concrete instance: CreateRoleCommand, DeactivateRoleCommand,
+/// SetRoleAwardMappingCommand, UpdateStaffPermissionLevelCommand,
+/// SetStaffPayRateOverrideCommand/ClearStaffPayRateOverrideCommand, and
+/// UpdateVenueAvailabilitySettingsCommand are all spec'd Owner-only but,
+/// same as above, any authenticated Manager can call them today.
+/// StaffMember now carries a PermissionLevel field (Owner/Manager/
+/// Supervisor/Staff) that captures which tier an owner has assigned
+/// someone to, but nothing here reads it yet — it's data capture ahead of
+/// enforcement, not enforcement itself. The one piece of this that IS
+/// enforced today is a data-integrity invariant, not access control:
+/// StaffMember.UpdatePermissionLevel throws if it would demote the last
+/// remaining Owner in an organisation.
 /// </summary>
 public sealed class AuthorizationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull

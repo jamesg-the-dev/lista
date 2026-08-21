@@ -11,17 +11,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { useVenueContextStore } from '~/lib/venue-context';
 
 import AwardPayTab from './components/AwardPayTab';
-import ComingSoonTab from './components/ComingSoonTab';
 import RosterRulesTab from './components/RosterRulesTab';
+import StaffRolesTab from './components/StaffRolesTab';
 import VenueProfileTab from './components/VenueProfileTab';
 import { useVenues } from './hooks';
 
 // Settings → Venue Profile / Award & Pay / Roster Rules / Staff & Roles, per
-// docs/features/feature-order.md. Venue Profile, Award & Pay, and Roster
-// Rules have a backend (see docs/features/FEATURE_SETTINGS_VENUE_PROFILE.md,
-// FEATURE_SETTINGS_AWARD_PAY_CONFIG.md and
-// FEATURE_SETTINGS_ROSTER_RULES_COMPLIANCE.md); Staff & Roles renders
-// ComingSoonTab until its own build-order step lands.
+// docs/features/feature-order.md. All four sections now have a backend (see
+// docs/features/FEATURE_SETTINGS_VENUE_PROFILE.md,
+// FEATURE_SETTINGS_AWARD_PAY_CONFIG.md,
+// FEATURE_SETTINGS_ROSTER_RULES_COMPLIANCE.md and
+// FEATURE_SETTINGS_STAFF_ROLES.md).
 const SETTINGS_TABS = [
   { value: 'venue-profile', label: 'Venue Profile' },
   { value: 'award-pay', label: 'Award & Pay' },
@@ -108,10 +108,7 @@ export default function SettingsRoute() {
             </TabsContent>
 
             <TabsContent value="staff-roles" className="mt-6">
-              <ComingSoonTab
-                title="Staff & Roles"
-                description="Custom roles with award mapping baked into creation, permission levels and pay overrides."
-              />
+              {activeVenueId && <StaffRolesTab venueId={activeVenueId} />}
             </TabsContent>
           </Tabs>
         </div>

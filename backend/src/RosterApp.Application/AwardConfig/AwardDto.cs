@@ -21,3 +21,10 @@ public sealed record AwardDto(
     public static AwardDto FromDomain(AwardDefinition award, decimal? minimumCasualLoadingPercent) =>
         new(award.Id, award.AwardCode, award.Name, award.Jurisdiction, minimumCasualLoadingPercent);
 }
+
+/// <summary>Populates RoleAwardMappingTable's per-row classification dropdown (GetClassificationsForAwardAsync).</summary>
+public sealed record AwardClassificationDto(Guid Id, Guid AwardId, string Name, string? Description)
+{
+    public static AwardClassificationDto FromDomain(AwardClassificationDefinition classification) =>
+        new(classification.Id, classification.AwardId, classification.Name, classification.Description);
+}

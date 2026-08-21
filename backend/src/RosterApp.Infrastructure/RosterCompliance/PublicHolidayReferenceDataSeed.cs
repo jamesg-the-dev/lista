@@ -4,9 +4,10 @@ namespace RosterApp.Infrastructure.RosterCompliance;
 
 /// <summary>
 /// System-maintained public holiday reference data (§2 AC3, §6), seeded via
-/// EF Core migration data seeding — same "data change not a code deploy"
-/// rationale, and the same reduced-scope precedent, as AwardReferenceDataSeed
-/// (which only seeds real classification data for MA000009). Only the 2026
+/// an idempotent startup seeder (PublicHolidayReferenceDataSeeder) — same
+/// "data change not a code deploy" rationale, and the same reduced-scope
+/// precedent, as AwardReferenceDataSeed (which only seeds real classification
+/// data for MA000009). Only the 2026
 /// calendar year is seeded for MVP; extending into 2027 is a follow-up data
 /// migration before the end of 2026, not a code change. National dates
 /// (IsNational = true) are duplicated one row per state per

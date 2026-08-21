@@ -12,14 +12,22 @@ public interface IAwardReferenceDataLookup
 
     Task<bool> AwardExistsAsync(Guid awardId, CancellationToken cancellationToken);
 
+    /// <summary>Populates the classification dropdown in RoleAwardMappingTable, scoped to the venue's currently-selected award.</summary>
+    Task<IReadOnlyList<AwardClassificationDto>> GetClassificationsForAwardAsync(Guid awardId, CancellationToken cancellationToken);
+
+    /// <summary>Backs SetRoleAwardMappingCommandValidator's existence check.</summary>
+    Task<bool> ClassificationExistsAsync(Guid awardClassificationId, CancellationToken cancellationToken);
+
     /// <summary>
     /// The strictest (highest) currently-active CasualLoadingPercentMin
     /// across every classification under this award, or null if the award
-    /// has no classification/rate data seeded yet. TODO: once RoleAwardMapping
-    /// exists (Staff & Roles build-order step), narrow this to only the
-    /// classifications actually mapped to a role in this venue, rather than
-    /// every classification the award defines — a venue that only rosters
-    /// Level 1 staff shouldn't be held to a Level 6 minimum it never uses.
+    /// has no classification/rate data seeded yet. TODO: RoleAwardMapping
+    /// now exists (Staff & Roles build-order step), but this still isn't
+    /// narrowed to only the classifications actually mapped to a role in
+    /// this venue — a venue that only rosters Level 1 staff shouldn't be
+    /// held to a Level 6 minimum it never uses. Narrowing this is pay-calc
+    /// scope, not part of the Staff & Roles settings CRUD work that
+    /// introduced RoleAwardMapping.
     /// </summary>
     Task<decimal?> GetMinimumCasualLoadingPercentAsync(Guid awardId, CancellationToken cancellationToken);
 }

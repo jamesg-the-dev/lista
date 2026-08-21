@@ -59,7 +59,39 @@ public sealed class AwardConfigurationController(ISender mediator) : ApiControll
         var config = await Mediator.Send(command, cancellationToken);
         return Ok(ApiResponse<AwardConfigurationDto>.Ok(config));
     }
+
+    [HttpGet("~/api/awards/{awardId:guid}/classifications")]
+    public async Task<ActionResult<ApiResponse<IReadOnlyList<AwardClassificationDto>>>> GetAwardClassifications(
+        Guid awardId,
+        CancellationToken cancellationToken)
+    {
+        var classifications = await Mediator.Send(new GetAwardClassificationsQuery(awardId), cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<AwardClassificationDto>>.Ok(classifications));
+    }
+
+    [HttpGet("~/api/venues/{venueId:guid}/role-award-mappings")]
+    public async Task<ActionResult<ApiResponse<IReadOnlyList<RoleAwardMappingDto>>>> GetRoleAwardMappings(
+        Guid venueId,
+        CancellationToken cancellationToken)
+    {
+        var mappings = await Mediator.Send(new GetRoleAwardMappingsForVenueQuery(venueId), cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<RoleAwardMappingDto>>.Ok(mappings));
+    }
+
+    [HttpPut("~/api/venues/{venueId:guid}/role-award-mappings/{roleId:guid}")]
+    public async Task<ActionResult<ApiResponse<RoleAwardMappingDto>>> SetRoleAwardMapping(
+        Guid venueId,
+        Guid roleId,
+        SetRoleAwardMappingRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new SetRoleAwardMappingCommand(venueId, roleId, request.AwardClassificationId);
+        var mapping = await Mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<RoleAwardMappingDto>.Ok(mapping));
+    }
 }
+
+public sealed record SetRoleAwardMappingRequest(Guid AwardClassificationId);
 
 public sealed record UpdateAwardConfigurationRequest(
     Guid AwardId,

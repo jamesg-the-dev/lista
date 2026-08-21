@@ -298,6 +298,75 @@ export function toLeaveRequestInputDto(input: LeaveRequestInput) {
 }
 
 // ---------------------------------------------------------------------------
+// Permission level — fixed, code-defined tier (Owner/Manager/Supervisor/
+// Staff per FEATURE_SETTINGS_STAFF_ROLES.md §3). Data capture only: the
+// backend's AuthorizationBehavior doesn't enforce this tier yet (see its doc
+// comment), so setting someone to Owner here doesn't currently grant them
+// anything beyond the label. Edited from Settings → Staff & Roles
+// (UpdateStaffPermissionLevelCommand), not from this route's profile form —
+// see StaffMemberForm.tsx's doc comment.
+// ---------------------------------------------------------------------------
+
+export type PermissionLevel = 'staff' | 'supervisor' | 'manager' | 'owner';
+
+const PERMISSION_LEVEL_TABLE: Record<string, PermissionLevel> = {
+  Staff: 'staff',
+  Supervisor: 'supervisor',
+  Manager: 'manager',
+  Owner: 'owner',
+};
+const PERMISSION_LEVEL_REVERSE: Record<PermissionLevel, string> = {
+  staff: 'Staff',
+  supervisor: 'Supervisor',
+  manager: 'Manager',
+  owner: 'Owner',
+};
+
+export function mapPermissionLevel(wire: string): PermissionLevel {
+  return mustMapWireEnum(wire, PERMISSION_LEVEL_TABLE, 'PermissionLevel');
+}
+export function unmapPermissionLevel(value: PermissionLevel): string {
+  return PERMISSION_LEVEL_REVERSE[value];
+}
+
+export const PERMISSION_LEVEL_META: Record<PermissionLevel, { label: string; description: string }> = {
+  owner: { label: 'Owner', description: 'Full access, including settings' },
+  manager: { label: 'Manager', description: 'Publish rosters, approve swaps' },
+  supervisor: { label: 'Supervisor', description: 'Edit rosters for their own venue' },
+  staff: { label: 'Staff', description: 'View own roster and shifts' },
+};
+
+// ---------------------------------------------------------------------------
+// Pay rate override — above-award hourly rate, layered on top of (never
+// instead of) the award-derived base rate. Read-only here; set/cleared from
+// Settings → Staff & Roles (SetStaffPayRateOverrideCommand /
+// ClearStaffPayRateOverrideCommand).
+// ---------------------------------------------------------------------------
+
+export interface PayRateOverrideDto {
+  overrideHourlyRate: number;
+  reason: string;
+  effectiveFromUtc: string;
+  setByManagerId: string;
+}
+
+export interface PayRateOverride {
+  overrideHourlyRate: number;
+  reason: string;
+  effectiveFromUtc: Date;
+  setByManagerId: string;
+}
+
+function mapPayRateOverride(dto: PayRateOverrideDto): PayRateOverride {
+  return {
+    overrideHourlyRate: dto.overrideHourlyRate,
+    reason: dto.reason,
+    effectiveFromUtc: new Date(dto.effectiveFromUtc),
+    setByManagerId: dto.setByManagerId,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Venue — sourced from useCurrentAccount()'s venues (see file header), not
 // its own endpoint. Only the fields AccountVenueDto actually carries.
 // ---------------------------------------------------------------------------
@@ -316,9 +385,13 @@ export interface StaffMemberDto {
   name: string;
   email: string;
   phone: string;
+  dateOfBirth: string; // DateOnly, "yyyy-MM-dd"
   employmentType: string;
   classification: string;
   maxWeeklyHours: number;
+  permissionLevel: string; // PermissionLevel wire member name
+  primaryRoleId: string | null;
+  payRateOverride: PayRateOverrideDto | null;
   venueIds: string[];
   unavailability: AvailabilityExceptionDto[];
   leaveRequests: LeaveRequestDto[];
@@ -329,9 +402,13 @@ export interface StaffMember {
   name: string;
   email: string;
   phone: string;
+  dateOfBirth: Date;
   employmentType: EmploymentType;
   classification: AwardClassification;
   maxWeeklyHours: number;
+  permissionLevel: PermissionLevel;
+  primaryRoleId: string | null;
+  payRateOverride: PayRateOverride | null;
   venueIds: string[];
   unavailability: AvailabilityException[];
   leaveRequests: LeaveRequest[];
@@ -343,9 +420,13 @@ export function mapStaffMember(dto: StaffMemberDto): StaffMember {
     name: dto.name,
     email: dto.email,
     phone: dto.phone,
+    dateOfBirth: new Date(`${dto.dateOfBirth}T00:00:00Z`),
     employmentType: mapEmploymentType(dto.employmentType),
     classification: mapClassification(dto.classification),
     maxWeeklyHours: dto.maxWeeklyHours,
+    permissionLevel: mapPermissionLevel(dto.permissionLevel),
+    primaryRoleId: dto.primaryRoleId,
+    payRateOverride: dto.payRateOverride ? mapPayRateOverride(dto.payRateOverride) : null,
     venueIds: dto.venueIds,
     unavailability: dto.unavailability.map(mapAvailabilityException),
     leaveRequests: dto.leaveRequests.map(mapLeaveRequest),
@@ -355,31 +436,56 @@ export function mapStaffMember(dto: StaffMemberDto): StaffMember {
 // Input shape for the create/edit form — core profile fields only.
 // Availability exceptions and leave requests are managed through their own
 // granular endpoints below (add/remove/decide), not bundled into one big
-// upsert, matching CQRS's one-command-per-action shape.
+// upsert, matching CQRS's one-command-per-action shape. permissionLevel is
+// only ever read by toCreateStaffMemberRequestDto (UpdateStaffMemberCommand
+// has no such field — permission changes go through the dedicated
+// UpdateStaffPermissionLevelCommand from Settings → Staff & Roles instead,
+// see PermissionLevel's doc comment above); it's still part of this one
+// shared input shape so StaffMemberForm.tsx's blank/edit value builders
+// don't need two different return types.
 export interface StaffMemberInput {
   id: string | null; // null = create (POST /api/staff); otherwise PUT /api/staff/{id}
   name: string;
   email: string;
   phone: string;
+  dateOfBirth: Date;
   employmentType: EmploymentType;
   classification: AwardClassification;
   maxWeeklyHours: number;
   venueIds: string[];
+  permissionLevel: PermissionLevel;
+  primaryRoleId: string | null;
 }
 
-// Request body shape shared by CreateStaffMemberRequest and
-// UpdateStaffMemberRequest — both are identical; only the id (URL for
-// update, absent for create) and HTTP verb differ, so api.ts picks the
-// route based on StaffMemberInput.id rather than needing two DTO shapes.
-export function toStaffMemberRequestDto(input: StaffMemberInput) {
+// Request body for POST /api/staff (CreateStaffMemberCommand).
+export function toCreateStaffMemberRequestDto(input: StaffMemberInput) {
   return {
     name: input.name,
     email: input.email,
     phone: input.phone,
+    dateOfBirth: toIsoDate(input.dateOfBirth),
     employmentType: unmapEmploymentType(input.employmentType),
     classification: unmapClassification(input.classification),
     maxWeeklyHours: input.maxWeeklyHours,
     venueIds: input.venueIds,
+    permissionLevel: unmapPermissionLevel(input.permissionLevel),
+    primaryRoleId: input.primaryRoleId,
+  };
+}
+
+// Request body for PUT /api/staff/{id} (UpdateStaffMemberCommand) — no
+// permissionLevel field, see StaffMemberInput's doc comment.
+export function toUpdateStaffMemberRequestDto(input: StaffMemberInput) {
+  return {
+    name: input.name,
+    email: input.email,
+    phone: input.phone,
+    dateOfBirth: toIsoDate(input.dateOfBirth),
+    employmentType: unmapEmploymentType(input.employmentType),
+    classification: unmapClassification(input.classification),
+    maxWeeklyHours: input.maxWeeklyHours,
+    venueIds: input.venueIds,
+    primaryRoleId: input.primaryRoleId,
   };
 }
 

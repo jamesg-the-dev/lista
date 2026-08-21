@@ -36,10 +36,13 @@ public sealed class StaffController(ISender mediator) : ApiControllerBase(mediat
             request.Name,
             request.Email,
             request.Phone,
+            request.DateOfBirth,
             request.EmploymentType,
             request.Classification,
             request.MaxWeeklyHours,
-            request.VenueIds);
+            request.VenueIds,
+            request.PermissionLevel,
+            request.PrimaryRoleId);
 
         var staff = await Mediator.Send(command, cancellationToken);
         return Ok(ApiResponse<StaffMemberDto>.Ok(staff));
@@ -63,12 +66,44 @@ public sealed class StaffController(ISender mediator) : ApiControllerBase(mediat
             request.Name,
             request.Email,
             request.Phone,
+            request.DateOfBirth,
             request.EmploymentType,
             request.Classification,
             request.MaxWeeklyHours,
-            request.VenueIds);
+            request.VenueIds,
+            request.PrimaryRoleId);
 
         var staff = await Mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<StaffMemberDto>.Ok(staff));
+    }
+
+    [HttpPut("~/api/staff/{id:guid}/permission-level")]
+    public async Task<ActionResult<ApiResponse<StaffMemberDto>>> UpdateStaffPermissionLevel(
+        Guid id,
+        UpdateStaffPermissionLevelRequest request,
+        CancellationToken cancellationToken)
+    {
+        var staff = await Mediator.Send(new UpdateStaffPermissionLevelCommand(id, request.PermissionLevel), cancellationToken);
+        return Ok(ApiResponse<StaffMemberDto>.Ok(staff));
+    }
+
+    [HttpPut("~/api/staff/{id:guid}/pay-rate-override")]
+    public async Task<ActionResult<ApiResponse<StaffMemberDto>>> SetStaffPayRateOverride(
+        Guid id,
+        SetStaffPayRateOverrideRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new SetStaffPayRateOverrideCommand(id, request.OverrideHourlyRate, request.Reason);
+        var staff = await Mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<StaffMemberDto>.Ok(staff));
+    }
+
+    [HttpDelete("~/api/staff/{id:guid}/pay-rate-override")]
+    public async Task<ActionResult<ApiResponse<StaffMemberDto>>> ClearStaffPayRateOverride(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var staff = await Mediator.Send(new ClearStaffPayRateOverrideCommand(id), cancellationToken);
         return Ok(ApiResponse<StaffMemberDto>.Ok(staff));
     }
 
@@ -109,20 +144,29 @@ public sealed record CreateStaffMemberRequest(
     string Name,
     string Email,
     string Phone,
+    DateOnly DateOfBirth,
     string EmploymentType,
     string Classification,
     int MaxWeeklyHours,
-    IReadOnlyList<Guid> VenueIds
+    IReadOnlyList<Guid> VenueIds,
+    string PermissionLevel,
+    Guid? PrimaryRoleId
 );
 
 public sealed record UpdateStaffMemberRequest(
     string Name,
     string Email,
     string Phone,
+    DateOnly DateOfBirth,
     string EmploymentType,
     string Classification,
     int MaxWeeklyHours,
-    IReadOnlyList<Guid> VenueIds
+    IReadOnlyList<Guid> VenueIds,
+    Guid? PrimaryRoleId
 );
+
+public sealed record UpdateStaffPermissionLevelRequest(string PermissionLevel);
+
+public sealed record SetStaffPayRateOverrideRequest(decimal OverrideHourlyRate, string Reason);
 
 public sealed record SetStandingUnavailabilityRequest(string DayOfWeek, bool IsAllDay, IReadOnlyList<string> Blocks);

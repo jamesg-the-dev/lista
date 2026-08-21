@@ -4,11 +4,11 @@ namespace RosterApp.Infrastructure.AwardConfig;
 
 /// <summary>
 /// The fixed ids and figures for MVP's system-maintained award reference
-/// data, shared between the seed migration (SeedAwardReferenceData) and
-/// anything else that needs to know these ids (e.g. tests). Kept as one
-/// source of truth rather than scattering literal Guids across a migration
-/// file — see AwardDefinition for why this data is system-maintained rather
-/// than owner-editable.
+/// data, shared between the idempotent startup seeder
+/// (AwardReferenceDataSeeder) and anything else that needs to know these ids
+/// (e.g. tests). Kept as one source of truth rather than scattering literal
+/// Guids across the seeder — see AwardDefinition for why this data is
+/// system-maintained rather than owner-editable.
 ///
 /// Classification names/rates for MA000009 mirror the levels already used
 /// by RosterApp.Domain.Staffing.AwardClassification (Introductory..Level6)

@@ -88,6 +88,17 @@ public sealed class VenueController(ISender mediator) : ApiControllerBase(mediat
         return Ok(ApiResponse<VenueDto>.Ok(venue));
     }
 
+    [HttpPut("~/api/venues/{venueId:guid}/availability-settings")]
+    public async Task<ActionResult<ApiResponse<VenueDto>>> UpdateVenueAvailabilitySettings(
+        Guid venueId,
+        UpdateVenueAvailabilitySettingsRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdateVenueAvailabilitySettingsCommand(venueId, request.SelfServiceMode, request.AdvanceNoticeDays);
+        var venue = await Mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<VenueDto>.Ok(venue));
+    }
+
     [HttpPost("~/api/venues/{venueId:guid}/deactivate")]
     public async Task<ActionResult> DeactivateVenue(Guid venueId, CancellationToken cancellationToken)
     {
@@ -121,3 +132,5 @@ public sealed record UpdateVenueProfileRequest(
 );
 
 public sealed record UpdateVenueTradingHoursRequest(IReadOnlyList<TradingHourSessionInput> Sessions);
+
+public sealed record UpdateVenueAvailabilitySettingsRequest(string SelfServiceMode, int AdvanceNoticeDays);

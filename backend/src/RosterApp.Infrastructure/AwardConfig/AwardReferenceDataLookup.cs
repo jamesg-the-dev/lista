@@ -40,6 +40,20 @@ public sealed class AwardReferenceDataLookup(RosterDbContext dbContext) : IAward
     public Task<bool> AwardExistsAsync(Guid awardId, CancellationToken cancellationToken) =>
         dbContext.AwardDefinitions.AsNoTracking().AnyAsync(a => a.Id == awardId, cancellationToken);
 
+    public async Task<IReadOnlyList<AwardClassificationDto>> GetClassificationsForAwardAsync(Guid awardId, CancellationToken cancellationToken)
+    {
+        var classifications = await dbContext.AwardClassificationDefinitions
+            .AsNoTracking()
+            .Where(c => c.AwardId == awardId)
+            .OrderBy(c => c.Name)
+            .ToListAsync(cancellationToken);
+
+        return classifications.Select(AwardClassificationDto.FromDomain).ToList();
+    }
+
+    public Task<bool> ClassificationExistsAsync(Guid awardClassificationId, CancellationToken cancellationToken) =>
+        dbContext.AwardClassificationDefinitions.AsNoTracking().AnyAsync(c => c.Id == awardClassificationId, cancellationToken);
+
     public async Task<decimal?> GetMinimumCasualLoadingPercentAsync(Guid awardId, CancellationToken cancellationToken)
     {
         var minimums = await dbContext.AwardRates

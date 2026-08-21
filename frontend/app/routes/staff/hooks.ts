@@ -7,6 +7,7 @@ import type {
   AvailabilityExceptionInput,
   LeaveRequestInput,
   LeaveRequestStatus,
+  PermissionLevel,
   StaffMemberInput,
 } from './types';
 import { mapLeaveRequest, mapStaffAvailability, mapStaffMember } from './types';
@@ -48,6 +49,65 @@ export function useSaveStaffMember() {
   return useMutation({
     mutationFn: (input: StaffMemberInput) =>
       input.id ? api.updateStaffMember(input.id, input) : api.createStaffMember(input),
+    onSuccess: dto => {
+      queryClient.invalidateQueries({
+        predicate: query => query.queryKey[0] === 'staff' && query.queryKey[1] === 'list',
+      });
+      queryClient.invalidateQueries({ queryKey: ['staff', 'detail', dto.id] });
+    },
+  });
+}
+
+// The three mutations below back Settings → Staff & Roles' StaffEditDrawer
+// (RosterApp.Application.Staffing's UpdateStaffPermissionLevelCommand /
+// SetStaffPayRateOverrideCommand / ClearStaffPayRateOverrideCommand) — kept
+// here rather than in settings/hooks.ts since StaffMember is owned by this
+// route; the Settings tab imports them directly.
+
+export function useUpdateStaffPermissionLevel() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      staffId,
+      permissionLevel,
+    }: {
+      staffId: string;
+      permissionLevel: PermissionLevel;
+    }) => api.updateStaffPermissionLevel(staffId, permissionLevel),
+    onSuccess: dto => {
+      queryClient.invalidateQueries({
+        predicate: query => query.queryKey[0] === 'staff' && query.queryKey[1] === 'list',
+      });
+      queryClient.invalidateQueries({ queryKey: ['staff', 'detail', dto.id] });
+    },
+  });
+}
+
+export function useSetStaffPayRateOverride() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      staffId,
+      overrideHourlyRate,
+      reason,
+    }: {
+      staffId: string;
+      overrideHourlyRate: number;
+      reason: string;
+    }) => api.setStaffPayRateOverride(staffId, overrideHourlyRate, reason),
+    onSuccess: dto => {
+      queryClient.invalidateQueries({
+        predicate: query => query.queryKey[0] === 'staff' && query.queryKey[1] === 'list',
+      });
+      queryClient.invalidateQueries({ queryKey: ['staff', 'detail', dto.id] });
+    },
+  });
+}
+
+export function useClearStaffPayRateOverride() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (staffId: string) => api.clearStaffPayRateOverride(staffId),
     onSuccess: dto => {
       queryClient.invalidateQueries({
         predicate: query => query.queryKey[0] === 'staff' && query.queryKey[1] === 'list',

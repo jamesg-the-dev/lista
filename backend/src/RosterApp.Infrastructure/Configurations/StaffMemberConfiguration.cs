@@ -35,6 +35,33 @@ public sealed class StaffMemberConfiguration : IEntityTypeConfiguration<StaffMem
         builder.Property(s => s.Classification).HasConversion<string>().HasMaxLength(20);
         builder.Property(s => s.SupabaseUserId).HasMaxLength(100);
 
+        // DateOfBirth has no default — every pre-existing row is backfilled
+        // in the StaffRolesSettings migration (see its Up method) since the
+        // column is required going forward but didn't exist before this
+        // build-order step (see StaffMember.DateOfBirth's doc comment).
+        builder.Property(s => s.DateOfBirth).IsRequired();
+
+        builder.Property(s => s.PermissionLevel)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .HasDefaultValue(PermissionLevel.Staff);
+
+        builder.HasIndex(s => s.PrimaryRoleId);
+
+        builder
+            .HasOne<Role>()
+            .WithMany()
+            .HasForeignKey(s => s.PrimaryRoleId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.OwnsOne(s => s.PayRateOverride, override_ =>
+        {
+            override_.Property(o => o.OverrideHourlyRate).HasColumnName("OverrideHourlyRate").HasPrecision(8, 2);
+            override_.Property(o => o.Reason).HasColumnName("OverrideReason").HasMaxLength(500);
+            override_.Property(o => o.EffectiveFromUtc).HasColumnName("OverrideEffectiveFromUtc");
+            override_.Property(o => o.SetByManagerId).HasColumnName("OverrideSetByManagerId");
+        });
+
         // DB-level backstop for the async uniqueness check in
         // CreateStaffMemberCommandValidator/UpdateStaffMemberCommandValidator
         // — scoped per-organisation, not globally, so two unrelated

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useForm } from '@tanstack/react-form';
-import { UsersIcon } from 'lucide-react';
 
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert';
 import { Button } from '~/components/ui/button';
@@ -21,25 +20,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from '~/components/ui/dialog';
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '~/components/ui/empty';
 import { Separator } from '~/components/ui/separator';
 import { Skeleton } from '~/components/ui/skeleton';
 
 import {
   useActiveAwardConfiguration,
   useAvailableAwards,
+  useRolesForVenue,
   useUpdateAwardConfiguration,
 } from '../hooks';
 import type { AwardConfigurationDto } from '../types';
 import { blankAwardPayTabValue, toAwardPayTabValue } from '../types';
 import AwardPayForm from './AwardPayForm';
 import ConfigurationHistoryPanel from './ConfigurationHistoryPanel';
+import RoleAwardMappingTable from './RoleAwardMappingTable';
 
 // Mirrors backend's RosterApp.Domain.AwardConfig.SuperannuationGuarantee
 // .CurrentStatutoryMinimumPercent — used only as a fallback before this venue
@@ -53,6 +47,7 @@ export default function AwardPayTab({ venueId }: { venueId: string }) {
   const awardsQuery = useAvailableAwards();
   const configQuery = useActiveAwardConfiguration(venueId);
   const updateMutation = useUpdateAwardConfiguration(venueId);
+  const rolesQuery = useRolesForVenue(venueId);
 
   const form = useForm({
     defaultValues: blankAwardPayTabValue(),
@@ -140,6 +135,16 @@ export default function AwardPayTab({ venueId }: { venueId: string }) {
               </Alert>
             )}
 
+            {(rolesQuery.data ?? []).some(r => r.isActive && !r.mappedAwardClassificationId) && (
+              <Alert variant="destructive">
+                <AlertTitle>
+                  {(rolesQuery.data ?? []).filter(r => r.isActive && !r.mappedAwardClassificationId)
+                    .length}{' '}
+                  role(s) are not yet mapped to an award classification.
+                </AlertTitle>
+              </Alert>
+            )}
+
             <AwardPayForm
               form={form}
               awards={awardsQuery.data ?? []}
@@ -148,18 +153,7 @@ export default function AwardPayTab({ venueId }: { venueId: string }) {
 
             <Separator />
 
-            <Empty className="border-border rounded-lg border py-6">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <UsersIcon />
-                </EmptyMedia>
-                <EmptyTitle>Role → award mapping coming soon</EmptyTitle>
-                <EmptyDescription>
-                  Mapping this venue's custom roles to award classifications arrives with
-                  Staff &amp; Roles, where roles themselves are created.
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
+            <RoleAwardMappingTable venueId={venueId} awardId={configQuery.data?.awardId} />
 
             <Separator />
 

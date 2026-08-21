@@ -25,6 +25,7 @@ public sealed class RosterDbContext(DbContextOptions<RosterDbContext> options) :
     public DbSet<ManagerVenueAccess> ManagerVenueAccesses => Set<ManagerVenueAccess>();
     public DbSet<AuditLogEntry> AuditLogEntries => Set<AuditLogEntry>();
     public DbSet<StaffMember> StaffMembers => Set<StaffMember>();
+    public DbSet<Role> Roles => Set<Role>();
     public DbSet<StandingUnavailability> StandingUnavailabilities => Set<StandingUnavailability>();
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
     public DbSet<TimeEntry> TimeEntries => Set<TimeEntry>();
@@ -32,6 +33,7 @@ public sealed class RosterDbContext(DbContextOptions<RosterDbContext> options) :
     public DbSet<AwardClassificationDefinition> AwardClassificationDefinitions => Set<AwardClassificationDefinition>();
     public DbSet<AwardRate> AwardRates => Set<AwardRate>();
     public DbSet<AwardConfiguration> AwardConfigurations => Set<AwardConfiguration>();
+    public DbSet<RoleAwardMapping> RoleAwardMappings => Set<RoleAwardMapping>();
     public DbSet<RosterComplianceConfiguration> RosterComplianceConfigurations => Set<RosterComplianceConfiguration>();
     public DbSet<PublicHoliday> PublicHolidays => Set<PublicHoliday>();
     public DbSet<VenueHolidayOverride> VenueHolidayOverrides => Set<VenueHolidayOverride>();

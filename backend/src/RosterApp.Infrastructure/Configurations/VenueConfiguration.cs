@@ -53,6 +53,28 @@ public sealed class VenueConfiguration : IEntityTypeConfiguration<Venue>
 
         builder.Navigation(v => v.Address).IsRequired();
 
+        // Always present (see VenueAvailabilitySettings.CreateDefault) —
+        // required navigation, same shape as Address. Explicit defaults
+        // (not just IsRequired) so the migration backfills existing venue
+        // rows to the same RequiresApproval/7-day default new venues get,
+        // same rationale as IsActive's default above.
+        builder.OwnsOne(v => v.AvailabilitySettings, settings =>
+        {
+            settings.Property(s => s.SelfServiceMode)
+                .HasColumnName("AvailabilitySelfServiceMode")
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .IsRequired()
+                .HasDefaultValue(SelfServiceMode.RequiresApproval);
+
+            settings.Property(s => s.AdvanceNoticeDays)
+                .HasColumnName("AvailabilityAdvanceNoticeDays")
+                .IsRequired()
+                .HasDefaultValue(7);
+        });
+
+        builder.Navigation(v => v.AvailabilitySettings).IsRequired();
+
         // Real relational table, not jsonb — same rationale as Shift's
         // owned collections (see ShiftConfiguration): a manager's trading
         // hours are read on every roster-builder load, not just settings.

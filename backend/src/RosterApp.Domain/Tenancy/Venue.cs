@@ -32,6 +32,14 @@ public sealed class Venue : AggregateRoot
     /// </summary>
     public decimal? ForecastSalesTarget { get; private set; }
 
+    /// <summary>
+    /// Never null — defaults to RequiresApproval/7 days at creation (see
+    /// VenueAvailabilitySettings.CreateDefault), since "no self-service" is
+    /// a meaningful choice an owner should make explicitly, not an implicit
+    /// null state to check for everywhere it's read.
+    /// </summary>
+    public VenueAvailabilitySettings AvailabilitySettings { get; private set; } = null!;
+
     private readonly List<TradingHourSession> _tradingHours = [];
     public IReadOnlyList<TradingHourSession> TradingHours => _tradingHours.AsReadOnly();
 
@@ -56,6 +64,7 @@ public sealed class Venue : AggregateRoot
             IsActive = true,
             CreatedAtUtc = DateTime.UtcNow,
             CreatedByManagerId = createdByManagerId,
+            AvailabilitySettings = VenueAvailabilitySettings.CreateDefault(),
         };
 
         venue.AddDomainEvent(new VenueCreated(venue.Id, venue.OrganisationId, DateTime.UtcNow));
@@ -85,6 +94,12 @@ public sealed class Venue : AggregateRoot
     public void UpdateForecastSalesTarget(decimal? forecastSalesTarget)
     {
         ForecastSalesTarget = forecastSalesTarget;
+    }
+
+    public void UpdateAvailabilitySettings(SelfServiceMode selfServiceMode, int advanceNoticeDays)
+    {
+        AvailabilitySettings = new VenueAvailabilitySettings(selfServiceMode, advanceNoticeDays);
+        AddDomainEvent(new VenueAvailabilitySettingsUpdated(Id, OrganisationId, DateTime.UtcNow));
     }
 
     public void Deactivate()

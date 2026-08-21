@@ -4,8 +4,9 @@ namespace RosterApp.Domain.RosterCompliance;
 
 /// <summary>
 /// System-maintained reference data (§2 AC3, §6) — owners view this, they
-/// don't author it. Seeded via EF Core migration data seeding (see
-/// PublicHolidayReferenceDataSeed), same "data change not a code deploy"
+/// don't author it. Seeded via an idempotent startup seeder (see
+/// PublicHolidayReferenceDataSeed/PublicHolidayReferenceDataSeeder), same
+/// "data change not a code deploy"
 /// rationale as AwardDefinition. One row per state even for a nationally
 /// observed date (IsNational = true) — matching the spec's schema — because
 /// GetPublicHolidaysQuery filters by a single state and some nationally

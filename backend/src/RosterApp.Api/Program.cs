@@ -71,4 +71,10 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+using (var seedScope = app.Services.CreateScope())
+{
+    var dbContext = seedScope.ServiceProvider.GetRequiredService<RosterDbContext>();
+    await DatabaseSeeder.SeedAsync(dbContext);
+}
+
 app.Run();

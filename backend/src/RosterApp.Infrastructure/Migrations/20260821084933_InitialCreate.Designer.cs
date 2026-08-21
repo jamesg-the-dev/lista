@@ -12,8 +12,8 @@ using RosterApp.Infrastructure;
 namespace RosterApp.Infrastructure.Migrations
 {
     [DbContext(typeof(RosterDbContext))]
-    [Migration("20260821070106_AwardPayConfiguration")]
-    partial class AwardPayConfiguration
+    [Migration("20260821084933_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -204,6 +204,147 @@ namespace RosterApp.Infrastructure.Migrations
                     b.ToTable("AwardRates");
                 });
 
+            modelBuilder.Entity("RosterApp.Domain.AwardConfig.RoleAwardMapping", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AwardClassificationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByManagerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("EffectiveFromUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EffectiveToUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("VenueId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AwardClassificationId");
+
+                    b.HasIndex("RoleId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_RoleAwardMappings_RoleId_Active")
+                        .HasFilter("\"EffectiveToUtc\" IS NULL");
+
+                    b.HasIndex("VenueId");
+
+                    b.ToTable("RoleAwardMappings");
+                });
+
+            modelBuilder.Entity("RosterApp.Domain.RosterCompliance.PublicHoliday", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsNational")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("State", "Date");
+
+                    b.ToTable("PublicHolidays");
+                });
+
+            modelBuilder.Entity("RosterApp.Domain.RosterCompliance.RosterComplianceConfiguration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByManagerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("EffectiveFromUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EffectiveToUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("MaxShiftLengthMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MinRestBetweenShiftsMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MinShiftLengthMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("VenueId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("WeeklyOvertimeThresholdMinutes")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VenueId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_RosterComplianceConfigurations_VenueId_Active")
+                        .HasFilter("\"EffectiveToUtc\" IS NULL");
+
+                    b.HasIndex("VenueId", "EffectiveFromUtc");
+
+                    b.ToTable("RosterComplianceConfigurations");
+                });
+
+            modelBuilder.Entity("RosterApp.Domain.RosterCompliance.VenueHolidayOverride", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByManagerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateOnly>("OverrideDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("VenueId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VenueId", "OverrideDate");
+
+                    b.ToTable("VenueHolidayOverrides");
+                });
+
             modelBuilder.Entity("RosterApp.Domain.Rostering.Shift", b =>
                 {
                     b.Property<Guid>("Id")
@@ -328,6 +469,41 @@ namespace RosterApp.Infrastructure.Migrations
                     b.ToTable("LeaveRequests");
                 });
 
+            modelBuilder.Entity("RosterApp.Domain.Staffing.Role", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ColorTag")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByManagerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<Guid>("VenueId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VenueId");
+
+                    b.ToTable("Roles");
+                });
+
             modelBuilder.Entity("RosterApp.Domain.Staffing.StaffMember", b =>
                 {
                     b.Property<Guid>("Id")
@@ -340,6 +516,9 @@ namespace RosterApp.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("DateOfBirth")
+                        .HasColumnType("date");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -362,16 +541,28 @@ namespace RosterApp.Infrastructure.Migrations
                     b.Property<Guid>("OrganisationId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("PermissionLevel")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("Staff");
+
                     b.Property<string>("Phone")
                         .IsRequired()
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)");
+
+                    b.Property<Guid?>("PrimaryRoleId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("SupabaseUserId")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("PrimaryRoleId");
 
                     b.HasIndex("SupabaseUserId")
                         .IsUnique()
@@ -698,6 +889,110 @@ namespace RosterApp.Infrastructure.Migrations
                     b.Navigation("PenaltyMultipliers");
                 });
 
+            modelBuilder.Entity("RosterApp.Domain.AwardConfig.RoleAwardMapping", b =>
+                {
+                    b.HasOne("RosterApp.Domain.AwardConfig.AwardClassificationDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("AwardClassificationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("RosterApp.Domain.Staffing.Role", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("RosterApp.Domain.Tenancy.Venue", null)
+                        .WithMany()
+                        .HasForeignKey("VenueId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("RosterApp.Domain.RosterCompliance.RosterComplianceConfiguration", b =>
+                {
+                    b.HasOne("RosterApp.Domain.Tenancy.Venue", null)
+                        .WithMany()
+                        .HasForeignKey("VenueId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.OwnsMany("RosterApp.Domain.RosterCompliance.MealBreakRule", "MealBreakRules", b1 =>
+                        {
+                            b1.Property<Guid>("RosterComplianceConfigurationId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<int>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer");
+
+                            NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<int>("Id"));
+
+                            b1.Property<decimal>("AfterHoursWorked")
+                                .HasPrecision(4, 2)
+                                .HasColumnType("numeric(4,2)");
+
+                            b1.Property<int>("BreakDurationMinutes")
+                                .HasColumnType("integer");
+
+                            b1.Property<bool>("IsPaid")
+                                .HasColumnType("boolean");
+
+                            b1.HasKey("RosterComplianceConfigurationId", "Id");
+
+                            b1.ToTable("RosterComplianceMealBreakRules", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("RosterComplianceConfigurationId");
+                        });
+
+                    b.OwnsOne("RosterApp.Domain.RosterCompliance.MinorRosterRule", "MinorRules", b1 =>
+                        {
+                            b1.Property<Guid>("RosterComplianceConfigurationId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<TimeOnly>("EarliestStartTime")
+                                .HasColumnType("time without time zone")
+                                .HasColumnName("MinorEarliestStartTime");
+
+                            b1.Property<TimeOnly>("LatestFinishTime")
+                                .HasColumnType("time without time zone")
+                                .HasColumnName("MinorLatestFinishTime");
+
+                            b1.Property<decimal>("MaxDailyHours")
+                                .HasPrecision(4, 2)
+                                .HasColumnType("numeric(4,2)")
+                                .HasColumnName("MinorMaxDailyHours");
+
+                            b1.Property<decimal>("MaxWeeklyHours")
+                                .HasPrecision(5, 2)
+                                .HasColumnType("numeric(5,2)")
+                                .HasColumnName("MinorMaxWeeklyHours");
+
+                            b1.HasKey("RosterComplianceConfigurationId");
+
+                            b1.ToTable("RosterComplianceConfigurations");
+
+                            b1.WithOwner()
+                                .HasForeignKey("RosterComplianceConfigurationId");
+                        });
+
+                    b.Navigation("MealBreakRules");
+
+                    b.Navigation("MinorRules")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("RosterApp.Domain.RosterCompliance.VenueHolidayOverride", b =>
+                {
+                    b.HasOne("RosterApp.Domain.Tenancy.Venue", null)
+                        .WithMany()
+                        .HasForeignKey("VenueId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("RosterApp.Domain.Rostering.Shift", b =>
                 {
                     b.HasOne("RosterApp.Domain.Tenancy.Venue", null)
@@ -812,8 +1107,54 @@ namespace RosterApp.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("RosterApp.Domain.Staffing.Role", b =>
+                {
+                    b.HasOne("RosterApp.Domain.Tenancy.Venue", null)
+                        .WithMany()
+                        .HasForeignKey("VenueId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("RosterApp.Domain.Staffing.StaffMember", b =>
                 {
+                    b.HasOne("RosterApp.Domain.Staffing.Role", null)
+                        .WithMany()
+                        .HasForeignKey("PrimaryRoleId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.OwnsOne("RosterApp.Domain.Staffing.PayRateOverride", "PayRateOverride", b1 =>
+                        {
+                            b1.Property<Guid>("StaffMemberId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<DateTime>("EffectiveFromUtc")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("OverrideEffectiveFromUtc");
+
+                            b1.Property<decimal>("OverrideHourlyRate")
+                                .HasPrecision(8, 2)
+                                .HasColumnType("numeric(8,2)")
+                                .HasColumnName("OverrideHourlyRate");
+
+                            b1.Property<string>("Reason")
+                                .IsRequired()
+                                .HasMaxLength(500)
+                                .HasColumnType("character varying(500)")
+                                .HasColumnName("OverrideReason");
+
+                            b1.Property<Guid>("SetByManagerId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("OverrideSetByManagerId");
+
+                            b1.HasKey("StaffMemberId");
+
+                            b1.ToTable("StaffMembers");
+
+                            b1.WithOwner()
+                                .HasForeignKey("StaffMemberId");
+                        });
+
                     b.OwnsMany("RosterApp.Domain.Staffing.StaffMemberVenueAssignment", "VenueAssignments", b1 =>
                         {
                             b1.Property<Guid>("StaffMemberId")
@@ -832,6 +1173,8 @@ namespace RosterApp.Infrastructure.Migrations
                             b1.WithOwner()
                                 .HasForeignKey("StaffMemberId");
                         });
+
+                    b.Navigation("PayRateOverride");
 
                     b.Navigation("VenueAssignments");
                 });
@@ -917,6 +1260,33 @@ namespace RosterApp.Infrastructure.Migrations
                                 .HasForeignKey("VenueId");
                         });
 
+                    b.OwnsOne("RosterApp.Domain.Tenancy.VenueAvailabilitySettings", "AvailabilitySettings", b1 =>
+                        {
+                            b1.Property<Guid>("VenueId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<int>("AdvanceNoticeDays")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(7)
+                                .HasColumnName("AvailabilityAdvanceNoticeDays");
+
+                            b1.Property<string>("SelfServiceMode")
+                                .IsRequired()
+                                .ValueGeneratedOnAdd()
+                                .HasMaxLength(20)
+                                .HasColumnType("character varying(20)")
+                                .HasDefaultValue("RequiresApproval")
+                                .HasColumnName("AvailabilitySelfServiceMode");
+
+                            b1.HasKey("VenueId");
+
+                            b1.ToTable("Venues");
+
+                            b1.WithOwner()
+                                .HasForeignKey("VenueId");
+                        });
+
                     b.OwnsOne("RosterApp.Domain.ValueObjects.Address", "Address", b1 =>
                         {
                             b1.Property<Guid>("VenueId")
@@ -966,6 +1336,9 @@ namespace RosterApp.Infrastructure.Migrations
                         });
 
                     b.Navigation("Address")
+                        .IsRequired();
+
+                    b.Navigation("AvailabilitySettings")
                         .IsRequired();
 
                     b.Navigation("TradingHours");

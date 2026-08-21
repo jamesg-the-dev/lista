@@ -51,6 +51,8 @@ public static class DependencyInjection
         services.AddScoped<IAwardConfigurationRepository, AwardConfigurationRepository>();
         services.AddScoped<IAwardConfigurationLookup, AwardConfigurationLookup>();
         services.AddScoped<IAwardReferenceDataLookup, AwardReferenceDataLookup>();
+        services.AddScoped<IRoleAwardMappingRepository, RoleAwardMappingRepository>();
+        services.AddScoped<IRoleAwardMappingLookup, RoleAwardMappingLookup>();
 
         services.AddScoped<IRosterComplianceConfigurationRepository, RosterComplianceConfigurationRepository>();
         services.AddScoped<IRosterComplianceConfigurationLookup, RosterComplianceConfigurationLookup>();
@@ -65,6 +67,9 @@ public static class DependencyInjection
         services.AddScoped<IStaffLookup, StaffLookup>();
         services.AddScoped<IStaffAvailabilityChecker, StaffAvailabilityChecker>();
         services.AddScoped<IStaffUniquenessChecker, StaffUniquenessChecker>();
+        services.AddScoped<IRoleRepository, RoleRepository>();
+        services.AddScoped<IRoleLookup, RoleLookup>();
+        services.AddScoped<IRoleUniquenessChecker, RoleUniquenessChecker>();
 
         services.AddScoped<ITimeEntryRepository, TimeEntryRepository>();
         services.AddScoped<ITimeEntryLookup, TimeEntryLookup>();

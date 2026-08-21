@@ -1,22 +1,29 @@
 import { apiClient } from '~/lib/api-client';
 
 import type {
+  AwardClassificationDto,
   AwardConfigurationDto,
   AwardDto,
   AwardPayTabValue,
   PublicHolidayDto,
+  RoleAwardMappingDto,
+  RoleDto,
   RosterComplianceConfigurationDto,
   RosterRulesTabValue,
   TradingHourSession,
+  VenueAvailabilitySettings,
   VenueHolidayOverrideDto,
   VenueProfileDto,
   VenueProfileTabValue,
 } from './types';
 import {
   toAddVenueHolidayOverrideRequestDto,
+  toCreateRoleRequestDto,
+  toSetRoleAwardMappingRequestDto,
   toTradingHourSessionInputDto,
   toUpdateAwardConfigurationRequestDto,
   toUpdateRosterComplianceConfigurationRequestDto,
+  toUpdateVenueAvailabilitySettingsRequestDto,
   toUpdateVenueProfileRequestDto,
 } from './types';
 
@@ -130,5 +137,60 @@ export function addVenueHolidayOverride(
   return apiClient.post<VenueHolidayOverrideDto>(
     `/api/venues/${venueId}/holiday-overrides`,
     toAddVenueHolidayOverrideRequestDto(overrideDate, name),
+  );
+}
+
+export function updateVenueAvailabilitySettings(
+  venueId: string,
+  value: VenueAvailabilitySettings,
+): Promise<VenueProfileDto> {
+  return apiClient.put<VenueProfileDto>(
+    `/api/venues/${venueId}/availability-settings`,
+    toUpdateVenueAvailabilitySettingsRequestDto(value),
+  );
+}
+
+// Backed by RoleController.
+
+export function fetchRolesForVenue(venueId: string): Promise<RoleDto[]> {
+  return apiClient.get<RoleDto[]>(`/api/venues/${venueId}/roles`);
+}
+
+export function fetchUnmappedRoles(venueId: string): Promise<RoleDto[]> {
+  return apiClient.get<RoleDto[]>(`/api/venues/${venueId}/roles/unmapped`);
+}
+
+export function createRole(
+  venueId: string,
+  displayName: string,
+  colorTag: string | null,
+): Promise<RoleDto> {
+  return apiClient.post<RoleDto>(
+    `/api/venues/${venueId}/roles`,
+    toCreateRoleRequestDto(displayName, colorTag),
+  );
+}
+
+export function deactivateRole(roleId: string): Promise<void> {
+  return apiClient.post<void>(`/api/roles/${roleId}/deactivate`);
+}
+
+// Award classification reference data + role mapping — backed by
+// AwardConfigurationController (same controller as the Award & Pay tab,
+// since RoleAwardMapping's domain lives alongside AwardConfiguration — see
+// FEATURE_SETTINGS_STAFF_ROLES.md §1's cross-reference).
+
+export function fetchAwardClassifications(awardId: string): Promise<AwardClassificationDto[]> {
+  return apiClient.get<AwardClassificationDto[]>(`/api/awards/${awardId}/classifications`);
+}
+
+export function setRoleAwardMapping(
+  venueId: string,
+  roleId: string,
+  awardClassificationId: string,
+): Promise<RoleAwardMappingDto> {
+  return apiClient.put<RoleAwardMappingDto>(
+    `/api/venues/${venueId}/role-award-mappings/${roleId}`,
+    toSetRoleAwardMappingRequestDto(awardClassificationId),
   );
 }

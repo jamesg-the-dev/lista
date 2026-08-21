@@ -27,6 +27,12 @@ public sealed record TradingHourSessionDto(
             session.CrossesMidnight);
 }
 
+public sealed record VenueAvailabilitySettingsDto(string SelfServiceMode, int AdvanceNoticeDays)
+{
+    public static VenueAvailabilitySettingsDto FromDomain(VenueAvailabilitySettings settings) =>
+        new(settings.SelfServiceMode.ToString(), settings.AdvanceNoticeDays);
+}
+
 public sealed record VenueDto(
     Guid Id,
     Guid OrganisationId,
@@ -36,7 +42,8 @@ public sealed record VenueDto(
     string Timezone,
     bool IsActive,
     decimal? ForecastSalesTarget,
-    IReadOnlyList<TradingHourSessionDto> TradingHours)
+    IReadOnlyList<TradingHourSessionDto> TradingHours,
+    VenueAvailabilitySettingsDto AvailabilitySettings)
 {
     public static VenueDto FromDomain(Venue venue) =>
         new(
@@ -48,5 +55,6 @@ public sealed record VenueDto(
             venue.Timezone,
             venue.IsActive,
             venue.ForecastSalesTarget,
-            venue.TradingHours.Select(TradingHourSessionDto.FromDomain).ToList());
+            venue.TradingHours.Select(TradingHourSessionDto.FromDomain).ToList(),
+            VenueAvailabilitySettingsDto.FromDomain(venue.AvailabilitySettings));
 }

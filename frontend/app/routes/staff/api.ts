@@ -5,14 +5,17 @@ import type {
   AvailabilityExceptionInput,
   LeaveRequestDto,
   LeaveRequestInput,
+  PermissionLevel,
   StaffAvailabilityDto,
   StaffMemberDto,
   StaffMemberInput,
 } from './types';
 import {
+  toCreateStaffMemberRequestDto,
   toLeaveRequestInputDto,
   toSetStandingUnavailabilityRequestDto,
-  toStaffMemberRequestDto,
+  toUpdateStaffMemberRequestDto,
+  unmapPermissionLevel,
 } from './types';
 
 // Backed by StaffController and LeaveRequestController — see types.ts's
@@ -28,7 +31,7 @@ export function fetchStaffMember(staffId: string): Promise<StaffMemberDto> {
 }
 
 export function createStaffMember(input: StaffMemberInput): Promise<StaffMemberDto> {
-  return apiClient.post<StaffMemberDto>('/api/staff', toStaffMemberRequestDto(input));
+  return apiClient.post<StaffMemberDto>('/api/staff', toCreateStaffMemberRequestDto(input));
 }
 
 export function updateStaffMember(
@@ -37,8 +40,36 @@ export function updateStaffMember(
 ): Promise<StaffMemberDto> {
   return apiClient.put<StaffMemberDto>(
     `/api/staff/${staffId}`,
-    toStaffMemberRequestDto(input),
+    toUpdateStaffMemberRequestDto(input),
   );
+}
+
+// Owner-only per FEATURE_SETTINGS_STAFF_ROLES.md §5 (not enforced by the
+// backend yet — see AuthorizationBehavior's TODO), called from Settings →
+// Staff & Roles' StaffEditDrawer, not from this route's own profile form.
+
+export function updateStaffPermissionLevel(
+  staffId: string,
+  permissionLevel: PermissionLevel,
+): Promise<StaffMemberDto> {
+  return apiClient.put<StaffMemberDto>(`/api/staff/${staffId}/permission-level`, {
+    permissionLevel: unmapPermissionLevel(permissionLevel),
+  });
+}
+
+export function setStaffPayRateOverride(
+  staffId: string,
+  overrideHourlyRate: number,
+  reason: string,
+): Promise<StaffMemberDto> {
+  return apiClient.put<StaffMemberDto>(`/api/staff/${staffId}/pay-rate-override`, {
+    overrideHourlyRate,
+    reason,
+  });
+}
+
+export function clearStaffPayRateOverride(staffId: string): Promise<StaffMemberDto> {
+  return apiClient.delete<StaffMemberDto>(`/api/staff/${staffId}/pay-rate-override`);
 }
 
 export function fetchStaffAvailability(

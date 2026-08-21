@@ -57,6 +57,15 @@ public sealed class StaffLookup(RosterDbContext dbContext) : IStaffLookup
             approvedLeave.Select(LeaveRequestDto.FromDomain).ToList());
     }
 
+    public Task<bool> AnyStaffWithPrimaryRoleAsync(Guid roleId, CancellationToken cancellationToken) =>
+        dbContext.StaffMembers.AsNoTracking().AnyAsync(s => s.PrimaryRoleId == roleId, cancellationToken);
+
+    public Task<int> CountByPermissionLevelAsync(Guid organisationId, PermissionLevel permissionLevel, CancellationToken cancellationToken) =>
+        dbContext.StaffMembers
+            .AsNoTracking()
+            .Where(s => s.OrganisationId == organisationId && s.PermissionLevel == permissionLevel)
+            .CountAsync(cancellationToken);
+
     private async Task<IReadOnlyList<StaffMemberDto>> ComposeAsync(
         IReadOnlyList<StaffMember> staffMembers,
         CancellationToken cancellationToken)
