@@ -269,12 +269,12 @@ function StaffDataTable({ staff }: { staff: StaffMember[] }) {
   const table = useReactTable({
     data: filteredStaff,
     columns,
-    state: { sorting, pagination },
-    onSortingChange: setSorting,
+    state: { pagination },
+    // onSortingChange: setSorting,
     onPaginationChange: setPagination,
     enableSortingRemoval: false,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    // getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
   });
 
@@ -306,7 +306,7 @@ function StaffDataTable({ staff }: { staff: StaffMember[] }) {
                   <TableHead key={header.id} className="h-11">
                     {header.isPlaceholder ? null : header.column.getCanSort() ? (
                       <div
-                        className="flex h-full cursor-pointer items-center gap-2 select-none"
+                        className="flex h-full items-center gap-2 select-none"
                         onClick={header.column.getToggleSortingHandler()}
                         onKeyDown={e => {
                           if (e.key === 'Enter' || e.key === ' ') {
