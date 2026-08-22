@@ -27,6 +27,7 @@ export function useVenueProfile(venueId: string) {
     queryKey: ['settings', 'venue-profile', venueId],
     queryFn: async () => mapVenueProfile(await api.fetchVenueProfile(venueId)),
     enabled: !!venueId,
+    staleTime: 30_000,
   });
 }
 
@@ -141,7 +142,9 @@ export function useAddVenueHolidayOverride(venueId: string) {
     mutationFn: ({ overrideDate, name }: { overrideDate: string; name: string }) =>
       api.addVenueHolidayOverride(venueId, overrideDate, name),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['settings', 'holiday-overrides', venueId] });
+      queryClient.invalidateQueries({
+        queryKey: ['settings', 'holiday-overrides', venueId],
+      });
     },
   });
 }
@@ -162,14 +165,20 @@ export function useRolesForVenue(venueId: string) {
     queryKey: ['settings', 'roles', venueId],
     queryFn: async () => (await api.fetchRolesForVenue(venueId)).map(mapRole),
     enabled: !!venueId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
 export function useCreateRole(venueId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ displayName, colorTag }: { displayName: string; colorTag: string | null }) =>
-      api.createRole(venueId, displayName, colorTag),
+    mutationFn: ({
+      displayName,
+      colorTag,
+    }: {
+      displayName: string;
+      colorTag: string | null;
+    }) => api.createRole(venueId, displayName, colorTag),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settings', 'roles', venueId] });
     },
@@ -192,6 +201,7 @@ export function useAwardClassifications(awardId: string | undefined) {
     queryKey: ['settings', 'award-classifications', awardId],
     queryFn: () => api.fetchAwardClassifications(awardId!),
     enabled: !!awardId,
+    staleTime: 30_000,
   });
 }
 

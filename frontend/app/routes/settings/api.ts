@@ -125,8 +125,12 @@ export function fetchPublicHolidays(
   return apiClient.get<PublicHolidayDto[]>(`/api/public-holidays?${params.toString()}`);
 }
 
-export function fetchVenueHolidayOverrides(venueId: string): Promise<VenueHolidayOverrideDto[]> {
-  return apiClient.get<VenueHolidayOverrideDto[]>(`/api/venues/${venueId}/holiday-overrides`);
+export function fetchVenueHolidayOverrides(
+  venueId: string,
+): Promise<VenueHolidayOverrideDto[]> {
+  return apiClient.get<VenueHolidayOverrideDto[]>(
+    `/api/venues/${venueId}/holiday-overrides`,
+  );
 }
 
 export function addVenueHolidayOverride(
@@ -180,8 +184,12 @@ export function deactivateRole(roleId: string): Promise<void> {
 // since RoleAwardMapping's domain lives alongside AwardConfiguration — see
 // FEATURE_SETTINGS_STAFF_ROLES.md §1's cross-reference).
 
-export function fetchAwardClassifications(awardId: string): Promise<AwardClassificationDto[]> {
-  return apiClient.get<AwardClassificationDto[]>(`/api/awards/${awardId}/classifications`);
+export function fetchAwardClassifications(
+  awardId: string,
+): Promise<AwardClassificationDto[]> {
+  return apiClient.get<AwardClassificationDto[]>(
+    `/api/awards/${awardId}/classifications`,
+  );
 }
 
 export function setRoleAwardMapping(

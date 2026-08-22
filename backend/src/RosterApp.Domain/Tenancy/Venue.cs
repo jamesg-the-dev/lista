@@ -51,7 +51,8 @@ public sealed class Venue : AggregateRoot
         Abn abn,
         Address address,
         string timezone,
-        Guid createdByManagerId)
+        Guid createdByManagerId
+    )
     {
         var venue = new Venue
         {

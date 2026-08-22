@@ -20,9 +20,13 @@ public sealed class VenueController(ISender mediator) : ApiControllerBase(mediat
     [HttpGet("~/api/organisations/{organisationId:guid}/venues")]
     public async Task<ActionResult<ApiResponse<IReadOnlyList<VenueDto>>>> GetVenuesForOrganisation(
         Guid organisationId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
-        var venues = await Mediator.Send(new GetVenuesForOrganisationQuery(organisationId), cancellationToken);
+        var venues = await Mediator.Send(
+            new GetVenuesForOrganisationQuery(organisationId),
+            cancellationToken
+        );
         return Ok(ApiResponse<IReadOnlyList<VenueDto>>.Ok(venues));
     }
 
@@ -30,7 +34,8 @@ public sealed class VenueController(ISender mediator) : ApiControllerBase(mediat
     public async Task<ActionResult<ApiResponse<VenueDto>>> CreateVenue(
         Guid organisationId,
         CreateVenueRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var command = new CreateVenueCommand(
             organisationId,
@@ -42,14 +47,18 @@ public sealed class VenueController(ISender mediator) : ApiControllerBase(mediat
             request.State,
             request.Postcode,
             request.Country,
-            request.Timezone);
+            request.Timezone
+        );
 
         var venue = await Mediator.Send(command, cancellationToken);
         return Ok(ApiResponse<VenueDto>.Ok(venue));
     }
 
     [HttpGet("~/api/venues/{venueId:guid}/profile")]
-    public async Task<ActionResult<ApiResponse<VenueDto>>> GetVenueProfile(Guid venueId, CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResponse<VenueDto>>> GetVenueProfile(
+        Guid venueId,
+        CancellationToken cancellationToken
+    )
     {
         var venue = await Mediator.Send(new GetVenueProfileQuery(venueId), cancellationToken);
         return Ok(ApiResponse<VenueDto>.Ok(venue));
@@ -59,7 +68,8 @@ public sealed class VenueController(ISender mediator) : ApiControllerBase(mediat
     public async Task<ActionResult<ApiResponse<VenueDto>>> UpdateVenueProfile(
         Guid venueId,
         UpdateVenueProfileRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var command = new UpdateVenueProfileCommand(
             venueId,
@@ -71,7 +81,8 @@ public sealed class VenueController(ISender mediator) : ApiControllerBase(mediat
             request.State,
             request.Postcode,
             request.Country,
-            request.Timezone);
+            request.Timezone
+        );
 
         var venue = await Mediator.Send(command, cancellationToken);
         return Ok(ApiResponse<VenueDto>.Ok(venue));
@@ -81,7 +92,8 @@ public sealed class VenueController(ISender mediator) : ApiControllerBase(mediat
     public async Task<ActionResult<ApiResponse<VenueDto>>> UpdateVenueTradingHours(
         Guid venueId,
         UpdateVenueTradingHoursRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var command = new UpdateVenueTradingHoursCommand(venueId, request.Sessions);
         var venue = await Mediator.Send(command, cancellationToken);
@@ -92,15 +104,23 @@ public sealed class VenueController(ISender mediator) : ApiControllerBase(mediat
     public async Task<ActionResult<ApiResponse<VenueDto>>> UpdateVenueAvailabilitySettings(
         Guid venueId,
         UpdateVenueAvailabilitySettingsRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
-        var command = new UpdateVenueAvailabilitySettingsCommand(venueId, request.SelfServiceMode, request.AdvanceNoticeDays);
+        var command = new UpdateVenueAvailabilitySettingsCommand(
+            venueId,
+            request.SelfServiceMode,
+            request.AdvanceNoticeDays
+        );
         var venue = await Mediator.Send(command, cancellationToken);
         return Ok(ApiResponse<VenueDto>.Ok(venue));
     }
 
     [HttpPost("~/api/venues/{venueId:guid}/deactivate")]
-    public async Task<ActionResult> DeactivateVenue(Guid venueId, CancellationToken cancellationToken)
+    public async Task<ActionResult> DeactivateVenue(
+        Guid venueId,
+        CancellationToken cancellationToken
+    )
     {
         await Mediator.Send(new DeactivateVenueCommand(venueId), cancellationToken);
         return NoContent();
@@ -131,6 +151,11 @@ public sealed record UpdateVenueProfileRequest(
     string Timezone
 );
 
-public sealed record UpdateVenueTradingHoursRequest(IReadOnlyList<TradingHourSessionInput> Sessions);
+public sealed record UpdateVenueTradingHoursRequest(
+    IReadOnlyList<TradingHourSessionInput> Sessions
+);
 
-public sealed record UpdateVenueAvailabilitySettingsRequest(string SelfServiceMode, int AdvanceNoticeDays);
+public sealed record UpdateVenueAvailabilitySettingsRequest(
+    string SelfServiceMode,
+    int AdvanceNoticeDays
+);

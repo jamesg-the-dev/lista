@@ -39,8 +39,15 @@ export default function VenueProfileTab({ venueId }: { venueId: string }) {
   const updateProfileMutation = useUpdateVenueProfile(venueId);
   const updateTradingHoursMutation = useUpdateVenueTradingHours(venueId);
 
+  // defaultValues tracks profileQuery.data (not a fixed blank object) so
+  // that on every render it stays deep-equal to whatever resetFromProfile
+  // last passed to form.reset() below. @tanstack/react-form re-syncs the
+  // form's live values to `defaultValues` on every render when they differ
+  // from what it last saw — passing a perpetually-blank object here would
+  // make it clobber the real data back to blank the render right after it
+  // loads.
   const form = useForm({
-    defaultValues: blankFormValue(),
+    defaultValues: profileQuery.data ? toVenueProfileTabValue(profileQuery.data) : blankFormValue(),
     onSubmit: async ({ value }) => {
       await Promise.all([
         updateProfileMutation.mutateAsync(value),

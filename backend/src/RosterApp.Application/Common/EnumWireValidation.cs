@@ -12,5 +12,6 @@ namespace RosterApp.Application.Common;
 public static class EnumWireValidation
 {
     public static bool IsDefinedName<TEnum>(string? value)
-        where TEnum : struct, Enum => value is not null && Enum.GetNames<TEnum>().Contains(value, StringComparer.Ordinal);
+        where TEnum : struct, Enum =>
+        value is not null && Enum.GetNames<TEnum>().Contains(value, StringComparer.Ordinal);
 }

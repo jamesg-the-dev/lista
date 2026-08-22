@@ -24,7 +24,11 @@ public enum SelfServiceMode
 /// past-dated recalculation matters. Same "simple owned value on the
 /// aggregate" pattern as Venue.ForecastSalesTarget/TradingHours.
 /// </summary>
-public sealed record VenueAvailabilitySettings(SelfServiceMode SelfServiceMode, int AdvanceNoticeDays)
+public sealed record VenueAvailabilitySettings(
+    SelfServiceMode SelfServiceMode,
+    int AdvanceNoticeDays
+)
 {
-    public static VenueAvailabilitySettings CreateDefault() => new(SelfServiceMode.RequiresApproval, 7);
+    public static VenueAvailabilitySettings CreateDefault() =>
+        new(SelfServiceMode.RequiresApproval, 7);
 }

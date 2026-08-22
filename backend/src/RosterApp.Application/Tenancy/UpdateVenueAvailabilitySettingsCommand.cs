@@ -11,10 +11,14 @@ namespace RosterApp.Application.Tenancy;
 /// since it's a workflow setting rather than a compliance/pay figure. See
 /// VenueAvailabilitySettings' doc comment.
 /// </summary>
-public sealed record UpdateVenueAvailabilitySettingsCommand(Guid VenueId, string SelfServiceMode, int AdvanceNoticeDays)
-    : IRequest<VenueDto>, IVenueScopedRequest;
+public sealed record UpdateVenueAvailabilitySettingsCommand(
+    Guid VenueId,
+    string SelfServiceMode,
+    int AdvanceNoticeDays
+) : IRequest<VenueDto>, IVenueScopedRequest;
 
-public sealed class UpdateVenueAvailabilitySettingsCommandValidator : AbstractValidator<UpdateVenueAvailabilitySettingsCommand>
+public sealed class UpdateVenueAvailabilitySettingsCommandValidator
+    : AbstractValidator<UpdateVenueAvailabilitySettingsCommand>
 {
     public UpdateVenueAvailabilitySettingsCommandValidator()
     {
@@ -31,7 +35,10 @@ public sealed class UpdateVenueAvailabilitySettingsCommandHandler(
     IUnitOfWork unitOfWork
 ) : IRequestHandler<UpdateVenueAvailabilitySettingsCommand, VenueDto>
 {
-    public async Task<VenueDto> Handle(UpdateVenueAvailabilitySettingsCommand request, CancellationToken cancellationToken)
+    public async Task<VenueDto> Handle(
+        UpdateVenueAvailabilitySettingsCommand request,
+        CancellationToken cancellationToken
+    )
     {
         var venue = await venueRepository.GetByIdAsync(request.VenueId, cancellationToken);
         if (venue is null)
@@ -39,7 +46,10 @@ public sealed class UpdateVenueAvailabilitySettingsCommandHandler(
             throw new NotFoundException($"Venue '{request.VenueId}' was not found.");
         }
 
-        venue.UpdateAvailabilitySettings(Enum.Parse<SelfServiceMode>(request.SelfServiceMode), request.AdvanceNoticeDays);
+        venue.UpdateAvailabilitySettings(
+            Enum.Parse<SelfServiceMode>(request.SelfServiceMode),
+            request.AdvanceNoticeDays
+        );
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return VenueDto.FromDomain(venue);
