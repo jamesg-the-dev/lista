@@ -2,12 +2,16 @@ using FluentValidation;
 using MediatR;
 using RosterApp.Application.Common;
 using RosterApp.Domain.RosterCompliance;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.RosterCompliance;
 
 /// <summary>Rare, owner-initiated exception only — a venue-specific closure day (e.g. a private event), additive to the system-maintained calendar, never a replacement for it (§6).</summary>
 public sealed record AddVenueHolidayOverrideCommand(Guid VenueId, DateOnly OverrideDate, string Name)
-    : IRequest<VenueHolidayOverrideDto>, IVenueScopedRequest;
+    : IRequest<VenueHolidayOverrideDto>, IVenueScopedRequest, IRequiresPermissionLevel
+{
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Manager;
+}
 
 public sealed class AddVenueHolidayOverrideCommandValidator : AbstractValidator<AddVenueHolidayOverrideCommand>
 {

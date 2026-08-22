@@ -11,7 +11,11 @@ namespace RosterApp.Application.Rostering;
 /// their JWT (see SupabaseClaimsTransformation), and this query spans
 /// whichever venues they're assigned to rather than a single one.
 /// </summary>
-public sealed record GetMyShiftsQuery(DateOnly From, DateOnly To) : IRequest<IReadOnlyList<ShiftDto>>;
+public sealed record GetMyShiftsQuery(DateOnly From, DateOnly To)
+    : IRequest<IReadOnlyList<ShiftDto>>, IRequiresPermissionLevel
+{
+    public RosterApp.Domain.Staffing.PermissionLevel? MinimumPermissionLevel => null;
+}
 
 public sealed class GetMyShiftsQueryValidator : AbstractValidator<GetMyShiftsQuery>
 {

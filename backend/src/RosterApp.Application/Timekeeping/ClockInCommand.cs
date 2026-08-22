@@ -13,7 +13,11 @@ namespace RosterApp.Application.Timekeeping;
 /// venue is only known once the Shift is loaded, same pattern as
 /// RequestSwapCommand.
 /// </summary>
-public sealed record ClockInCommand(Guid ShiftId, decimal Latitude, decimal Longitude, decimal AccuracyMetres) : IRequest<TimeEntryDto>;
+public sealed record ClockInCommand(Guid ShiftId, decimal Latitude, decimal Longitude, decimal AccuracyMetres)
+    : IRequest<TimeEntryDto>, IRequiresPermissionLevel
+{
+    public RosterApp.Domain.Staffing.PermissionLevel? MinimumPermissionLevel => null;
+}
 
 public sealed class ClockInCommandValidator : AbstractValidator<ClockInCommand>
 {

@@ -9,22 +9,17 @@ namespace RosterApp.Application.Timekeeping;
 /// (CLAUDE.md build order step 4/6) — the first place actual clocked hours
 /// become available to compare against the roster.
 /// </summary>
-public sealed record GetActualVsRosteredQuery(Guid VenueId, DateOnly WeekStart) : IRequest<IReadOnlyList<ShiftVarianceDto>>, IVenueScopedRequest;
-
-public sealed class GetActualVsRosteredQueryHandler(
-    ITimeEntryLookup timeEntryLookup,
-    ICurrentTenantContext tenantContext
-) : IRequestHandler<GetActualVsRosteredQuery, IReadOnlyList<ShiftVarianceDto>>
+public sealed record GetActualVsRosteredQuery(Guid VenueId, DateOnly WeekStart)
+    : IRequest<IReadOnlyList<ShiftVarianceDto>>, IVenueScopedRequest, IRequiresPermissionLevel
 {
-    public async Task<IReadOnlyList<ShiftVarianceDto>> Handle(GetActualVsRosteredQuery request, CancellationToken cancellationToken)
-    {
-        if (tenantContext.PermissionLevel is null or PermissionLevel.Staff)
-        {
-            throw new ForbiddenAccessException("Only a manager can view the rostered-vs-actual report.");
-        }
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Supervisor;
+}
 
-        return await timeEntryLookup.GetActualVsRosteredAsync(request.VenueId, request.WeekStart, cancellationToken);
-    }
+public sealed class GetActualVsRosteredQueryHandler(ITimeEntryLookup timeEntryLookup)
+    : IRequestHandler<GetActualVsRosteredQuery, IReadOnlyList<ShiftVarianceDto>>
+{
+    public Task<IReadOnlyList<ShiftVarianceDto>> Handle(GetActualVsRosteredQuery request, CancellationToken cancellationToken) =>
+        timeEntryLookup.GetActualVsRosteredAsync(request.VenueId, request.WeekStart, cancellationToken);
 }
 
 /// <summary>

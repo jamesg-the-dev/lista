@@ -24,7 +24,14 @@ public sealed record UpdateStaffMemberCommand(
     int MaxWeeklyHours,
     IReadOnlyList<Guid> VenueIds,
     Guid? PrimaryRoleId
-) : IRequest<StaffMemberDto>;
+) : IRequest<StaffMemberDto>, IRequiresPermissionLevel
+{
+    // Flat Manager minimum, deliberately no self-carve-out: this command
+    // can change pay-affecting fields (Classification, EmploymentType,
+    // VenueIds), so a staff member editing their own record isn't treated
+    // as self-service the way availability/leave are.
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Manager;
+}
 
 /// <summary>
 /// Same per-organisation email/phone uniqueness guard as

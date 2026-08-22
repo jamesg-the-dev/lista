@@ -10,20 +10,15 @@ namespace RosterApp.Application.Timekeeping;
 /// member's own venue claims would also satisfy VenueId scoping, so
 /// PermissionLevel is checked explicitly in the handler.
 /// </summary>
-public sealed record GetFlaggedTimeEntriesQuery(Guid VenueId) : IRequest<IReadOnlyList<TimeEntryDto>>, IVenueScopedRequest;
-
-public sealed class GetFlaggedTimeEntriesQueryHandler(
-    ITimeEntryLookup timeEntryLookup,
-    ICurrentTenantContext tenantContext
-) : IRequestHandler<GetFlaggedTimeEntriesQuery, IReadOnlyList<TimeEntryDto>>
+public sealed record GetFlaggedTimeEntriesQuery(Guid VenueId)
+    : IRequest<IReadOnlyList<TimeEntryDto>>, IVenueScopedRequest, IRequiresPermissionLevel
 {
-    public async Task<IReadOnlyList<TimeEntryDto>> Handle(GetFlaggedTimeEntriesQuery request, CancellationToken cancellationToken)
-    {
-        if (tenantContext.PermissionLevel is null or PermissionLevel.Staff)
-        {
-            throw new ForbiddenAccessException("Only a manager can view flagged time entries.");
-        }
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Supervisor;
+}
 
-        return await timeEntryLookup.GetFlaggedForVenueAsync(request.VenueId, cancellationToken);
-    }
+public sealed class GetFlaggedTimeEntriesQueryHandler(ITimeEntryLookup timeEntryLookup)
+    : IRequestHandler<GetFlaggedTimeEntriesQuery, IReadOnlyList<TimeEntryDto>>
+{
+    public Task<IReadOnlyList<TimeEntryDto>> Handle(GetFlaggedTimeEntriesQuery request, CancellationToken cancellationToken) =>
+        timeEntryLookup.GetFlaggedForVenueAsync(request.VenueId, cancellationToken);
 }

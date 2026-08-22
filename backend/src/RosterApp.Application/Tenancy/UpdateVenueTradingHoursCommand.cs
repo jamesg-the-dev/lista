@@ -16,7 +16,10 @@ public sealed record TradingHourSessionInput(
 
 /// <summary>Replaces the full week's sessions in one call — simpler than a per-day patch endpoint.</summary>
 public sealed record UpdateVenueTradingHoursCommand(Guid VenueId, IReadOnlyList<TradingHourSessionInput> Sessions)
-    : IRequest<VenueDto>, IVenueScopedRequest;
+    : IRequest<VenueDto>, IVenueScopedRequest, RosterApp.Application.Common.IRequiresPermissionLevel
+{
+    public RosterApp.Domain.Staffing.PermissionLevel? MinimumPermissionLevel => RosterApp.Domain.Staffing.PermissionLevel.Manager;
+}
 
 public sealed class UpdateVenueTradingHoursCommandValidator : AbstractValidator<UpdateVenueTradingHoursCommand>
 {

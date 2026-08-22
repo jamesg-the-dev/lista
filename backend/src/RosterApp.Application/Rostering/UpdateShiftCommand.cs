@@ -2,6 +2,7 @@ using FluentValidation;
 using MediatR;
 using RosterApp.Application.Common;
 using RosterApp.Application.Staffing;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Rostering;
 
@@ -14,7 +15,10 @@ public sealed record UpdateShiftCommand(
     TimeOnly End,
     int UnpaidBreakMinutes,
     decimal BaseRatePerHour
-) : IRequest<ShiftDto>, IVenueScopedRequest;
+) : IRequest<ShiftDto>, IVenueScopedRequest, IRequiresPermissionLevel
+{
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Supervisor;
+}
 
 /// <summary>
 /// Same double-booking guard as CreateShiftCommandValidator — see the

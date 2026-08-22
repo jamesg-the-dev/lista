@@ -440,7 +440,9 @@ route directory.
     events raised on aggregates (see `Shift.cs` — events are TODO but the
     aggregate shape assumes this).
   * MediatR pipeline behaviors in this order: tenant-scoping →
-    authorization → audit → validation.
+    authorization → audit → validation. See "Authorization & permission
+    policy (backend)" below for what the authorization stage actually
+    enforces and does not.
   * Prefer pluggable interfaces over hardcoded logic wherever a second
     variant is plausible later (see `IAwardRateCalculator` — MVP has one
     implementation, but a second award/EBA pay template will need to slot
@@ -555,6 +557,117 @@ route directory.
   a payroll-shaped CSV export (see build order below) ships in MVP —
   domain models carry export-ready fields (pay codes, cost records) so a
   later Xero/MYOB API integration is additive, not a retrofit.
+
+* **TODO: backend test coverage is thin outside the domain layer.**
+  `RosterApp.Domain.Tests` has decent coverage of aggregates/value objects,
+  and `RosterApp.Application.Tests` currently only covers the
+  permission-policy mechanism (`PermissionPolicyCoverageTests`,
+  `AuthorizationBehaviorTests`) — command/query handlers themselves
+  (validators, the actual `Handle` logic per command) have no unit tests
+  yet, and there are no integration tests exercising `RosterApp.Api`
+  end-to-end (real HTTP requests through the full MediatR pipeline against
+  a test database). Build both out: handler-level unit tests per command/
+  query in `RosterApp.Application.Tests`, and API-level integration tests
+  (e.g. `WebApplicationFactory`-style, against Testcontainers/a local
+  Postgres) covering auth, tenant-scoping, and the new permission policy
+  actually rejecting/allowing requests over the wire — not just at the
+  pipeline-behavior unit-test level.
+
+## Authorization & permission policy (backend)
+
+### `Role` and `PermissionLevel` are unrelated concepts — never conflate them
+
+English uses "role" for both, but in this codebase they don't overlap at
+all:
+
+* **`Role`** (`RosterApp.Domain.Staffing.Role`) is a venue-scoped,
+  owner-created **job/position label** — "Bartender", "Head Chef" — mapped
+  to a pay award classification via `RoleAwardMapping`. It carries zero
+  access-control data. `CreateRoleCommand`/`DeactivateRoleCommand`/
+  `SetRoleAwardMappingCommand` and `RoleController` are entirely about this
+  job-classification concept.
+* **`PermissionLevel`** (`RosterApp.Domain.Staffing.PermissionLevel`) is
+  the **access tier** — `Staff < Supervisor < Manager < Owner` — carried as
+  a custom JWT claim (`TenantClaimTypes.PermissionLevel`, deliberately
+  *not* `ClaimTypes.Role` — this app doesn't use ASP.NET Core Identity's
+  role infrastructure at all). It's the sole input to the authorization
+  mechanism below.
+
+A staff member has exactly one `PermissionLevel` and can be assigned one or
+more `Role`s (job titles) — the two facts live on the same `StaffMember`
+row but answer completely different questions ("what can they do" vs
+"what do we call their job for rostering/pay purposes"). Don't use "role"
+as shorthand for "permission" in feature docs, command names, or code
+review — say `PermissionLevel`/tier explicitly.
+
+### The enforcement mechanism
+
+Every MediatR command and query implements **exactly one** of these two
+interfaces (`RosterApp.Application/Common/`), and `AuthorizationBehavior`
+— the "authorization" stage of the locked pipeline order above — is the
+**single** place PermissionLevel is ever checked. No ad-hoc PermissionLevel
+checks in handlers, no `[Authorize(Roles = ...)]` on controllers (this app
+has no ASP.NET Identity roles to check against — see above), no permission
+checks in FluentValidation validators.
+
+```csharp
+public interface IRequiresPermissionLevel
+{
+    // null = authenticated staff member required, no minimum tier
+    // (self-scoped-by-design actions, identity-bootstrap flows).
+    PermissionLevel? MinimumPermissionLevel { get; }
+}
+
+public interface IPermitsSelfOrMinimumLevel
+{
+    // For requests carrying an explicit target StaffMemberId distinct
+    // from the caller: the resource owner may always act on their own
+    // record; anyone else needs at least MinimumPermissionLevelForOthers.
+    Guid TargetStaffMemberId { get; }
+    PermissionLevel MinimumPermissionLevelForOthers { get; }
+}
+```
+
+Use `IRequiresPermissionLevel` for anything that isn't "acting on a
+specific other staff member's record" — including requests that are
+inherently self-scoped because the handler derives identity from
+`ICurrentTenantContext.StaffMemberId` rather than the request body (e.g.
+`ClockInCommand`, `GetMyShiftsQuery`). Use `IPermitsSelfOrMinimumLevel`
+whenever a request carries a client-supplied `StaffMemberId` that could
+name someone other than the caller (e.g. viewing/editing another staff
+member's availability) — a flat minimum tier would either lock the
+resource owner out of their own data or let a low-tier caller act on
+someone else's record just because the action is shaped like self-service.
+
+### This is mandatory for every new command/query, not just existing ones
+
+**Whenever you add a new MediatR command or query, deciding its
+`IRequiresPermissionLevel`/`IPermitsSelfOrMinimumLevel` policy is part of
+writing that command — not an optional follow-up.** Ask: who should be
+able to call this — any authenticated staff member, a minimum tier, or the
+resource owner plus a minimum tier for anyone else? Then implement the
+interface with that answer, even when the answer is "no minimum tier."
+
+This isn't just a review checklist — it's enforced at build time.
+`PermissionPolicyCoverageTests`
+(`backend/tests/RosterApp.Application.Tests/Common/PermissionPolicyCoverageTests.cs`)
+reflects over every MediatR request type in `RosterApp.Application` and
+fails if any type implements neither interface (forgot to decide) or both
+(the two rule shapes are mutually exclusive). A failure here means "you
+forgot to decide this command's access policy," not "the test is wrong" —
+don't work around it by adding an exclusion list.
+
+### Known residual gap
+
+`CreateStaffMemberCommand` lets the caller set the new hire's own
+`PermissionLevel` (including `Owner`) as part of creating them, with only
+a flat Manager-tier check on the command itself — there's no additional
+check preventing a Manager-tier caller from minting a new Owner-tier staff
+record. Flagged here rather than silently fixed because closing it
+properly needs a third rule shape (a tier requirement conditional on a
+field's value, not just on the caller or the target), which didn't exist
+when this policy system was introduced — treat tightening this as a
+deliberate follow-up, not an oversight to route around.
 
 ## State management & data layer (frontend)
 

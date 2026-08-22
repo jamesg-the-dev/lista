@@ -26,7 +26,10 @@ public sealed record UpdateAwardConfigurationCommand(
     string PayPeriod,
     string PayPeriodCutoffDay,
     IReadOnlyList<PenaltyRateToggleInput> PenaltyToggles
-) : IRequest<AwardConfigurationDto>, IVenueScopedRequest;
+) : IRequest<AwardConfigurationDto>, IVenueScopedRequest, IRequiresPermissionLevel
+{
+    public RosterApp.Domain.Staffing.PermissionLevel? MinimumPermissionLevel => RosterApp.Domain.Staffing.PermissionLevel.Owner;
+}
 
 /// <summary>
 /// Casual loading below the award minimum is a hard block (no override —

@@ -1,5 +1,6 @@
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Staffing;
 
@@ -11,7 +12,11 @@ namespace RosterApp.Application.Staffing;
 /// updateLeaveRequestStatus call expecting it — filling this in as the
 /// natural symmetric command.
 /// </summary>
-public sealed record DeclineLeaveRequestCommand(Guid LeaveRequestId) : IRequest<LeaveRequestDto>;
+public sealed record DeclineLeaveRequestCommand(Guid LeaveRequestId)
+    : IRequest<LeaveRequestDto>, IRequiresPermissionLevel
+{
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Supervisor;
+}
 
 public sealed class DeclineLeaveRequestCommandHandler(
     ILeaveRequestRepository leaveRequestRepository,

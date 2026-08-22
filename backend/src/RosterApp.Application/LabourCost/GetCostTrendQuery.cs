@@ -1,12 +1,17 @@
 using FluentValidation;
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.LabourCost;
 
 public sealed record GetCostTrendQuery(Guid VenueId, DateOnly From, DateOnly To)
     : IRequest<IReadOnlyList<CostTrendPointDto>>,
-        IVenueScopedRequest;
+        IVenueScopedRequest,
+        IRequiresPermissionLevel
+{
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Manager;
+}
 
 public sealed class GetCostTrendQueryValidator : AbstractValidator<GetCostTrendQuery>
 {

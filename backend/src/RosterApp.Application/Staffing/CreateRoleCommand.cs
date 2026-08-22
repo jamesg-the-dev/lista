@@ -16,7 +16,10 @@ namespace RosterApp.Application.Staffing;
 /// backend-transaction one.
 /// </summary>
 public sealed record CreateRoleCommand(Guid VenueId, string DisplayName, string? ColorTag)
-    : IRequest<RoleDto>, IVenueScopedRequest;
+    : IRequest<RoleDto>, IVenueScopedRequest, IRequiresPermissionLevel
+{
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Owner;
+}
 
 public sealed class CreateRoleCommandValidator : AbstractValidator<CreateRoleCommand>
 {

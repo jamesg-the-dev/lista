@@ -8,7 +8,10 @@ namespace RosterApp.Application.Timekeeping;
 /// Manager-only. No IVenueScopedRequest — venue only known once the
 /// TimeEntry is loaded, same pattern as ApproveSwapCommand.
 /// </summary>
-public sealed record ApproveTimeEntryCommand(Guid TimeEntryId) : IRequest<TimeEntryDto>;
+public sealed record ApproveTimeEntryCommand(Guid TimeEntryId) : IRequest<TimeEntryDto>, IRequiresPermissionLevel
+{
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Supervisor;
+}
 
 public sealed class ApproveTimeEntryCommandHandler(
     ITimeEntryRepository timeEntryRepository,
@@ -19,7 +22,7 @@ public sealed class ApproveTimeEntryCommandHandler(
     public async Task<TimeEntryDto> Handle(ApproveTimeEntryCommand request, CancellationToken cancellationToken)
     {
         var entry = await timeEntryRepository.GetByIdAsync(request.TimeEntryId, cancellationToken);
-        if (entry is null || tenantContext.PermissionLevel is null or PermissionLevel.Staff || !tenantContext.AccessibleVenueIds.Contains(entry.VenueId))
+        if (entry is null || !tenantContext.AccessibleVenueIds.Contains(entry.VenueId))
         {
             throw new NotFoundException($"Time entry '{request.TimeEntryId}' was not found.");
         }

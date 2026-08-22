@@ -13,7 +13,11 @@ namespace RosterApp.Application.Rostering;
 /// the request (so no IVenueScopedRequest) — the venue is only known once
 /// the Shift is loaded, same pattern as SubmitLeaveRequestCommand.
 /// </summary>
-public sealed record RequestSwapCommand(Guid ShiftId, Guid TargetStaffId, string? Reason) : IRequest<SwapRequestDto>;
+public sealed record RequestSwapCommand(Guid ShiftId, Guid TargetStaffId, string? Reason)
+    : IRequest<SwapRequestDto>, IRequiresPermissionLevel
+{
+    public RosterApp.Domain.Staffing.PermissionLevel? MinimumPermissionLevel => null;
+}
 
 public sealed class RequestSwapCommandValidator : AbstractValidator<RequestSwapCommand>
 {

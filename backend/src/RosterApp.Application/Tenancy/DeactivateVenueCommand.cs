@@ -5,8 +5,11 @@ using RosterApp.Application.Rostering;
 
 namespace RosterApp.Application.Tenancy;
 
-// TODO: Owner-only — see the note on UpdateVenueProfileCommand.
-public sealed record DeactivateVenueCommand(Guid VenueId) : IRequest, IVenueScopedRequest;
+public sealed record DeactivateVenueCommand(Guid VenueId)
+    : IRequest, IVenueScopedRequest, RosterApp.Application.Common.IRequiresPermissionLevel
+{
+    public RosterApp.Domain.Staffing.PermissionLevel? MinimumPermissionLevel => RosterApp.Domain.Staffing.PermissionLevel.Owner;
+}
 
 public sealed class DeactivateVenueCommandValidator : AbstractValidator<DeactivateVenueCommand>
 {

@@ -1,10 +1,15 @@
 using FluentValidation;
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Staffing;
 
-public sealed record ClearStaffPayRateOverrideCommand(Guid StaffMemberId) : IRequest<StaffMemberDto>;
+public sealed record ClearStaffPayRateOverrideCommand(Guid StaffMemberId)
+    : IRequest<StaffMemberDto>, IRequiresPermissionLevel
+{
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Owner;
+}
 
 public sealed class ClearStaffPayRateOverrideCommandValidator : AbstractValidator<ClearStaffPayRateOverrideCommand>
 {

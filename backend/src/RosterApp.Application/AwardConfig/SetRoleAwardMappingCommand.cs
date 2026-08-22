@@ -16,7 +16,10 @@ namespace RosterApp.Application.AwardConfig;
 /// RoleAwardMappingTable.
 /// </summary>
 public sealed record SetRoleAwardMappingCommand(Guid VenueId, Guid RoleId, Guid AwardClassificationId)
-    : IRequest<RoleAwardMappingDto>, IVenueScopedRequest;
+    : IRequest<RoleAwardMappingDto>, IVenueScopedRequest, IRequiresPermissionLevel
+{
+    public RosterApp.Domain.Staffing.PermissionLevel? MinimumPermissionLevel => RosterApp.Domain.Staffing.PermissionLevel.Owner;
+}
 
 public sealed class SetRoleAwardMappingCommandValidator : AbstractValidator<SetRoleAwardMappingCommand>
 {

@@ -1,9 +1,14 @@
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Staffing;
 
-public sealed record GetRolesForVenueQuery(Guid VenueId) : IRequest<IReadOnlyList<RoleDto>>, IVenueScopedRequest;
+public sealed record GetRolesForVenueQuery(Guid VenueId)
+    : IRequest<IReadOnlyList<RoleDto>>, IVenueScopedRequest, IRequiresPermissionLevel
+{
+    public PermissionLevel? MinimumPermissionLevel => null;
+}
 
 public sealed class GetRolesForVenueQueryHandler(IRoleLookup roleLookup)
     : IRequestHandler<GetRolesForVenueQuery, IReadOnlyList<RoleDto>>

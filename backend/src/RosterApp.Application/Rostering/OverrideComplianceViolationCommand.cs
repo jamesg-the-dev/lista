@@ -2,6 +2,7 @@ using FluentValidation;
 using MediatR;
 using RosterApp.Application.Common;
 using RosterApp.Domain.Rostering;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Rostering;
 
@@ -10,7 +11,10 @@ public sealed record OverrideComplianceViolationCommand(
     Guid VenueId,
     string ViolationType,
     string Reason
-) : IRequest<ShiftDto>, IVenueScopedRequest;
+) : IRequest<ShiftDto>, IVenueScopedRequest, IRequiresPermissionLevel
+{
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Manager;
+}
 
 /// <summary>
 /// ViolationType arrives as the exact enum member name string (see

@@ -1,13 +1,18 @@
 using FluentValidation;
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Domain.Staffing;
 using RosterApp.Domain.Tenancy;
 
 namespace RosterApp.Application.Tenancy;
 
 public sealed record SetVenueForecastSalesTargetCommand(Guid VenueId, decimal? ForecastSalesTarget)
     : IRequest<VenueDto>,
-        IVenueScopedRequest;
+        IVenueScopedRequest,
+        IRequiresPermissionLevel
+{
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Manager;
+}
 
 public sealed class SetVenueForecastSalesTargetCommandValidator : AbstractValidator<SetVenueForecastSalesTargetCommand>
 {

@@ -1,9 +1,15 @@
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Staffing;
 
-public sealed record RemoveStandingUnavailabilityCommand(Guid StaffMemberId, Guid ExceptionId) : IRequest;
+public sealed record RemoveStandingUnavailabilityCommand(Guid StaffMemberId, Guid ExceptionId)
+    : IRequest, IPermitsSelfOrMinimumLevel
+{
+    Guid IPermitsSelfOrMinimumLevel.TargetStaffMemberId => StaffMemberId;
+    PermissionLevel IPermitsSelfOrMinimumLevel.MinimumPermissionLevelForOthers => PermissionLevel.Supervisor;
+}
 
 public sealed class RemoveStandingUnavailabilityCommandHandler(
     IStaffMemberRepository staffMemberRepository,

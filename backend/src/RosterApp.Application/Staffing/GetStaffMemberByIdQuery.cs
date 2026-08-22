@@ -1,5 +1,6 @@
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Staffing;
 
@@ -11,7 +12,12 @@ namespace RosterApp.Application.Staffing;
 /// same multi-venue reason as UpdateStaffMemberCommand; the handler checks
 /// access itself.
 /// </summary>
-public sealed record GetStaffMemberByIdQuery(Guid StaffMemberId) : IRequest<StaffMemberDto>;
+public sealed record GetStaffMemberByIdQuery(Guid StaffMemberId)
+    : IRequest<StaffMemberDto>, IPermitsSelfOrMinimumLevel
+{
+    Guid IPermitsSelfOrMinimumLevel.TargetStaffMemberId => StaffMemberId;
+    PermissionLevel IPermitsSelfOrMinimumLevel.MinimumPermissionLevelForOthers => PermissionLevel.Supervisor;
+}
 
 public sealed class GetStaffMemberByIdQueryHandler(
     IStaffLookup staffLookup,

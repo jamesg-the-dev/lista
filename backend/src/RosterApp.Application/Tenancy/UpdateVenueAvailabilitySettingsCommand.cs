@@ -15,7 +15,10 @@ public sealed record UpdateVenueAvailabilitySettingsCommand(
     Guid VenueId,
     string SelfServiceMode,
     int AdvanceNoticeDays
-) : IRequest<VenueDto>, IVenueScopedRequest;
+) : IRequest<VenueDto>, IVenueScopedRequest, RosterApp.Application.Common.IRequiresPermissionLevel
+{
+    public RosterApp.Domain.Staffing.PermissionLevel? MinimumPermissionLevel => RosterApp.Domain.Staffing.PermissionLevel.Owner;
+}
 
 public sealed class UpdateVenueAvailabilitySettingsCommandValidator
     : AbstractValidator<UpdateVenueAvailabilitySettingsCommand>

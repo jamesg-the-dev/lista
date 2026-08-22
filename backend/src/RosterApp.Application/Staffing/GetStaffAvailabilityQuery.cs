@@ -1,9 +1,15 @@
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Staffing;
 
-public sealed record GetStaffAvailabilityQuery(Guid StaffMemberId, DateOnly From, DateOnly To) : IRequest<StaffAvailabilityDto>;
+public sealed record GetStaffAvailabilityQuery(Guid StaffMemberId, DateOnly From, DateOnly To)
+    : IRequest<StaffAvailabilityDto>, IPermitsSelfOrMinimumLevel
+{
+    Guid IPermitsSelfOrMinimumLevel.TargetStaffMemberId => StaffMemberId;
+    PermissionLevel IPermitsSelfOrMinimumLevel.MinimumPermissionLevelForOthers => PermissionLevel.Supervisor;
+}
 
 public sealed class GetStaffAvailabilityQueryHandler(
     IStaffMemberRepository staffMemberRepository,

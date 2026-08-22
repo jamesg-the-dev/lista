@@ -1,9 +1,14 @@
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Staffing;
 
-public sealed record ApproveLeaveRequestCommand(Guid LeaveRequestId) : IRequest<LeaveRequestDto>;
+public sealed record ApproveLeaveRequestCommand(Guid LeaveRequestId)
+    : IRequest<LeaveRequestDto>, IRequiresPermissionLevel
+{
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Supervisor;
+}
 
 public sealed class ApproveLeaveRequestCommandHandler(
     ILeaveRequestRepository leaveRequestRepository,

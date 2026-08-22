@@ -1,6 +1,7 @@
 using FluentValidation;
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Staffing;
 
@@ -13,7 +14,10 @@ namespace RosterApp.Application.Staffing;
 /// Shift gains a role reference, not silently skipped — don't add a
 /// same-named guard here that always passes.
 /// </summary>
-public sealed record DeactivateRoleCommand(Guid RoleId) : IRequest;
+public sealed record DeactivateRoleCommand(Guid RoleId) : IRequest, IRequiresPermissionLevel
+{
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Owner;
+}
 
 public sealed class DeactivateRoleCommandValidator : AbstractValidator<DeactivateRoleCommand>
 {

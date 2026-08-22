@@ -25,7 +25,10 @@ public sealed record UpdateRosterComplianceConfigurationCommand(
     int WeeklyOvertimeThresholdMinutes,
     MinorRosterRuleInput MinorRules,
     IReadOnlyList<MealBreakRuleInput> MealBreakRules
-) : IRequest<RosterComplianceConfigurationDto>, IVenueScopedRequest;
+) : IRequest<RosterComplianceConfigurationDto>, IVenueScopedRequest, RosterApp.Application.Common.IRequiresPermissionLevel
+{
+    public RosterApp.Domain.Staffing.PermissionLevel? MinimumPermissionLevel => RosterApp.Domain.Staffing.PermissionLevel.Owner;
+}
 
 /// <summary>
 /// Minimum rest below the 10-hour floor is a hard block with no override —

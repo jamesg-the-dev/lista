@@ -9,7 +9,11 @@ namespace RosterApp.Application.Rostering;
 /// same "venue only known once the aggregate is loaded" pattern as
 /// RequestSwapCommand.
 /// </summary>
-public sealed record RespondToSwapCommand(Guid SwapRequestId, bool Accepted) : IRequest<SwapRequestDto>;
+public sealed record RespondToSwapCommand(Guid SwapRequestId, bool Accepted)
+    : IRequest<SwapRequestDto>, IRequiresPermissionLevel
+{
+    public RosterApp.Domain.Staffing.PermissionLevel? MinimumPermissionLevel => null;
+}
 
 public sealed class RespondToSwapCommandHandler(
     ISwapRequestRepository swapRequestRepository,

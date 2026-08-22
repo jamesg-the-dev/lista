@@ -1,12 +1,17 @@
 using MediatR;
 using RosterApp.Application.Common;
 using RosterApp.Domain.Rostering;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Rostering;
 
 public sealed record GetRosterForWeekQuery(Guid VenueId, DateOnly WeekStart)
     : IRequest<IReadOnlyList<ShiftDto>>,
-        IVenueScopedRequest;
+        IVenueScopedRequest,
+        IRequiresPermissionLevel
+{
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Supervisor;
+}
 
 public sealed class GetRosterForWeekQueryHandler(IRosterLookup rosterLookup)
     : IRequestHandler<GetRosterForWeekQuery, IReadOnlyList<ShiftDto>>

@@ -1,5 +1,6 @@
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Staffing;
 
@@ -13,7 +14,11 @@ namespace RosterApp.Application.Staffing;
 /// venue) filtering the already-composed role+mapping list in memory is
 /// simpler than a second SQL shape for the same join.
 /// </summary>
-public sealed record GetUnmappedRolesQuery(Guid VenueId) : IRequest<IReadOnlyList<RoleDto>>, IVenueScopedRequest;
+public sealed record GetUnmappedRolesQuery(Guid VenueId)
+    : IRequest<IReadOnlyList<RoleDto>>, IVenueScopedRequest, IRequiresPermissionLevel
+{
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Manager;
+}
 
 public sealed class GetUnmappedRolesQueryHandler(IRoleLookup roleLookup)
     : IRequestHandler<GetUnmappedRolesQuery, IReadOnlyList<RoleDto>>

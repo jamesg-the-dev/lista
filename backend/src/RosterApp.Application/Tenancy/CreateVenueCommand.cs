@@ -24,7 +24,10 @@ public sealed record CreateVenueCommand(
     string Postcode,
     string Country,
     string Timezone
-) : IRequest<VenueDto>, IOrganisationScopedRequest;
+) : IRequest<VenueDto>, IOrganisationScopedRequest, RosterApp.Application.Common.IRequiresPermissionLevel
+{
+    public RosterApp.Domain.Staffing.PermissionLevel? MinimumPermissionLevel => RosterApp.Domain.Staffing.PermissionLevel.Owner;
+}
 
 public sealed class CreateVenueCommandValidator : AbstractValidator<CreateVenueCommand>
 {

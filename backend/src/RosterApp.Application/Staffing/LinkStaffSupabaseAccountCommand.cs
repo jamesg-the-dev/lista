@@ -21,7 +21,10 @@ namespace RosterApp.Application.Staffing;
 /// from the caller's own validated JWT via ICurrentTenantContext, so a
 /// staff member can only ever link their own account.
 /// </summary>
-public sealed record LinkStaffSupabaseAccountCommand : IRequest<StaffMemberDto>;
+public sealed record LinkStaffSupabaseAccountCommand : IRequest<StaffMemberDto>, IRequiresPermissionLevel
+{
+    public RosterApp.Domain.Staffing.PermissionLevel? MinimumPermissionLevel => null;
+}
 
 public sealed class LinkStaffSupabaseAccountCommandHandler(
     IStaffMemberRepository staffMemberRepository,

@@ -1,6 +1,7 @@
 using FluentValidation;
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Staffing;
 
@@ -16,7 +17,10 @@ namespace RosterApp.Application.Staffing;
 /// without that comparison rather than half-implementing it.
 /// </summary>
 public sealed record SetStaffPayRateOverrideCommand(Guid StaffMemberId, decimal OverrideHourlyRate, string Reason)
-    : IRequest<StaffMemberDto>;
+    : IRequest<StaffMemberDto>, IRequiresPermissionLevel
+{
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Owner;
+}
 
 public sealed class SetStaffPayRateOverrideCommandValidator : AbstractValidator<SetStaffPayRateOverrideCommand>
 {

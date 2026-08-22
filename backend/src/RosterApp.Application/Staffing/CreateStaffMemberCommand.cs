@@ -17,7 +17,16 @@ public sealed record CreateStaffMemberCommand(
     IReadOnlyList<Guid> VenueIds,
     string PermissionLevel,
     Guid? PrimaryRoleId
-) : IRequest<StaffMemberDto>;
+) : IRequest<StaffMemberDto>, IRequiresPermissionLevel
+{
+    // Flat Manager minimum to create a new staff member at all. Note: this
+    // command lets the caller set the new hire's own PermissionLevel
+    // (including Owner) without a separate, higher-tier check on that
+    // field — see CLAUDE.md's Authorization & permission policy section
+    // for why that's called out as a known residual gap rather than
+    // silently left unaddressed.
+    RosterApp.Domain.Staffing.PermissionLevel? IRequiresPermissionLevel.MinimumPermissionLevel => RosterApp.Domain.Staffing.PermissionLevel.Manager;
+}
 
 /// <summary>
 /// Email/phone uniqueness (scoped per-organisation — see

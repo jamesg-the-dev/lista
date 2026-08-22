@@ -1,9 +1,14 @@
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Rostering;
 
-public sealed record DeleteShiftCommand(Guid ShiftId, Guid VenueId) : IRequest, IVenueScopedRequest;
+public sealed record DeleteShiftCommand(Guid ShiftId, Guid VenueId)
+    : IRequest, IVenueScopedRequest, IRequiresPermissionLevel
+{
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Supervisor;
+}
 
 public sealed class DeleteShiftCommandHandler(
     IShiftRepository shiftRepository,

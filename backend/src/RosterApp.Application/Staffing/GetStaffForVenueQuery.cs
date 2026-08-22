@@ -4,7 +4,11 @@ using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Staffing;
 
-public sealed record GetStaffForVenueQuery(Guid VenueId) : IRequest<IReadOnlyList<StaffMemberDto>>, IVenueScopedRequest;
+public sealed record GetStaffForVenueQuery(Guid VenueId)
+    : IRequest<IReadOnlyList<StaffMemberDto>>, IVenueScopedRequest, IRequiresPermissionLevel
+{
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Supervisor;
+}
 
 public sealed class GetStaffForVenueQueryHandler(IStaffLookup staffLookup)
     : IRequestHandler<GetStaffForVenueQuery, IReadOnlyList<StaffMemberDto>>

@@ -1,11 +1,16 @@
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.LabourCost;
 
 public sealed record GetCostByVenueQuery(Guid OrganisationId, DateOnly WeekStart)
     : IRequest<IReadOnlyList<CostByVenueDto>>,
-        IOrganisationScopedRequest;
+        IOrganisationScopedRequest,
+        IRequiresPermissionLevel
+{
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Manager;
+}
 
 public sealed class GetCostByVenueQueryHandler(ILabourCostLookup labourCostLookup)
     : IRequestHandler<GetCostByVenueQuery, IReadOnlyList<CostByVenueDto>>

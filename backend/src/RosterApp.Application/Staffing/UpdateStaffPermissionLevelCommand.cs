@@ -10,11 +10,14 @@ namespace RosterApp.Application.Staffing;
 /// §5's CQRS table — this is the one field in the profile that carries the
 /// "last remaining Owner can't be demoted" invariant (§6), so it gets its
 /// own narrow command rather than being buried in the general profile-edit
-/// form's field list. Not gated to Owner-only callers yet — see
-/// AuthorizationBehavior's TODO; any authenticated Manager can call this
-/// today, same as every other settings command.
+/// form's field list. Owner-only via IRequiresPermissionLevel, enforced by
+/// AuthorizationBehavior.
 /// </summary>
-public sealed record UpdateStaffPermissionLevelCommand(Guid StaffMemberId, string PermissionLevel) : IRequest<StaffMemberDto>;
+public sealed record UpdateStaffPermissionLevelCommand(Guid StaffMemberId, string PermissionLevel)
+    : IRequest<StaffMemberDto>, IRequiresPermissionLevel
+{
+    RosterApp.Domain.Staffing.PermissionLevel? IRequiresPermissionLevel.MinimumPermissionLevel => RosterApp.Domain.Staffing.PermissionLevel.Owner;
+}
 
 public sealed class UpdateStaffPermissionLevelCommandValidator : AbstractValidator<UpdateStaffPermissionLevelCommand>
 {

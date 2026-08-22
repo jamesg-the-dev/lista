@@ -1,9 +1,14 @@
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Tenancy;
 
-public sealed record GetVenueProfileQuery(Guid VenueId) : IRequest<VenueDto>, IVenueScopedRequest;
+public sealed record GetVenueProfileQuery(Guid VenueId)
+    : IRequest<VenueDto>, IVenueScopedRequest, IRequiresPermissionLevel
+{
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Manager;
+}
 
 public sealed class GetVenueProfileQueryHandler(IVenueLookup venueLookup) : IRequestHandler<GetVenueProfileQuery, VenueDto>
 {

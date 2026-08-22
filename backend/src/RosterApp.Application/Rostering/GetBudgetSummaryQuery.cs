@@ -1,11 +1,16 @@
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Rostering;
 
 public sealed record GetBudgetSummaryQuery(Guid VenueId, DateOnly WeekStart)
     : IRequest<BudgetSummaryDto>,
-        IVenueScopedRequest;
+        IVenueScopedRequest,
+        IRequiresPermissionLevel
+{
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Supervisor;
+}
 
 public sealed class GetBudgetSummaryQueryHandler(IBudgetSummaryLookup budgetSummaryLookup)
     : IRequestHandler<GetBudgetSummaryQuery, BudgetSummaryDto>

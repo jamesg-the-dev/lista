@@ -2,12 +2,17 @@ using FluentValidation;
 using MediatR;
 using RosterApp.Application.Common;
 using RosterApp.Domain.Rostering;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Rostering;
 
 public sealed record DuplicateRosterCommand(Guid VenueId, DateOnly SourceWeekStart, DateOnly TargetWeekStart)
     : IRequest<IReadOnlyList<ShiftDto>>,
-        IVenueScopedRequest;
+        IVenueScopedRequest,
+        IRequiresPermissionLevel
+{
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Supervisor;
+}
 
 public sealed class DuplicateRosterCommandValidator : AbstractValidator<DuplicateRosterCommand>
 {

@@ -3,6 +3,7 @@ using MediatR;
 using RosterApp.Application.Common;
 using RosterApp.Application.Staffing;
 using RosterApp.Domain.Rostering;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Rostering;
 
@@ -14,7 +15,10 @@ public sealed record CreateShiftCommand(
     TimeOnly End,
     int UnpaidBreakMinutes,
     decimal BaseRatePerHour
-) : IRequest<ShiftDto>, IVenueScopedRequest;
+) : IRequest<ShiftDto>, IVenueScopedRequest, IRequiresPermissionLevel
+{
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Supervisor;
+}
 
 /// <summary>
 /// Double-booking guard (CLAUDE.md build order step 2: "the roster builder

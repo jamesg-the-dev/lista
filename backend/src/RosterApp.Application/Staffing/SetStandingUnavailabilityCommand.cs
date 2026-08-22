@@ -17,7 +17,11 @@ public sealed record SetStandingUnavailabilityCommand(
     string DayOfWeek,
     bool IsAllDay,
     IReadOnlyList<string> Blocks
-) : IRequest<AvailabilityExceptionDto>;
+) : IRequest<AvailabilityExceptionDto>, IPermitsSelfOrMinimumLevel
+{
+    Guid IPermitsSelfOrMinimumLevel.TargetStaffMemberId => StaffMemberId;
+    PermissionLevel IPermitsSelfOrMinimumLevel.MinimumPermissionLevelForOthers => PermissionLevel.Supervisor;
+}
 
 public sealed class SetStandingUnavailabilityCommandValidator : AbstractValidator<SetStandingUnavailabilityCommand>
 {

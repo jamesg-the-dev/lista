@@ -12,7 +12,10 @@ namespace RosterApp.Application.Account;
 /// whole Phase 0 pipeline: JWT validation → claims transformation →
 /// tenant context → this query.
 /// </summary>
-public sealed record GetCurrentAccountQuery : IRequest<AccountDto>;
+public sealed record GetCurrentAccountQuery : IRequest<AccountDto>, IRequiresPermissionLevel
+{
+    public RosterApp.Domain.Staffing.PermissionLevel? MinimumPermissionLevel => null;
+}
 
 public sealed record AccountDto(
     Guid StaffMemberId,

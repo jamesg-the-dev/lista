@@ -6,7 +6,11 @@ using RosterApp.Domain.Staffing;
 namespace RosterApp.Application.Rostering;
 
 /// <summary>Manager-only.</summary>
-public sealed record RejectSwapCommand(Guid SwapRequestId, string? Reason) : IRequest<SwapRequestDto>;
+public sealed record RejectSwapCommand(Guid SwapRequestId, string? Reason)
+    : IRequest<SwapRequestDto>, IRequiresPermissionLevel
+{
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Supervisor;
+}
 
 public sealed class RejectSwapCommandValidator : AbstractValidator<RejectSwapCommand>
 {
@@ -30,7 +34,7 @@ public sealed class RejectSwapCommandHandler(
             throw new NotFoundException($"Swap request '{request.SwapRequestId}' was not found.");
         }
 
-        if (tenantContext.PermissionLevel is null or PermissionLevel.Staff || !tenantContext.AccessibleVenueIds.Contains(swapRequest.VenueId))
+        if (!tenantContext.AccessibleVenueIds.Contains(swapRequest.VenueId))
         {
             throw new NotFoundException($"Swap request '{request.SwapRequestId}' was not found.");
         }

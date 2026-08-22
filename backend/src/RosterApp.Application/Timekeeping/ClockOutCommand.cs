@@ -5,7 +5,11 @@ using RosterApp.Application.Rostering;
 
 namespace RosterApp.Application.Timekeeping;
 
-public sealed record ClockOutCommand(Guid TimeEntryId, decimal Latitude, decimal Longitude, decimal AccuracyMetres) : IRequest<TimeEntryDto>;
+public sealed record ClockOutCommand(Guid TimeEntryId, decimal Latitude, decimal Longitude, decimal AccuracyMetres)
+    : IRequest<TimeEntryDto>, IRequiresPermissionLevel
+{
+    public RosterApp.Domain.Staffing.PermissionLevel? MinimumPermissionLevel => null;
+}
 
 public sealed class ClockOutCommandValidator : AbstractValidator<ClockOutCommand>
 {

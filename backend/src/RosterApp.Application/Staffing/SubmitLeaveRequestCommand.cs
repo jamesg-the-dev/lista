@@ -10,7 +10,11 @@ public sealed record SubmitLeaveRequestCommand(
     DateOnly StartDate,
     DateOnly EndDate,
     string? Reason
-) : IRequest<LeaveRequestDto>;
+) : IRequest<LeaveRequestDto>, IPermitsSelfOrMinimumLevel
+{
+    Guid IPermitsSelfOrMinimumLevel.TargetStaffMemberId => StaffMemberId;
+    PermissionLevel IPermitsSelfOrMinimumLevel.MinimumPermissionLevelForOthers => PermissionLevel.Supervisor;
+}
 
 public sealed class SubmitLeaveRequestCommandValidator : AbstractValidator<SubmitLeaveRequestCommand>
 {

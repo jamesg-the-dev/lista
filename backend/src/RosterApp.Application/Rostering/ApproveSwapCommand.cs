@@ -9,7 +9,10 @@ namespace RosterApp.Application.Rostering;
 /// the useful response for the manager inbox UI is the updated shift, same
 /// as OverrideComplianceViolationCommand's return shape.
 /// </summary>
-public sealed record ApproveSwapCommand(Guid SwapRequestId) : IRequest<ShiftDto>;
+public sealed record ApproveSwapCommand(Guid SwapRequestId) : IRequest<ShiftDto>, IRequiresPermissionLevel
+{
+    public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Supervisor;
+}
 
 /// <summary>
 /// Reassigns the Shift and re-runs both IAwardRateCalculator and
@@ -41,7 +44,7 @@ public sealed class ApproveSwapCommandHandler(
             throw new NotFoundException($"Swap request '{request.SwapRequestId}' was not found.");
         }
 
-        if (tenantContext.PermissionLevel is null or PermissionLevel.Staff || !tenantContext.AccessibleVenueIds.Contains(swapRequest.VenueId))
+        if (!tenantContext.AccessibleVenueIds.Contains(swapRequest.VenueId))
         {
             throw new NotFoundException($"Swap request '{request.SwapRequestId}' was not found.");
         }
