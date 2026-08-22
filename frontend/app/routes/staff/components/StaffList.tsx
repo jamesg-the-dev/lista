@@ -1,42 +1,81 @@
+import { useEffect, useId, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { ChevronRightIcon, UsersIcon } from 'lucide-react';
+import type { ColumnDef, PaginationState, SortingState } from '@tanstack/react-table';
+import {
+  flexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table';
+import {
+  ChevronDownIcon,
+  ChevronFirstIcon,
+  ChevronLastIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronUpIcon,
+  MoreVerticalIcon,
+  SearchIcon,
+  UsersIcon,
+} from 'lucide-react';
 
+import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '~/components/ui/dropdown-menu';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '~/components/ui/input-group';
+import { Label } from '~/components/ui/label';
+import { Pagination, PaginationContent, PaginationItem } from '~/components/ui/pagination';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '~/components/ui/select';
 import { Skeleton } from '~/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/components/ui/table';
+import { initials } from '~/lib/utils';
 import { useVenueContextStore } from '~/lib/venue-context';
 
 import { useStaffMembers } from '../hooks';
-import { CLASSIFICATION_META, EMPLOYMENT_TYPE_META } from '../types';
+import { CLASSIFICATION_META, EMPLOYMENT_TYPE_META, PERMISSION_LEVEL_META } from '../types';
 import type { StaffMember } from '../types';
-import { initials } from '~/lib/utils';
 
-function StaffRow({ staff, onSelect }: { staff: StaffMember; onSelect: () => void }) {
-  const classification = CLASSIFICATION_META[staff.classification];
-  const employmentType = EMPLOYMENT_TYPE_META[staff.employmentType];
+const PAGE_SIZE_ITEMS = [
+  { label: '10', value: '10' },
+  { label: '25', value: '25' },
+  { label: '50', value: '50' },
+];
+
+function NameCell({ staff, onSelect }: { staff: StaffMember; onSelect: () => void }) {
   return (
-    <Button
-      variant="outline"
+    <button
+      type="button"
       onClick={onSelect}
-      className="bg-card h-auto w-full items-center justify-between gap-3 rounded-lg px-4 py-3 text-left"
+      className="flex min-w-0 items-center gap-3 text-left"
     >
-      <div className="flex min-w-0 items-center gap-3">
-        <div className="bg-muted text-foreground flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-sans text-sm font-bold">
-          {initials(staff.name)}
-        </div>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium">{staff.name}</p>
-          <p className="text-muted-foreground truncate text-xs">
-            {classification.label} · {classification.description}
-          </p>
-        </div>
+      <div className="bg-muted text-foreground flex size-9 shrink-0 items-center justify-center rounded-full font-sans text-sm font-bold">
+        {initials(staff.name)}
       </div>
-      <div className="flex shrink-0 items-center gap-3">
-        <span className="bg-muted text-muted-foreground rounded px-2 py-1 font-sans text-xs font-medium tabular-nums">
-          {employmentType.label}
-        </span>
-        <ChevronRightIcon size={16} className="text-muted-foreground" />
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium">{staff.name}</p>
+        <p className="text-muted-foreground truncate text-xs">{staff.email}</p>
       </div>
-    </Button>
+    </button>
   );
 }
 
@@ -79,6 +118,274 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
   );
 }
 
+function StaffDataTable({ staff }: { staff: StaffMember[] }) {
+  const navigate = useNavigate();
+  const searchInputId = useId();
+  const pageSizeSelectId = useId();
+
+  const [search, setSearch] = useState('');
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'name', desc: false }]);
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+
+  const filteredStaff = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return staff;
+    return staff.filter(s => s.name.toLowerCase().includes(term));
+  }, [search, staff]);
+
+  useEffect(() => {
+    setPagination(p => ({ ...p, pageIndex: 0 }));
+  }, [search]);
+
+  const columns = useMemo<ColumnDef<StaffMember>[]>(
+    () => [
+      {
+        id: 'name',
+        header: 'Name',
+        accessorKey: 'name',
+        cell: ({ row }) => (
+          <NameCell staff={row.original} onSelect={() => navigate(`/staff/${row.original.id}`)} />
+        ),
+      },
+      {
+        id: 'classification',
+        header: 'Classification',
+        accessorFn: row => CLASSIFICATION_META[row.classification].label,
+        cell: ({ row }) => {
+          const classification = CLASSIFICATION_META[row.original.classification];
+          return (
+            <div>
+              <p className="text-sm font-medium">{classification.label}</p>
+              <p className="text-muted-foreground text-xs">{classification.description}</p>
+            </div>
+          );
+        },
+      },
+      {
+        id: 'employmentType',
+        header: 'Employment type',
+        accessorFn: row => EMPLOYMENT_TYPE_META[row.employmentType].label,
+        cell: ({ row }) => (
+          <Badge variant="outline">{EMPLOYMENT_TYPE_META[row.original.employmentType].label}</Badge>
+        ),
+      },
+      {
+        id: 'permissionLevel',
+        header: 'Permission',
+        accessorFn: row => PERMISSION_LEVEL_META[row.permissionLevel].label,
+        cell: ({ row }) => (
+          <Badge variant="outline">{PERMISSION_LEVEL_META[row.original.permissionLevel].label}</Badge>
+        ),
+      },
+      {
+        id: 'actions',
+        header: '',
+        enableSorting: false,
+        cell: ({ row }) => (
+          <DropdownMenu>
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
+              <MoreVerticalIcon size={14} />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => navigate(`/staff/${row.original.id}`)}>
+                View profile
+              </DropdownMenuItem>
+              {/* No backend command exists yet to deactivate a staff member
+                  (StaffMember has no IsActive/status concept) — surfaced as a
+                  disabled placeholder until that lands. */}
+              <DropdownMenuItem variant="destructive" disabled>
+                Deactivate
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ),
+      },
+    ],
+    [navigate],
+  );
+
+  const table = useReactTable({
+    data: filteredStaff,
+    columns,
+    state: { sorting, pagination },
+    onSortingChange: setSorting,
+    onPaginationChange: setPagination,
+    enableSortingRemoval: false,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
+
+  return (
+    <div className="flex w-full flex-col gap-4">
+      <div className="flex items-center gap-3">
+        <Label htmlFor={searchInputId} className="sr-only">
+          Search staff by name
+        </Label>
+        <InputGroup className="max-w-xs">
+          <InputGroupAddon>
+            <SearchIcon />
+          </InputGroupAddon>
+          <InputGroupInput
+            id={searchInputId}
+            placeholder="Search by name…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </InputGroup>
+      </div>
+
+      <div className="border-border rounded-md border">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map(headerGroup => (
+              <TableRow key={headerGroup.id} className="hover:bg-transparent">
+                {headerGroup.headers.map(header => (
+                  <TableHead key={header.id} className="h-11">
+                    {header.isPlaceholder ? null : header.column.getCanSort() ? (
+                      <div
+                        className="flex h-full cursor-pointer items-center gap-2 select-none"
+                        onClick={header.column.getToggleSortingHandler()}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            header.column.getToggleSortingHandler()?.(e);
+                          }
+                        }}
+                        tabIndex={0}
+                      >
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                        {{
+                          asc: <ChevronUpIcon className="shrink-0 opacity-60" size={16} />,
+                          desc: <ChevronDownIcon className="shrink-0 opacity-60" size={16} />,
+                        }[header.column.getIsSorted() as string] ?? null}
+                      </div>
+                    ) : (
+                      flexRender(header.column.columnDef.header, header.getContext())
+                    )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.length ? (
+              table.getRowModel().rows.map(row => (
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map(cell => (
+                    <TableCell key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                  No staff match "{search}"
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="flex items-center justify-between gap-8">
+        <div className="flex items-center gap-3">
+          <Label htmlFor={pageSizeSelectId} className="max-sm:sr-only">
+            Rows per page
+          </Label>
+          <Select
+            items={PAGE_SIZE_ITEMS}
+            value={table.getState().pagination.pageSize.toString()}
+            onValueChange={value => value !== null && table.setPageSize(Number(value))}
+          >
+            <SelectTrigger id={pageSizeSelectId} className="w-fit whitespace-nowrap">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {PAGE_SIZE_ITEMS.map(item => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <p className="text-muted-foreground flex grow justify-end text-sm whitespace-nowrap">
+          <span className="text-foreground">
+            {filteredStaff.length === 0
+              ? 0
+              : table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
+            -
+            {Math.min(
+              table.getState().pagination.pageIndex * table.getState().pagination.pageSize +
+                table.getState().pagination.pageSize,
+              filteredStaff.length,
+            )}
+          </span>
+          &nbsp;of <span className="text-foreground">{filteredStaff.length}</span>
+        </p>
+
+        <Pagination className="mx-0 w-auto">
+          <PaginationContent>
+            <PaginationItem>
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={() => table.firstPage()}
+                disabled={!table.getCanPreviousPage()}
+                aria-label="Go to first page"
+              >
+                <ChevronFirstIcon />
+              </Button>
+            </PaginationItem>
+            <PaginationItem>
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+                aria-label="Go to previous page"
+              >
+                <ChevronLeftIcon />
+              </Button>
+            </PaginationItem>
+            <PaginationItem>
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+                aria-label="Go to next page"
+              >
+                <ChevronRightIcon />
+              </Button>
+            </PaginationItem>
+            <PaginationItem>
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={() => table.lastPage()}
+                disabled={!table.getCanNextPage()}
+                aria-label="Go to last page"
+              >
+                <ChevronLastIcon />
+              </Button>
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      </div>
+    </div>
+  );
+}
+
 export default function StaffList() {
   const navigate = useNavigate();
   const { activeVenueId } = useVenueContextStore();
@@ -101,14 +408,9 @@ export default function StaffList() {
       {staffQuery.isSuccess && staffQuery.data.length === 0 && (
         <EmptyState onAdd={() => navigate('/staff/new')} />
       )}
-      {staffQuery.isSuccess &&
-        staffQuery.data.map(staff => (
-          <StaffRow
-            key={staff.id}
-            staff={staff}
-            onSelect={() => navigate(`/staff/${staff.id}`)}
-          />
-        ))}
+      {staffQuery.isSuccess && staffQuery.data.length > 0 && (
+        <StaffDataTable staff={staffQuery.data} />
+      )}
     </>
   );
 }

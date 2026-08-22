@@ -81,7 +81,7 @@ export default function StaffRoute() {
       </header>
 
       <main className="flex-1 px-6 py-6">
-        <div className="mx-auto flex max-w-3xl flex-col gap-2">
+        <div className="mx-auto flex max-w-5xl flex-col gap-2">
           <StaffList />
         </div>
       </main>
