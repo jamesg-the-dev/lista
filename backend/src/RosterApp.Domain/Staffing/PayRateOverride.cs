@@ -8,9 +8,9 @@ namespace RosterApp.Domain.Staffing;
 /// Reason is required so the override is auditable rather than a bare
 /// number a future owner/staff member has to take on faith.
 /// </summary>
-public sealed record PayRateOverride(decimal OverrideHourlyRate, string Reason, DateTime EffectiveFromUtc, Guid SetByManagerId)
+public sealed record PayRateOverride(decimal OverrideHourlyRate, string Reason, DateTime EffectiveFromUtc, Guid SetByStaffMemberId)
 {
-    public static PayRateOverride Create(decimal overrideHourlyRate, string reason, Guid setByManagerId)
+    public static PayRateOverride Create(decimal overrideHourlyRate, string reason, Guid setByStaffMemberId)
     {
         if (overrideHourlyRate <= 0)
         {
@@ -22,6 +22,6 @@ public sealed record PayRateOverride(decimal OverrideHourlyRate, string Reason, 
             throw new ArgumentException("A reason is required for pay rate overrides.", nameof(reason));
         }
 
-        return new PayRateOverride(overrideHourlyRate, reason.Trim(), DateTime.UtcNow, setByManagerId);
+        return new PayRateOverride(overrideHourlyRate, reason.Trim(), DateTime.UtcNow, setByStaffMemberId);
     }
 }

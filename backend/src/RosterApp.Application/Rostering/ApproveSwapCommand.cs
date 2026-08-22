@@ -1,5 +1,6 @@
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Rostering;
 
@@ -40,7 +41,7 @@ public sealed class ApproveSwapCommandHandler(
             throw new NotFoundException($"Swap request '{request.SwapRequestId}' was not found.");
         }
 
-        if (!tenantContext.IsManager || !tenantContext.AccessibleVenueIds.Contains(swapRequest.VenueId))
+        if (tenantContext.PermissionLevel is null or PermissionLevel.Staff || !tenantContext.AccessibleVenueIds.Contains(swapRequest.VenueId))
         {
             throw new NotFoundException($"Swap request '{request.SwapRequestId}' was not found.");
         }

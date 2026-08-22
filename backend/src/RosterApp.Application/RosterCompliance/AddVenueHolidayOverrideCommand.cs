@@ -26,7 +26,12 @@ public sealed class AddVenueHolidayOverrideCommandHandler(
 {
     public async Task<VenueHolidayOverrideDto> Handle(AddVenueHolidayOverrideCommand request, CancellationToken cancellationToken)
     {
-        var entity = VenueHolidayOverride.Create(request.VenueId, request.OverrideDate, request.Name, tenantContext.ManagerId);
+        if (tenantContext.StaffMemberId is not { } staffMemberId)
+        {
+            throw new ForbiddenAccessException("No authenticated tenant context.");
+        }
+
+        var entity = VenueHolidayOverride.Create(request.VenueId, request.OverrideDate, request.Name, staffMemberId);
 
         repository.Add(entity);
         await unitOfWork.SaveChangesAsync(cancellationToken);

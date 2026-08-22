@@ -101,7 +101,7 @@ namespace RosterApp.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedByManagerId")
+                    b.Property<Guid>("CreatedByStaffMemberId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("EffectiveFromUtc")
@@ -212,7 +212,7 @@ namespace RosterApp.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedByManagerId")
+                    b.Property<Guid>("CreatedByStaffMemberId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("EffectiveFromUtc")
@@ -277,7 +277,7 @@ namespace RosterApp.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedByManagerId")
+                    b.Property<Guid>("CreatedByStaffMemberId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("EffectiveFromUtc")
@@ -321,7 +321,7 @@ namespace RosterApp.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedByManagerId")
+                    b.Property<Guid>("CreatedByStaffMemberId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Name")
@@ -478,7 +478,7 @@ namespace RosterApp.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedByManagerId")
+                    b.Property<Guid>("CreatedByStaffMemberId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("DisplayName")
@@ -611,57 +611,6 @@ namespace RosterApp.Infrastructure.Migrations
                     b.ToTable("StandingUnavailabilities");
                 });
 
-            modelBuilder.Entity("RosterApp.Domain.Tenancy.Manager", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(320)
-                        .HasColumnType("character varying(320)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<Guid>("OrganisationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("SupabaseUserId")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OrganisationId");
-
-                    b.HasIndex("SupabaseUserId")
-                        .IsUnique();
-
-                    b.ToTable("Managers");
-                });
-
-            modelBuilder.Entity("RosterApp.Domain.Tenancy.ManagerVenueAccess", b =>
-                {
-                    b.Property<Guid>("ManagerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("VenueId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("ManagerId", "VenueId");
-
-                    b.HasIndex("VenueId");
-
-                    b.ToTable("ManagerVenueAccesses");
-                });
-
             modelBuilder.Entity("RosterApp.Domain.Tenancy.Organisation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -693,7 +642,7 @@ namespace RosterApp.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedByManagerId")
+                    b.Property<Guid>("CreatedByStaffMemberId")
                         .HasColumnType("uuid");
 
                     b.Property<decimal?>("ForecastSalesTarget")
@@ -1140,9 +1089,9 @@ namespace RosterApp.Infrastructure.Migrations
                                 .HasColumnType("character varying(500)")
                                 .HasColumnName("OverrideReason");
 
-                            b1.Property<Guid>("SetByManagerId")
+                            b1.Property<Guid>("SetByStaffMemberId")
                                 .HasColumnType("uuid")
-                                .HasColumnName("OverrideSetByManagerId");
+                                .HasColumnName("OverrideSetByStaffMemberId");
 
                             b1.HasKey("StaffMemberId");
 
@@ -1181,30 +1130,6 @@ namespace RosterApp.Infrastructure.Migrations
                     b.HasOne("RosterApp.Domain.Staffing.StaffMember", null)
                         .WithMany()
                         .HasForeignKey("StaffMemberId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("RosterApp.Domain.Tenancy.Manager", b =>
-                {
-                    b.HasOne("RosterApp.Domain.Tenancy.Organisation", null)
-                        .WithMany()
-                        .HasForeignKey("OrganisationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("RosterApp.Domain.Tenancy.ManagerVenueAccess", b =>
-                {
-                    b.HasOne("RosterApp.Domain.Tenancy.Manager", null)
-                        .WithMany()
-                        .HasForeignKey("ManagerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("RosterApp.Domain.Tenancy.Venue", null)
-                        .WithMany()
-                        .HasForeignKey("VenueId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -1263,14 +1188,12 @@ namespace RosterApp.Infrastructure.Migrations
                                 .HasColumnType("uuid");
 
                             b1.Property<int>("AdvanceNoticeDays")
-                                .ValueGeneratedOnAdd()
                                 .HasColumnType("integer")
                                 .HasDefaultValue(7)
                                 .HasColumnName("AvailabilityAdvanceNoticeDays");
 
                             b1.Property<string>("SelfServiceMode")
                                 .IsRequired()
-                                .ValueGeneratedOnAdd()
                                 .HasMaxLength(20)
                                 .HasColumnType("character varying(20)")
                                 .HasDefaultValue("RequiresApproval")

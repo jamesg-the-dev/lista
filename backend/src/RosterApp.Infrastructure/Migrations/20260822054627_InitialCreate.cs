@@ -93,28 +93,6 @@ namespace RosterApp.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Managers",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    OrganisationId = table.Column<Guid>(type: "uuid", nullable: false),
-                    SupabaseUserId = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    Email = table.Column<string>(type: "character varying(320)", maxLength: 320, nullable: false),
-                    CreatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Managers", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Managers_Organisations_OrganisationId",
-                        column: x => x.OrganisationId,
-                        principalTable: "Organisations",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Venues",
                 columns: table => new
                 {
@@ -131,7 +109,7 @@ namespace RosterApp.Infrastructure.Migrations
                     Timezone = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                     CreatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    CreatedByManagerId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedByStaffMemberId = table.Column<Guid>(type: "uuid", nullable: false),
                     ForecastSalesTarget = table.Column<decimal>(type: "numeric(10,2)", precision: 10, scale: 2, nullable: true),
                     AvailabilitySelfServiceMode = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false, defaultValue: "RequiresApproval"),
                     AvailabilityAdvanceNoticeDays = table.Column<int>(type: "integer", nullable: false, defaultValue: 7)
@@ -182,7 +160,7 @@ namespace RosterApp.Infrastructure.Migrations
                     SuperannuationRatePercent = table.Column<decimal>(type: "numeric(5,2)", precision: 5, scale: 2, nullable: false),
                     PayPeriod = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     PayPeriodCutoffDay = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
-                    CreatedByManagerId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedByStaffMemberId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -203,30 +181,6 @@ namespace RosterApp.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ManagerVenueAccesses",
-                columns: table => new
-                {
-                    ManagerId = table.Column<Guid>(type: "uuid", nullable: false),
-                    VenueId = table.Column<Guid>(type: "uuid", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ManagerVenueAccesses", x => new { x.ManagerId, x.VenueId });
-                    table.ForeignKey(
-                        name: "FK_ManagerVenueAccesses_Managers_ManagerId",
-                        column: x => x.ManagerId,
-                        principalTable: "Managers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ManagerVenueAccesses_Venues_VenueId",
-                        column: x => x.VenueId,
-                        principalTable: "Venues",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Roles",
                 columns: table => new
                 {
@@ -235,7 +189,7 @@ namespace RosterApp.Infrastructure.Migrations
                     DisplayName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     ColorTag = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
-                    CreatedByManagerId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedByStaffMemberId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -265,7 +219,7 @@ namespace RosterApp.Infrastructure.Migrations
                     MinorMaxWeeklyHours = table.Column<decimal>(type: "numeric(5,2)", precision: 5, scale: 2, nullable: false),
                     MinorEarliestStartTime = table.Column<TimeOnly>(type: "time without time zone", nullable: false),
                     MinorLatestFinishTime = table.Column<TimeOnly>(type: "time without time zone", nullable: false),
-                    CreatedByManagerId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedByStaffMemberId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -312,7 +266,7 @@ namespace RosterApp.Infrastructure.Migrations
                     VenueId = table.Column<Guid>(type: "uuid", nullable: false),
                     OverrideDate = table.Column<DateOnly>(type: "date", nullable: false),
                     Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    CreatedByManagerId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedByStaffMemberId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -403,7 +357,7 @@ namespace RosterApp.Infrastructure.Migrations
                     AwardClassificationId = table.Column<Guid>(type: "uuid", nullable: false),
                     EffectiveFromUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     EffectiveToUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    CreatedByManagerId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedByStaffMemberId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -448,7 +402,7 @@ namespace RosterApp.Infrastructure.Migrations
                     OverrideHourlyRate = table.Column<decimal>(type: "numeric(8,2)", precision: 8, scale: 2, nullable: true),
                     OverrideReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     OverrideEffectiveFromUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    OverrideSetByManagerId = table.Column<Guid>(type: "uuid", nullable: true),
+                    OverrideSetByStaffMemberId = table.Column<Guid>(type: "uuid", nullable: true),
                     SupabaseUserId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true)
                 },
                 constraints: table =>
@@ -716,22 +670,6 @@ namespace RosterApp.Infrastructure.Migrations
                 columns: new[] { "StaffMemberId", "StartDate" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Managers_OrganisationId",
-                table: "Managers",
-                column: "OrganisationId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Managers_SupabaseUserId",
-                table: "Managers",
-                column: "SupabaseUserId",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ManagerVenueAccesses_VenueId",
-                table: "ManagerVenueAccesses",
-                column: "VenueId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_PublicHolidays_State_Date",
                 table: "PublicHolidays",
                 columns: new[] { "State", "Date" });
@@ -757,13 +695,6 @@ namespace RosterApp.Infrastructure.Migrations
                 name: "IX_Roles_VenueId",
                 table: "Roles",
                 column: "VenueId");
-
-            // Case-insensitive uniqueness among active roles per venue (§6)
-            // — EF Core's fluent HasIndex API can't express lower(DisplayName),
-            // so this DB-level backstop for RoleUniquenessChecker's async
-            // check is added as raw SQL. See RoleConfiguration's doc comment.
-            migrationBuilder.Sql(
-                "CREATE UNIQUE INDEX \"IX_Roles_VenueId_DisplayName_Active\" ON \"Roles\" (\"VenueId\", lower(\"DisplayName\")) WHERE \"IsActive\";");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RosterComplianceConfigurations_VenueId_Active",
@@ -892,9 +823,6 @@ namespace RosterApp.Infrastructure.Migrations
                 name: "LeaveRequests");
 
             migrationBuilder.DropTable(
-                name: "ManagerVenueAccesses");
-
-            migrationBuilder.DropTable(
                 name: "PublicHolidays");
 
             migrationBuilder.DropTable(
@@ -932,9 +860,6 @@ namespace RosterApp.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "AwardRates");
-
-            migrationBuilder.DropTable(
-                name: "Managers");
 
             migrationBuilder.DropTable(
                 name: "RosterComplianceConfigurations");

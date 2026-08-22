@@ -1,5 +1,6 @@
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Timekeeping;
 
@@ -7,7 +8,7 @@ namespace RosterApp.Application.Timekeeping;
 /// Manager inbox for flagged clock-out variance, same "IVenueScopedRequest
 /// alone isn't enough" reasoning as GetPendingSwapsForVenueQuery — a staff
 /// member's own venue claims would also satisfy VenueId scoping, so
-/// IsManager is checked explicitly in the handler.
+/// PermissionLevel is checked explicitly in the handler.
 /// </summary>
 public sealed record GetFlaggedTimeEntriesQuery(Guid VenueId) : IRequest<IReadOnlyList<TimeEntryDto>>, IVenueScopedRequest;
 
@@ -18,7 +19,7 @@ public sealed class GetFlaggedTimeEntriesQueryHandler(
 {
     public async Task<IReadOnlyList<TimeEntryDto>> Handle(GetFlaggedTimeEntriesQuery request, CancellationToken cancellationToken)
     {
-        if (!tenantContext.IsManager)
+        if (tenantContext.PermissionLevel is null or PermissionLevel.Staff)
         {
             throw new ForbiddenAccessException("Only a manager can view flagged time entries.");
         }

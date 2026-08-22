@@ -20,7 +20,7 @@ public sealed record AwardConfigurationDto(
     bool MeetsSuperannuationMinimum,
     string PayPeriod,
     string PayPeriodCutoffDay,
-    Guid CreatedByManagerId,
+    Guid CreatedByStaffMemberId,
     DateTime CreatedAtUtc,
     IReadOnlyList<PenaltyRateToggleDto> PenaltyToggles)
 {
@@ -37,7 +37,7 @@ public sealed record AwardConfigurationDto(
             config.SuperannuationRatePercent >= SuperannuationGuarantee.CurrentStatutoryMinimumPercent,
             config.PayPeriod.ToString(),
             config.PayPeriodCutoffDay.ToString(),
-            config.CreatedByManagerId,
+            config.CreatedByStaffMemberId,
             config.CreatedAtUtc,
             config.PenaltyToggles.Select(PenaltyRateToggleDto.FromDomain).ToList());
 }

@@ -8,10 +8,10 @@ namespace RosterApp.Application.Staffing;
 /// the Configurations' HasConversion&lt;string&gt;()) — not as a number. See
 /// CLAUDE.md § Wire format for enums.
 /// </summary>
-public sealed record PayRateOverrideDto(decimal OverrideHourlyRate, string Reason, DateTime EffectiveFromUtc, Guid SetByManagerId)
+public sealed record PayRateOverrideDto(decimal OverrideHourlyRate, string Reason, DateTime EffectiveFromUtc, Guid SetByStaffMemberId)
 {
     public static PayRateOverrideDto FromDomain(PayRateOverride override_) =>
-        new(override_.OverrideHourlyRate, override_.Reason, override_.EffectiveFromUtc, override_.SetByManagerId);
+        new(override_.OverrideHourlyRate, override_.Reason, override_.EffectiveFromUtc, override_.SetByStaffMemberId);
 }
 
 public sealed record StaffMemberDto(

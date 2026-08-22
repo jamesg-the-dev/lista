@@ -21,8 +21,6 @@ public sealed class RosterDbContext(DbContextOptions<RosterDbContext> options) :
     public DbSet<SwapRequest> SwapRequests => Set<SwapRequest>();
     public DbSet<Organisation> Organisations => Set<Organisation>();
     public DbSet<Venue> Venues => Set<Venue>();
-    public DbSet<Manager> Managers => Set<Manager>();
-    public DbSet<ManagerVenueAccess> ManagerVenueAccesses => Set<ManagerVenueAccess>();
     public DbSet<AuditLogEntry> AuditLogEntries => Set<AuditLogEntry>();
     public DbSet<StaffMember> StaffMembers => Set<StaffMember>();
     public DbSet<Role> Roles => Set<Role>();

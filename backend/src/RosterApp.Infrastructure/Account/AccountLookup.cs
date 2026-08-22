@@ -6,32 +6,33 @@ namespace RosterApp.Infrastructure.Account;
 public sealed class AccountLookup(RosterDbContext dbContext) : IAccountLookup
 {
     public async Task<AccountDto> GetAccountAsync(
-        Guid managerId,
+        Guid staffMemberId,
         CancellationToken cancellationToken
     )
     {
-        var manager =
+        var staffMember =
             await dbContext
-                .Managers.AsNoTracking()
-                .FirstOrDefaultAsync(m => m.Id == managerId, cancellationToken)
-            ?? throw new InvalidOperationException($"Manager '{managerId}' not found.");
+                .StaffMembers.AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == staffMemberId, cancellationToken)
+            ?? throw new InvalidOperationException($"Staff member '{staffMemberId}' not found.");
 
         var venues = await dbContext
-            .ManagerVenueAccesses.AsNoTracking()
-            .Where(access => access.ManagerId == managerId)
+            .StaffMembers.AsNoTracking()
+            .Where(s => s.Id == staffMemberId)
+            .SelectMany(s => s.VenueAssignments)
             .Join(
                 dbContext.Venues,
-                access => access.VenueId,
+                assignment => assignment.VenueId,
                 venue => venue.Id,
-                (access, venue) => new AccountVenueDto(venue.Id, venue.Name)
+                (assignment, venue) => new AccountVenueDto(venue.Id, venue.Name)
             )
             .ToListAsync(cancellationToken);
 
         return new AccountDto(
-            manager.Id,
-            manager.OrganisationId,
-            manager.Name,
-            manager.Email,
+            staffMember.Id,
+            staffMember.OrganisationId,
+            staffMember.Name,
+            staffMember.Email,
             venues
         );
     }

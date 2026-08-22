@@ -12,7 +12,7 @@ public sealed class RoleAwardMappingConfiguration : IEntityTypeConfiguration<Rol
     {
         builder.HasKey(m => m.Id);
         builder.Property(m => m.Id).ValueGeneratedNever();
-        builder.Property(m => m.CreatedByManagerId).IsRequired();
+        builder.Property(m => m.CreatedByStaffMemberId).IsRequired();
 
         builder.HasIndex(m => m.VenueId);
 

@@ -5,18 +5,15 @@ using RosterApp.Domain.ValueObjects;
 
 namespace RosterApp.Application.Tenancy;
 
-// TODO: this currently allows any authenticated Manager to edit a venue's
-// profile. The spec calls for Owner-only edit with Manager/Staff read-only,
-// but no such role model exists yet — ICurrentTenantContext only
-// distinguishes Manager vs Staff, not Owner vs Manager. A real permission
-// tier system is a near-term priority, not just for this screen: every
-// upcoming settings feature (Award & Pay Config, Roster Rules &
-// Compliance, Staff & Roles) has the same Owner-only requirement. When
-// building it, note the domain needs to support multiple venue owners,
-// multiple managers, and multiple staff per organisation — and that
-// Managers are themselves a kind of Staff for data-access purposes, not a
-// separate population. See AuthorizationBehavior.cs for the pipeline stage
-// this eventually plugs into.
+// TODO: this currently allows any authenticated StaffMember to edit a
+// venue's profile. The spec calls for Owner-only edit with Manager/Staff
+// read-only — ICurrentTenantContext exposes PermissionLevel (Owner/
+// Manager/Supervisor/Staff) now, but nothing here reads it yet. A real
+// permission tier system is a near-term priority, not just for this
+// screen: every upcoming settings feature (Award & Pay Config, Roster
+// Rules & Compliance, Staff & Roles) has the same Owner-only requirement.
+// See AuthorizationBehavior.cs for the pipeline stage this eventually
+// plugs into.
 public sealed record UpdateVenueProfileCommand(
     Guid VenueId,
     string Name,

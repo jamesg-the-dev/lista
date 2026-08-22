@@ -13,19 +13,19 @@ public sealed class VenueHolidayOverride
     public Guid VenueId { get; private set; }
     public DateOnly OverrideDate { get; private set; }
     public string Name { get; private set; } = null!;
-    public Guid CreatedByManagerId { get; private set; }
+    public Guid CreatedByStaffMemberId { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
 
     private VenueHolidayOverride() { } // EF Core
 
-    public static VenueHolidayOverride Create(Guid venueId, DateOnly overrideDate, string name, Guid createdByManagerId) =>
+    public static VenueHolidayOverride Create(Guid venueId, DateOnly overrideDate, string name, Guid createdByStaffMemberId) =>
         new()
         {
             Id = Guid.NewGuid(),
             VenueId = venueId,
             OverrideDate = overrideDate,
             Name = name,
-            CreatedByManagerId = createdByManagerId,
+            CreatedByStaffMemberId = createdByStaffMemberId,
             CreatedAtUtc = DateTime.UtcNow,
         };
 }

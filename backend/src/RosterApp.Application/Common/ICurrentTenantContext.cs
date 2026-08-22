@@ -1,3 +1,5 @@
+using RosterApp.Domain.Staffing;
+
 namespace RosterApp.Application.Common;
 
 /// <summary>
@@ -6,42 +8,40 @@ namespace RosterApp.Application.Common;
 /// and by query/command handlers that need to know who's asking. Scoped
 /// per-request (not a singleton) — populated after auth, before the
 /// request reaches MediatR.
+///
+/// Every authenticated actor — Owner, Manager, Supervisor, or plain Staff —
+/// is a StaffMember row; there is no separate Manager population to
+/// distinguish (see StaffMember.PermissionLevel).
 /// </summary>
 public interface ICurrentTenantContext
 {
     bool IsAuthenticated { get; }
-    Guid ManagerId { get; }
     Guid OrganisationId { get; }
     IReadOnlyCollection<Guid> AccessibleVenueIds { get; }
 
     /// <summary>
-    /// True once SupabaseClaimsTransformation has resolved this principal to
-    /// a Manager record. Manager- and staff-only command handlers (e.g.
-    /// ApproveSwapCommand vs RequestSwapCommand) use this instead of
-    /// AccessibleVenueIds to tell the two roles apart, since a staff
-    /// member's own assigned venues also satisfy AccessibleVenueIds.
-    /// </summary>
-    bool IsManager { get; }
-
-    /// <summary>
-    /// Resolved StaffMember identity (Phase 5) — null for a Manager-
-    /// authenticated request, or for a Supabase-authenticated request that
-    /// hasn't been linked to a StaffMember yet (see
-    /// LinkStaffSupabaseAccountCommand).
+    /// Resolved StaffMember identity — null for a Supabase-authenticated
+    /// request that hasn't been linked to a StaffMember yet (see
+    /// LinkStaffSupabaseAccountCommand, which runs precisely in that
+    /// window).
     /// </summary>
     Guid? StaffMemberId { get; }
 
     /// <summary>
-    /// True once SupabaseClaimsTransformation has resolved this principal to
-    /// a StaffMember record (i.e. StaffMemberId is set).
+    /// The resolved StaffMember's permission tier — null under the same
+    /// "not yet linked" condition as StaffMemberId. Used by command/query
+    /// handlers that need to distinguish management-capable actors from
+    /// plain Staff-tier self-service ones (e.g. ApproveSwapCommand vs
+    /// RequestSwapCommand): compare against PermissionLevel.Staff rather
+    /// than introducing a separate population check.
     /// </summary>
-    bool IsStaff { get; }
+    PermissionLevel? PermissionLevel { get; }
 
     /// <summary>
     /// Raw Supabase Auth "sub" claim, available as soon as the JWT is valid
-    /// — independent of whether it's been resolved to a Manager or
-    /// StaffMember yet. Needed by LinkStaffSupabaseAccountCommand, which
-    /// runs precisely in the "not resolved yet" window.
+    /// — independent of whether it's been resolved to a StaffMember yet.
+    /// Needed by LinkStaffSupabaseAccountCommand, which runs precisely in
+    /// the "not resolved yet" window.
     /// </summary>
     string? SupabaseUserId { get; }
 

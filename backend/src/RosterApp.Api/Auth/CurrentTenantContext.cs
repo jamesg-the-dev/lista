@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using RosterApp.Application.Common;
+using PermissionLevel = RosterApp.Domain.Staffing.PermissionLevel;
 
 namespace RosterApp.Api.Auth;
 
@@ -8,19 +9,15 @@ public sealed class CurrentTenantContext(IHttpContextAccessor httpContextAccesso
 {
     private ClaimsPrincipal? User => httpContextAccessor.HttpContext?.User;
 
-    private string? ManagerIdClaim => User?.FindFirst(TenantClaimTypes.ManagerId)?.Value;
     private string? StaffMemberIdClaim => User?.FindFirst(TenantClaimTypes.StaffMemberId)?.Value;
     private string? OrganisationIdClaim => User?.FindFirst(TenantClaimTypes.OrganisationId)?.Value;
+    private string? PermissionLevelClaim => User?.FindFirst(TenantClaimTypes.PermissionLevel)?.Value;
 
-    public bool IsAuthenticated => (ManagerIdClaim is not null || StaffMemberIdClaim is not null) && OrganisationIdClaim is not null;
-
-    public Guid ManagerId => ManagerIdClaim is { } value ? Guid.Parse(value) : Guid.Empty;
-
-    public bool IsManager => ManagerIdClaim is not null;
+    public bool IsAuthenticated => StaffMemberIdClaim is not null && OrganisationIdClaim is not null;
 
     public Guid? StaffMemberId => StaffMemberIdClaim is { } value ? Guid.Parse(value) : null;
 
-    public bool IsStaff => StaffMemberIdClaim is not null;
+    public PermissionLevel? PermissionLevel => PermissionLevelClaim is { } value ? Enum.Parse<PermissionLevel>(value) : null;
 
     public Guid OrganisationId => OrganisationIdClaim is { } value ? Guid.Parse(value) : Guid.Empty;
 

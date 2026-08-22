@@ -16,7 +16,7 @@ public sealed record RoleDto(
     string DisplayName,
     string? ColorTag,
     bool IsActive,
-    Guid CreatedByManagerId,
+    Guid CreatedByStaffMemberId,
     DateTime CreatedAtUtc,
     Guid? MappedAwardClassificationId,
     string? MappedAwardClassificationName)
@@ -28,7 +28,7 @@ public sealed record RoleDto(
             role.DisplayName,
             role.ColorTag,
             role.IsActive,
-            role.CreatedByManagerId,
+            role.CreatedByStaffMemberId,
             role.CreatedAtUtc,
             mappedAwardClassificationId,
             mappedAwardClassificationName);

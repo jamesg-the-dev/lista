@@ -9,7 +9,7 @@ public sealed record RoleAwardMappingDto(
     Guid AwardClassificationId,
     DateTime EffectiveFromUtc,
     DateTime? EffectiveToUtc,
-    Guid CreatedByManagerId,
+    Guid CreatedByStaffMemberId,
     DateTime CreatedAtUtc)
 {
     public static RoleAwardMappingDto FromDomain(RoleAwardMapping mapping) =>
@@ -20,6 +20,6 @@ public sealed record RoleAwardMappingDto(
             mapping.AwardClassificationId,
             mapping.EffectiveFromUtc,
             mapping.EffectiveToUtc,
-            mapping.CreatedByManagerId,
+            mapping.CreatedByStaffMemberId,
             mapping.CreatedAtUtc);
 }

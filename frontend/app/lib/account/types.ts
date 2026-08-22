@@ -14,7 +14,7 @@ export interface AccountVenueDto {
 }
 
 export interface AccountDto {
-  managerId: string;
+  staffMemberId: string;
   organisationId: string;
   name: string;
   email: string;
@@ -27,7 +27,7 @@ export interface AccountVenue {
 }
 
 export interface Account {
-  managerId: string;
+  staffMemberId: string;
   organisationId: string;
   name: string;
   email: string;
@@ -36,7 +36,7 @@ export interface Account {
 
 export function mapAccount(dto: AccountDto): Account {
   return {
-    managerId: dto.managerId,
+    staffMemberId: dto.staffMemberId,
     organisationId: dto.organisationId,
     name: dto.name,
     email: dto.email,

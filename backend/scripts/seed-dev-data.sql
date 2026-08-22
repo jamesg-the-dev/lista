@@ -1,10 +1,13 @@
 -- Minimal dev seed data for a fresh database (after running migrations).
 --
--- Creates one Organisation, one Manager linked to your Supabase Auth user
--- (so /api/account/me resolves), one Venue with a complete profile (Venue
--- now requires Abn/Address/Timezone at creation — see
--- backend/src/RosterApp.Domain/Tenancy/Venue.cs), and the ManagerVenueAccess
--- row that grants that manager access to that venue.
+-- Creates one Organisation, one Owner-tier StaffMember linked to your
+-- Supabase Auth user (so /api/account/me resolves), one Venue with a
+-- complete profile (Venue requires Abn/Address/Timezone at creation — see
+-- backend/src/RosterApp.Domain/Tenancy/Venue.cs), and the
+-- StaffMemberVenueAssignments row that grants that owner access to that
+-- venue. There is no separate Manager identity — every authenticated actor
+-- (Owner, Manager, Supervisor, Staff) is a StaffMember row, distinguished
+-- only by PermissionLevel (see StaffMember.cs).
 --
 -- Run once against a freshly-migrated database. Re-running will insert a
 -- second organisation/venue rather than erroring — this is a one-shot
@@ -15,14 +18,24 @@ WITH new_org AS (
   VALUES (gen_random_uuid(), 'Demo Hospitality Group', now())
   RETURNING "Id"
 ),
-new_manager AS (
-  INSERT INTO "Managers" ("Id", "OrganisationId", "SupabaseUserId", "Name", "Email", "CreatedAtUtc")
+new_staff AS (
+  INSERT INTO "StaffMembers" (
+    "Id", "OrganisationId", "Name", "Email", "Phone",
+    "EmploymentType", "Classification", "MaxWeeklyHours", "DateOfBirth",
+    "PermissionLevel", "SupabaseUserId", "CreatedAtUtc"
+  )
   SELECT
     gen_random_uuid(),
     org."Id",
-    '1edfff73-9715-4bd9-9026-c8610144a3a9', -- Supabase Auth user id (JWT "sub")
     'James Guerra',
     'jamesguerra2008@gmail.com',
+    '+61412345678',
+    'FullTime',
+    'Level5',
+    38,
+    '1985-06-15',
+    'Owner',
+    '1edfff73-9715-4bd9-9026-c8610144a3a9', -- Supabase Auth user id (JWT "sub")
     now()
   FROM new_org org
   RETURNING "Id", "OrganisationId"
@@ -31,11 +44,11 @@ new_venue AS (
   INSERT INTO "Venues" (
     "Id", "OrganisationId", "Name", "Abn",
     "Address_Line1", "Address_Line2", "Address_Suburb", "Address_State", "Address_Postcode", "Address_Country",
-    "Timezone", "IsActive", "CreatedAtUtc", "CreatedByManagerId", "ForecastSalesTarget"
+    "Timezone", "IsActive", "CreatedAtUtc", "CreatedByStaffMemberId", "ForecastSalesTarget"
   )
   SELECT
     gen_random_uuid(),
-    mgr."OrganisationId",
+    staff."OrganisationId",
     'The Public House',
     '51824753556', -- valid ABN checksum (ATO's own example ABN)
     '123 Chapel St',
@@ -47,11 +60,11 @@ new_venue AS (
     'Australia/Melbourne',
     true,
     now(),
-    mgr."Id",
+    staff."Id",
     NULL
-  FROM new_manager mgr
+  FROM new_staff staff
   RETURNING "Id"
 )
-INSERT INTO "ManagerVenueAccesses" ("ManagerId", "VenueId")
-SELECT mgr."Id", venue."Id"
-FROM new_manager mgr, new_venue venue;
+INSERT INTO "StaffMemberVenueAssignments" ("StaffMemberId", "VenueId")
+SELECT staff."Id", venue."Id"
+FROM new_staff staff, new_venue venue;

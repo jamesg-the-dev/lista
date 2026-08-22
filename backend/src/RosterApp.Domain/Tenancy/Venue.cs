@@ -21,7 +21,7 @@ public sealed class Venue : AggregateRoot
     public string Timezone { get; private set; } = "Australia/Melbourne";
     public bool IsActive { get; private set; } = true;
     public DateTime CreatedAtUtc { get; private set; }
-    public Guid CreatedByManagerId { get; private set; }
+    public Guid CreatedByStaffMemberId { get; private set; }
 
     /// <summary>
     /// A single flat weekly target, not a value stored per specific week —
@@ -51,7 +51,7 @@ public sealed class Venue : AggregateRoot
         Abn abn,
         Address address,
         string timezone,
-        Guid createdByManagerId
+        Guid createdByStaffMemberId
     )
     {
         var venue = new Venue
@@ -64,7 +64,7 @@ public sealed class Venue : AggregateRoot
             Timezone = timezone,
             IsActive = true,
             CreatedAtUtc = DateTime.UtcNow,
-            CreatedByManagerId = createdByManagerId,
+            CreatedByStaffMemberId = createdByStaffMemberId,
             AvailabilitySettings = VenueAvailabilitySettings.CreateDefault(),
         };
 

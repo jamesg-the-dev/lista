@@ -41,6 +41,11 @@ public sealed class SetRoleAwardMappingCommandHandler(
 {
     public async Task<RoleAwardMappingDto> Handle(SetRoleAwardMappingCommand request, CancellationToken cancellationToken)
     {
+        if (tenantContext.StaffMemberId is not { } staffMemberId)
+        {
+            throw new ForbiddenAccessException("No authenticated tenant context.");
+        }
+
         var role = await roleRepository.GetByIdAsync(request.RoleId, cancellationToken);
         if (role is null || role.VenueId != request.VenueId)
         {
@@ -53,7 +58,7 @@ public sealed class SetRoleAwardMappingCommandHandler(
             request.VenueId,
             request.RoleId,
             request.AwardClassificationId,
-            tenantContext.ManagerId);
+            staffMemberId);
 
         currentMapping?.Supersede(DateTime.UtcNow);
         repository.Add(newMapping);

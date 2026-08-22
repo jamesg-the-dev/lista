@@ -74,6 +74,11 @@ public sealed class UpdateRosterComplianceConfigurationCommandHandler(
 {
     public async Task<RosterComplianceConfigurationDto> Handle(UpdateRosterComplianceConfigurationCommand request, CancellationToken cancellationToken)
     {
+        if (tenantContext.StaffMemberId is not { } staffMemberId)
+        {
+            throw new ForbiddenAccessException("No authenticated tenant context.");
+        }
+
         var currentConfig = await repository.GetActiveByVenueIdAsync(request.VenueId, cancellationToken);
 
         var minorRules = MinorRosterRule.Create(
@@ -94,7 +99,7 @@ public sealed class UpdateRosterComplianceConfigurationCommandHandler(
             request.WeeklyOvertimeThresholdMinutes,
             minorRules,
             mealBreakRules,
-            tenantContext.ManagerId);
+            staffMemberId);
 
         currentConfig?.Supersede(DateTime.UtcNow);
         repository.Add(newConfig);

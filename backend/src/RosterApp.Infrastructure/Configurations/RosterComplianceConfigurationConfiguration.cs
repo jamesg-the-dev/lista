@@ -11,7 +11,7 @@ public sealed class RosterComplianceConfigurationConfiguration : IEntityTypeConf
     {
         builder.HasKey(c => c.Id);
         builder.Property(c => c.Id).ValueGeneratedNever();
-        builder.Property(c => c.CreatedByManagerId).IsRequired();
+        builder.Property(c => c.CreatedByStaffMemberId).IsRequired();
 
         // Covers GetRosterComplianceConfigurationHistoryQuery's "all versions
         // for this venue, newest first" lookup — a distinct column set from

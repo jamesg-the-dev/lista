@@ -347,14 +347,14 @@ export interface PayRateOverrideDto {
   overrideHourlyRate: number;
   reason: string;
   effectiveFromUtc: string;
-  setByManagerId: string;
+  setByStaffMemberId: string;
 }
 
 export interface PayRateOverride {
   overrideHourlyRate: number;
   reason: string;
   effectiveFromUtc: Date;
-  setByManagerId: string;
+  setByStaffMemberId: string;
 }
 
 function mapPayRateOverride(dto: PayRateOverrideDto): PayRateOverride {
@@ -362,7 +362,7 @@ function mapPayRateOverride(dto: PayRateOverrideDto): PayRateOverride {
     overrideHourlyRate: dto.overrideHourlyRate,
     reason: dto.reason,
     effectiveFromUtc: new Date(dto.effectiveFromUtc),
-    setByManagerId: dto.setByManagerId,
+    setByStaffMemberId: dto.setByStaffMemberId,
   };
 }
 

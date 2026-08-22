@@ -1,5 +1,6 @@
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Timekeeping;
 
@@ -17,7 +18,7 @@ public sealed class GetActualVsRosteredQueryHandler(
 {
     public async Task<IReadOnlyList<ShiftVarianceDto>> Handle(GetActualVsRosteredQuery request, CancellationToken cancellationToken)
     {
-        if (!tenantContext.IsManager)
+        if (tenantContext.PermissionLevel is null or PermissionLevel.Staff)
         {
             throw new ForbiddenAccessException("Only a manager can view the rostered-vs-actual report.");
         }

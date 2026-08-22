@@ -91,6 +91,11 @@ public sealed class UpdateAwardConfigurationCommandHandler(
 {
     public async Task<AwardConfigurationDto> Handle(UpdateAwardConfigurationCommand request, CancellationToken cancellationToken)
     {
+        if (tenantContext.StaffMemberId is not { } staffMemberId)
+        {
+            throw new ForbiddenAccessException("No authenticated tenant context.");
+        }
+
         var currentConfig = await repository.GetActiveByVenueIdAsync(request.VenueId, cancellationToken);
         var minCasualLoadingPercent = await referenceDataLookup.GetMinimumCasualLoadingPercentAsync(request.AwardId, cancellationToken) ?? 0m;
 
@@ -108,7 +113,7 @@ public sealed class UpdateAwardConfigurationCommandHandler(
             Enum.Parse<PayPeriod>(request.PayPeriod),
             Enum.Parse<DayOfWeek>(request.PayPeriodCutoffDay),
             toggles,
-            tenantContext.ManagerId,
+            staffMemberId,
             request.ConfirmBelowMinimumSuper);
 
         currentConfig?.Supersede(DateTime.UtcNow);

@@ -35,7 +35,7 @@ public sealed class RosterComplianceConfiguration : AggregateRoot
     public int MinRestBetweenShiftsMinutes { get; private set; }
     public int WeeklyOvertimeThresholdMinutes { get; private set; }
     public MinorRosterRule MinorRules { get; private set; } = null!;
-    public Guid CreatedByManagerId { get; private set; }
+    public Guid CreatedByStaffMemberId { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
 
     private readonly List<MealBreakRule> _mealBreakRules = [];
@@ -51,7 +51,7 @@ public sealed class RosterComplianceConfiguration : AggregateRoot
         int weeklyOvertimeThresholdMinutes,
         MinorRosterRule minorRules,
         IEnumerable<MealBreakRule> mealBreakRules,
-        Guid createdByManagerId)
+        Guid createdByStaffMemberId)
     {
         if (minRestBetweenShiftsMinutes < MinimumRestBetweenShiftsMinutesFloor)
         {
@@ -76,7 +76,7 @@ public sealed class RosterComplianceConfiguration : AggregateRoot
             MinRestBetweenShiftsMinutes = minRestBetweenShiftsMinutes,
             WeeklyOvertimeThresholdMinutes = weeklyOvertimeThresholdMinutes,
             MinorRules = minorRules,
-            CreatedByManagerId = createdByManagerId,
+            CreatedByStaffMemberId = createdByStaffMemberId,
             CreatedAtUtc = now,
         };
 

@@ -15,7 +15,7 @@ public sealed class AwardConfigurationConfiguration : IEntityTypeConfiguration<A
         builder.Property(c => c.SuperannuationRatePercent).HasPrecision(5, 2);
         builder.Property(c => c.PayPeriod).HasConversion<string>().HasMaxLength(20);
         builder.Property(c => c.PayPeriodCutoffDay).HasConversion<string>().HasMaxLength(10);
-        builder.Property(c => c.CreatedByManagerId).IsRequired();
+        builder.Property(c => c.CreatedByStaffMemberId).IsRequired();
 
         builder.HasIndex(c => c.AwardId);
 

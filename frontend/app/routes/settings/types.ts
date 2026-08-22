@@ -429,7 +429,7 @@ export interface AwardConfigurationDto {
   meetsSuperannuationMinimum: boolean;
   payPeriod: string; // PayPeriod wire member name
   payPeriodCutoffDay: string; // DayOfWeekName wire member name
-  createdByManagerId: string;
+  createdByStaffMemberId: string;
   createdAtUtc: string;
   penaltyToggles: PenaltyRateToggleDto[];
 }
@@ -574,7 +574,7 @@ export interface RosterComplianceConfigurationDto {
   weeklyOvertimeThresholdMinutes: number;
   minorRules: MinorRosterRuleDto;
   mealBreakRules: MealBreakRuleDto[];
-  createdByManagerId: string;
+  createdByStaffMemberId: string;
   createdAtUtc: string;
 }
 
@@ -707,7 +707,7 @@ export interface VenueHolidayOverrideDto {
   venueId: string;
   overrideDate: string; // DateOnly, "yyyy-MM-dd"
   name: string;
-  createdByManagerId: string;
+  createdByStaffMemberId: string;
   createdAtUtc: string;
 }
 
@@ -749,7 +749,7 @@ export interface RoleDto {
   displayName: string;
   colorTag: string | null;
   isActive: boolean;
-  createdByManagerId: string;
+  createdByStaffMemberId: string;
   createdAtUtc: string;
   mappedAwardClassificationId: string | null;
   mappedAwardClassificationName: string | null;
@@ -805,6 +805,6 @@ export interface RoleAwardMappingDto {
   awardClassificationId: string;
   effectiveFromUtc: string;
   effectiveToUtc: string | null;
-  createdByManagerId: string;
+  createdByStaffMemberId: string;
   createdAtUtc: string;
 }

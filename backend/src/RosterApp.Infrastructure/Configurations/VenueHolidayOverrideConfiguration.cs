@@ -12,7 +12,7 @@ public sealed class VenueHolidayOverrideConfiguration : IEntityTypeConfiguration
         builder.HasKey(o => o.Id);
         builder.Property(o => o.Id).ValueGeneratedNever();
         builder.Property(o => o.Name).IsRequired().HasMaxLength(200);
-        builder.Property(o => o.CreatedByManagerId).IsRequired();
+        builder.Property(o => o.CreatedByStaffMemberId).IsRequired();
 
         builder.HasIndex(o => new { o.VenueId, o.OverrideDate });
 

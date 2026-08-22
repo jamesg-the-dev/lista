@@ -51,6 +51,11 @@ public sealed class CreateVenueCommandHandler(
 {
     public async Task<VenueDto> Handle(CreateVenueCommand request, CancellationToken cancellationToken)
     {
+        if (tenantContext.StaffMemberId is not { } staffMemberId)
+        {
+            throw new ForbiddenAccessException("No authenticated tenant context.");
+        }
+
         var abn = Abn.Create(request.Abn);
         var address = new Address(
             request.AddressLine1,
@@ -60,7 +65,7 @@ public sealed class CreateVenueCommandHandler(
             request.Postcode,
             request.Country);
 
-        var venue = Venue.Create(request.OrganisationId, request.Name, abn, address, request.Timezone, tenantContext.ManagerId);
+        var venue = Venue.Create(request.OrganisationId, request.Name, abn, address, request.Timezone, staffMemberId);
 
         venueRepository.Add(venue);
         await unitOfWork.SaveChangesAsync(cancellationToken);

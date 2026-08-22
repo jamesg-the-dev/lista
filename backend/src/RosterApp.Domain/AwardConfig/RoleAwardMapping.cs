@@ -22,7 +22,7 @@ public sealed class RoleAwardMapping : AggregateRoot
     public Guid AwardClassificationId { get; private set; }
     public DateTime EffectiveFromUtc { get; private set; }
     public DateTime? EffectiveToUtc { get; private set; }
-    public Guid CreatedByManagerId { get; private set; }
+    public Guid CreatedByStaffMemberId { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
 
     private RoleAwardMapping() { } // EF Core
@@ -31,7 +31,7 @@ public sealed class RoleAwardMapping : AggregateRoot
         Guid venueId,
         Guid roleId,
         Guid awardClassificationId,
-        Guid createdByManagerId)
+        Guid createdByStaffMemberId)
     {
         var now = DateTime.UtcNow;
         var mapping = new RoleAwardMapping
@@ -41,7 +41,7 @@ public sealed class RoleAwardMapping : AggregateRoot
             RoleId = roleId,
             AwardClassificationId = awardClassificationId,
             EffectiveFromUtc = now,
-            CreatedByManagerId = createdByManagerId,
+            CreatedByStaffMemberId = createdByStaffMemberId,
             CreatedAtUtc = now,
         };
 

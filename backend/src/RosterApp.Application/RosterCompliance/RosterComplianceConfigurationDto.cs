@@ -24,7 +24,7 @@ public sealed record RosterComplianceConfigurationDto(
     int WeeklyOvertimeThresholdMinutes,
     MinorRosterRuleDto MinorRules,
     IReadOnlyList<MealBreakRuleDto> MealBreakRules,
-    Guid CreatedByManagerId,
+    Guid CreatedByStaffMemberId,
     DateTime CreatedAtUtc)
 {
     public static RosterComplianceConfigurationDto FromDomain(RosterComplianceConfiguration config) =>
@@ -39,6 +39,6 @@ public sealed record RosterComplianceConfigurationDto(
             config.WeeklyOvertimeThresholdMinutes,
             MinorRosterRuleDto.FromDomain(config.MinorRules),
             config.MealBreakRules.Select(MealBreakRuleDto.FromDomain).ToList(),
-            config.CreatedByManagerId,
+            config.CreatedByStaffMemberId,
             config.CreatedAtUtc);
 }

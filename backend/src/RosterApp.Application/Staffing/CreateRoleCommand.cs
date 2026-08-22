@@ -42,7 +42,12 @@ public sealed class CreateRoleCommandHandler(
 {
     public async Task<RoleDto> Handle(CreateRoleCommand request, CancellationToken cancellationToken)
     {
-        var role = Role.Create(request.VenueId, request.DisplayName, request.ColorTag, tenantContext.ManagerId);
+        if (tenantContext.StaffMemberId is not { } staffMemberId)
+        {
+            throw new ForbiddenAccessException("No authenticated tenant context.");
+        }
+
+        var role = Role.Create(request.VenueId, request.DisplayName, request.ColorTag, staffMemberId);
 
         roleRepository.Add(role);
         await unitOfWork.SaveChangesAsync(cancellationToken);

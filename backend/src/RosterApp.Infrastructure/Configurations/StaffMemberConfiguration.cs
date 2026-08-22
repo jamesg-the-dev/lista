@@ -59,7 +59,7 @@ public sealed class StaffMemberConfiguration : IEntityTypeConfiguration<StaffMem
             override_.Property(o => o.OverrideHourlyRate).HasColumnName("OverrideHourlyRate").HasPrecision(8, 2);
             override_.Property(o => o.Reason).HasColumnName("OverrideReason").HasMaxLength(500);
             override_.Property(o => o.EffectiveFromUtc).HasColumnName("OverrideEffectiveFromUtc");
-            override_.Property(o => o.SetByManagerId).HasColumnName("OverrideSetByManagerId");
+            override_.Property(o => o.SetByStaffMemberId).HasColumnName("OverrideSetByStaffMemberId");
         });
 
         // DB-level backstop for the async uniqueness check in
@@ -75,10 +75,9 @@ public sealed class StaffMemberConfiguration : IEntityTypeConfiguration<StaffMem
             .HasFilter("\"Phone\" IS NOT NULL");
 
         // Global (not per-organisation) uniqueness — one Supabase Auth
-        // account belongs to at most one StaffMember, same as
-        // Manager.SupabaseUserId. Partial so unlinked rows (the common
-        // case until a staff member activates the app) don't collide on
-        // NULL.
+        // account belongs to at most one StaffMember. Partial so unlinked
+        // rows (the common case until a staff member activates the app)
+        // don't collide on NULL.
         builder.HasIndex(s => s.SupabaseUserId)
             .IsUnique()
             .HasFilter("\"SupabaseUserId\" IS NOT NULL");

@@ -1,5 +1,6 @@
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Timekeeping;
 
@@ -18,7 +19,7 @@ public sealed class ApproveTimeEntryCommandHandler(
     public async Task<TimeEntryDto> Handle(ApproveTimeEntryCommand request, CancellationToken cancellationToken)
     {
         var entry = await timeEntryRepository.GetByIdAsync(request.TimeEntryId, cancellationToken);
-        if (entry is null || !tenantContext.IsManager || !tenantContext.AccessibleVenueIds.Contains(entry.VenueId))
+        if (entry is null || tenantContext.PermissionLevel is null or PermissionLevel.Staff || !tenantContext.AccessibleVenueIds.Contains(entry.VenueId))
         {
             throw new NotFoundException($"Time entry '{request.TimeEntryId}' was not found.");
         }

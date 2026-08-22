@@ -76,11 +76,13 @@ public sealed record StaffMemberVenueAssignment(Guid VenueId)
 }
 
 /// <summary>
-/// Aggregate root for a rostered employee's profile. VenueAssignments is
-/// owned directly by the aggregate — a staff member's venue assignment is
-/// core identity data that every command here (create/update, availability,
-/// leave) needs loaded and saved atomically with the profile, not a
-/// separate join-entity concern like ManagerVenueAccess.
+/// Aggregate root for a rostered employee's profile — every authenticated
+/// actor (Owner, Manager, Supervisor, or plain Staff) is a StaffMember row,
+/// distinguished only by PermissionLevel; there is no separate Manager
+/// population. VenueAssignments is owned directly by the aggregate — a
+/// staff member's venue assignment is core identity data that every
+/// command here (create/update, availability, leave) needs loaded and
+/// saved atomically with the profile, not a separate join-entity concern.
 /// </summary>
 public sealed class StaffMember : AggregateRoot
 {
@@ -131,8 +133,9 @@ public sealed class StaffMember : AggregateRoot
     /// Null until the staff member activates the staff app (Phase 5) —
     /// managers create the profile first via CreateStaffMemberCommand, then
     /// the staff member links their own Supabase Auth account to it via
-    /// LinkStaffSupabaseAccountCommand, matched by email. Same "Supabase
-    /// user id -> internal identity" shape as Manager.SupabaseUserId.
+    /// LinkStaffSupabaseAccountCommand, matched by email. An Owner/Manager's
+    /// own row has this set immediately at creation instead, since they are
+    /// their own login.
     /// </summary>
     public string? SupabaseUserId { get; private set; }
 
@@ -254,9 +257,9 @@ public sealed class StaffMember : AggregateRoot
     /// warning surfaced by the caller (§6), not blocked here, since a
     /// probation-period structure might legitimately justify it.
     /// </summary>
-    public void SetPayRateOverride(decimal hourlyRate, string reason, Guid setByManagerId)
+    public void SetPayRateOverride(decimal hourlyRate, string reason, Guid setByStaffMemberId)
     {
-        PayRateOverride = PayRateOverride.Create(hourlyRate, reason, setByManagerId);
+        PayRateOverride = PayRateOverride.Create(hourlyRate, reason, setByStaffMemberId);
         AddDomainEvent(new StaffMemberPayRateOverrideSet(Id, DateTime.UtcNow));
     }
 

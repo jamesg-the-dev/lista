@@ -19,12 +19,12 @@ public sealed class Role : AggregateRoot
     public string DisplayName { get; private set; } = null!;
     public string? ColorTag { get; private set; }
     public bool IsActive { get; private set; } = true;
-    public Guid CreatedByManagerId { get; private set; }
+    public Guid CreatedByStaffMemberId { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
 
     private Role() { } // EF Core
 
-    public static Role Create(Guid venueId, string displayName, string? colorTag, Guid createdByManagerId)
+    public static Role Create(Guid venueId, string displayName, string? colorTag, Guid createdByStaffMemberId)
     {
         if (string.IsNullOrWhiteSpace(displayName))
         {
@@ -38,7 +38,7 @@ public sealed class Role : AggregateRoot
             DisplayName = displayName.Trim(),
             ColorTag = colorTag,
             IsActive = true,
-            CreatedByManagerId = createdByManagerId,
+            CreatedByStaffMemberId = createdByStaffMemberId,
             CreatedAtUtc = DateTime.UtcNow,
         };
 

@@ -4,7 +4,7 @@ using RosterApp.Application.Common;
 namespace RosterApp.Application.Account;
 
 /// <summary>
-/// Resolves the authenticated Supabase user to their internal Manager
+/// Resolves the authenticated Supabase user to their internal StaffMember
 /// identity and accessible venues. Deliberately implements neither
 /// IVenueScopedRequest nor IOrganisationScopedRequest — this is the
 /// request that establishes tenant identity in the first place, so
@@ -15,7 +15,7 @@ namespace RosterApp.Application.Account;
 public sealed record GetCurrentAccountQuery : IRequest<AccountDto>;
 
 public sealed record AccountDto(
-    Guid ManagerId,
+    Guid StaffMemberId,
     Guid OrganisationId,
     string Name,
     string Email,
@@ -34,12 +34,12 @@ public sealed class GetCurrentAccountQueryHandler(
         CancellationToken cancellationToken
     )
     {
-        if (!tenantContext.IsAuthenticated)
+        if (tenantContext.StaffMemberId is not { } staffMemberId)
         {
             throw new ForbiddenAccessException("No authenticated tenant context.");
         }
 
-        return await accountLookup.GetAccountAsync(tenantContext.ManagerId, cancellationToken);
+        return await accountLookup.GetAccountAsync(staffMemberId, cancellationToken);
     }
 }
 
@@ -49,5 +49,5 @@ public sealed class GetCurrentAccountQueryHandler(
 /// </summary>
 public interface IAccountLookup
 {
-    Task<AccountDto> GetAccountAsync(Guid managerId, CancellationToken cancellationToken);
+    Task<AccountDto> GetAccountAsync(Guid staffMemberId, CancellationToken cancellationToken);
 }

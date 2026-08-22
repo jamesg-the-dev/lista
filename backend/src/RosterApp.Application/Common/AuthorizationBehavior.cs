@@ -13,32 +13,26 @@ namespace RosterApp.Application.Common;
 ///
 /// TODO: the Venue Profile settings feature is the first place this gap
 /// actually bites — its spec calls for Owner-only edit with Manager/Staff
-/// read-only, but there's no Owner/Manager/Staff distinction to enforce
-/// (ICurrentTenantContext only has IsManager/IsStaff). Every subsequent
-/// settings feature (Award &amp; Pay Config, Roster Rules &amp; Compliance,
-/// Staff &amp; Roles) has the same Owner-only requirement, so this needs a
-/// real permission-tier model soon, not a one-off fix on a single command.
-/// UpdateAwardConfigurationCommand (RosterApp.Application.AwardConfig) is
-/// the concrete instance for Award &amp; Pay Config — any authenticated
-/// Manager can call it today, with Owner-only enforcement deferred until
-/// this behavior is built out. When it's built: the domain needs room for
-/// multiple venue owners, multiple managers, and multiple staff per
-/// organisation, and Managers should be modelled as a kind of Staff for
-/// data-access purposes rather than a separate population.
+/// read-only, but there's no Owner/Manager/Staff distinction enforced here
+/// yet (ICurrentTenantContext exposes PermissionLevel, but nothing in this
+/// behavior reads it — data capture ahead of enforcement, not enforcement
+/// itself). Every subsequent settings feature (Award &amp; Pay Config,
+/// Roster Rules &amp; Compliance, Staff &amp; Roles) has the same Owner-only
+/// requirement, so this needs a real permission-tier model soon, not a
+/// one-off fix on a single command. UpdateAwardConfigurationCommand
+/// (RosterApp.Application.AwardConfig) is the concrete instance for
+/// Award &amp; Pay Config — any authenticated StaffMember can call it today,
+/// with Owner-only enforcement deferred until this behavior is built out.
 ///
 /// Staff &amp; Roles (RosterApp.Application.Staffing/AwardConfig) is the next
 /// concrete instance: CreateRoleCommand, DeactivateRoleCommand,
 /// SetRoleAwardMappingCommand, UpdateStaffPermissionLevelCommand,
 /// SetStaffPayRateOverrideCommand/ClearStaffPayRateOverrideCommand, and
 /// UpdateVenueAvailabilitySettingsCommand are all spec'd Owner-only but,
-/// same as above, any authenticated Manager can call them today.
-/// StaffMember now carries a PermissionLevel field (Owner/Manager/
-/// Supervisor/Staff) that captures which tier an owner has assigned
-/// someone to, but nothing here reads it yet — it's data capture ahead of
-/// enforcement, not enforcement itself. The one piece of this that IS
-/// enforced today is a data-integrity invariant, not access control:
-/// StaffMember.UpdatePermissionLevel throws if it would demote the last
-/// remaining Owner in an organisation.
+/// same as above, any authenticated StaffMember can call them today. The
+/// one piece of this that IS enforced today is a data-integrity invariant,
+/// not access control: StaffMember.UpdatePermissionLevel throws if it
+/// would demote the last remaining Owner in an organisation.
 /// </summary>
 public sealed class AuthorizationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull

@@ -14,7 +14,7 @@ public sealed class RoleConfiguration : IEntityTypeConfiguration<Role>
         builder.Property(r => r.DisplayName).IsRequired().HasMaxLength(100);
         builder.Property(r => r.ColorTag).HasMaxLength(30);
         builder.Property(r => r.IsActive).IsRequired().HasDefaultValue(true);
-        builder.Property(r => r.CreatedByManagerId).IsRequired();
+        builder.Property(r => r.CreatedByStaffMemberId).IsRequired();
 
         builder.HasIndex(r => r.VenueId);
 

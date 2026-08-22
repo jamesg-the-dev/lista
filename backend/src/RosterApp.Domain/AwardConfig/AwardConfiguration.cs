@@ -32,7 +32,7 @@ public sealed class AwardConfiguration : AggregateRoot
     public decimal SuperannuationRatePercent { get; private set; }
     public PayPeriod PayPeriod { get; private set; }
     public DayOfWeek PayPeriodCutoffDay { get; private set; }
-    public Guid CreatedByManagerId { get; private set; }
+    public Guid CreatedByStaffMemberId { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
 
     private readonly List<PenaltyRateToggle> _penaltyToggles = [];
@@ -63,7 +63,7 @@ public sealed class AwardConfiguration : AggregateRoot
         PayPeriod payPeriod,
         DayOfWeek payPeriodCutoffDay,
         IEnumerable<PenaltyRateToggle> penaltyToggles,
-        Guid createdByManagerId,
+        Guid createdByStaffMemberId,
         bool ownerConfirmedBelowMinimum = false)
     {
         if (casualLoadingPercent < awardMinCasualLoadingPercent)
@@ -91,7 +91,7 @@ public sealed class AwardConfiguration : AggregateRoot
             SuperannuationRatePercent = superannuationRatePercent,
             PayPeriod = payPeriod,
             PayPeriodCutoffDay = payPeriodCutoffDay,
-            CreatedByManagerId = createdByManagerId,
+            CreatedByStaffMemberId = createdByStaffMemberId,
             CreatedAtUtc = now,
         };
 

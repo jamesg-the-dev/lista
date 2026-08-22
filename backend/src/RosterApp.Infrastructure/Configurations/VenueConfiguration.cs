@@ -16,7 +16,7 @@ public sealed class VenueConfiguration : IEntityTypeConfiguration<Venue>
         builder.Property(v => v.Timezone).IsRequired().HasMaxLength(100);
 
         builder.Property(v => v.IsActive).IsRequired().HasDefaultValue(true);
-        builder.Property(v => v.CreatedByManagerId).IsRequired();
+        builder.Property(v => v.CreatedByStaffMemberId).IsRequired();
         builder.Property(v => v.ForecastSalesTarget).HasPrecision(10, 2);
         builder.HasIndex(v => v.OrganisationId);
 

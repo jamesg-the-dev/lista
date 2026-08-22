@@ -6,10 +6,11 @@ namespace RosterApp.Application.Staffing;
 /// <summary>
 /// Not named in docs/backend-step-by-step.md's Phase 5 route table, but a
 /// necessary supporting piece for it: CLAUDE.md's stack decisions say
-/// "Supabase Auth handles manager/staff login," and Manager.cs's own doc
-/// comment anticipates StaffMember "gains its own login in Phase 5's staff
-/// app" — without a link step, GetMyShiftsQuery and every other "current
-/// staff member" endpoint in this phase has no identity to resolve.
+/// "Supabase Auth handles manager/staff login," and every authenticated
+/// actor is a StaffMember row — without a link step, GetMyShiftsQuery and
+/// every other "current staff member" endpoint in this phase has no
+/// identity to resolve for a staff member who wasn't the one who created
+/// their own row (i.e. anyone below Owner/Manager tier).
 ///
 /// Flow: a manager creates the StaffMember profile (Phase 2) with the
 /// staff member's email; the staff member later signs up for the staff app

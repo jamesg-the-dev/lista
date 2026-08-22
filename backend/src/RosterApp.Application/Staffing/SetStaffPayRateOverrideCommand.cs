@@ -37,13 +37,18 @@ public sealed class SetStaffPayRateOverrideCommandHandler(
 {
     public async Task<StaffMemberDto> Handle(SetStaffPayRateOverrideCommand request, CancellationToken cancellationToken)
     {
+        if (tenantContext.StaffMemberId is not { } staffMemberId)
+        {
+            throw new ForbiddenAccessException("No authenticated tenant context.");
+        }
+
         var staff = await staffMemberRepository.GetByIdAsync(request.StaffMemberId, cancellationToken);
         if (staff is null || !staff.VenueIds.Any(tenantContext.AccessibleVenueIds.Contains))
         {
             throw new NotFoundException($"Staff member '{request.StaffMemberId}' was not found.");
         }
 
-        staff.SetPayRateOverride(request.OverrideHourlyRate, request.Reason, tenantContext.ManagerId);
+        staff.SetPayRateOverride(request.OverrideHourlyRate, request.Reason, staffMemberId);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return await staffLookup.GetStaffMemberAsync(staff.Id, cancellationToken)
