@@ -10,9 +10,11 @@ import {
 } from '~/components/ui/dropdown-menu';
 import { useVenueContextStore } from '~/lib/venue-context';
 import { useVenues } from './hooks';
+import { usePageTitle } from '~/lib/utils';
 
 export default function StaffRoute() {
   const navigate = useNavigate();
+  usePageTitle('Staff');
   const { activeVenueId, setActiveVenueId } = useVenueContextStore();
 
   const venuesQuery = useVenues();

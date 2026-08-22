@@ -29,6 +29,7 @@ import {
   useVenues,
 } from './hooks';
 import { formatWeekLabel, mustFindVenue } from './types';
+import { usePageTitle } from '~/lib/utils';
 
 // Trailing-window options for the trend chart. Default is 8 weeks (~2
 // months) — enough to read a real trend without the chart becoming
@@ -39,6 +40,7 @@ const TRAILING_WINDOW_OPTIONS = [4, 8, 12] as const;
 const DEFAULT_TRAILING_WEEKS = 8;
 
 export default function LabourCostDashboard() {
+  usePageTitle('Labour Dashboard');
   const { activeVenueId, setActiveVenueId } = useVenueContextStore();
   const [trailingWeeks, setTrailingWeeks] = useState<number>(DEFAULT_TRAILING_WEEKS);
   const [selectedWeekIso, setSelectedWeekIso] = useState<string | null>(null);
@@ -61,7 +63,7 @@ export default function LabourCostDashboard() {
 
   if (venuesQuery.isLoading) {
     return (
-      <div className="flex min-h-screen w-full items-center justify-center bg-background">
+      <div className="bg-background flex min-h-screen w-full items-center justify-center">
         <Spinner className="size-6" />
       </div>
     );
@@ -69,7 +71,7 @@ export default function LabourCostDashboard() {
 
   if (venuesQuery.isError) {
     return (
-      <div className="flex min-h-screen w-full items-center justify-center bg-background p-6">
+      <div className="bg-background flex min-h-screen w-full items-center justify-center p-6">
         <Empty>
           <EmptyTitle>Couldn't load the dashboard</EmptyTitle>
           <EmptyDescription>
@@ -83,28 +85,31 @@ export default function LabourCostDashboard() {
   const venue = mustFindVenue(venues, activeVenueId);
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-background font-sans text-foreground">
+    <div className="bg-background text-foreground flex min-h-screen w-full flex-col font-sans">
       {/* Top bar */}
-      <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4 border-b border-border bg-card px-6 py-4">
+      <header className="border-border bg-card sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4 border-b px-6 py-4">
         <div className="flex min-w-0 items-center gap-4">
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
                 <Button
                   variant="outline"
-                  className="h-auto gap-2 rounded-lg bg-muted px-3 py-2"
+                  className="bg-muted h-auto gap-2 rounded-lg px-3 py-2"
                 />
               }
             >
-              <span className="h-2 w-2 shrink-0 rounded-full bg-foreground" />
+              <span className="bg-foreground h-2 w-2 shrink-0 rounded-full" />
               <div className="text-left">
                 <p className="font-sans text-sm leading-tight font-semibold uppercase">
                   {venue.name}
                 </p>
               </div>
-              <ChevronDownIcon size={14} className="ml-1 shrink-0 text-muted-foreground" />
+              <ChevronDownIcon
+                size={14}
+                className="text-muted-foreground ml-1 shrink-0"
+              />
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-64 bg-muted">
+            <DropdownMenuContent className="bg-muted w-64">
               {venues.map(v => (
                 <DropdownMenuItem
                   key={v.id}
@@ -118,14 +123,14 @@ export default function LabourCostDashboard() {
                     <p className="text-sm font-medium">{v.name}</p>
                   </div>
                   {v.id === activeVenueId && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-foreground" />
+                    <span className="bg-foreground h-1.5 w-1.5 rounded-full" />
                   )}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <div className="hidden border-l border-border pl-4 md:block">
+          <div className="border-border hidden border-l pl-4 md:block">
             <h1 className="font-sans text-sm font-semibold tracking-wide uppercase">
               Labour cost dashboard
             </h1>
@@ -135,17 +140,17 @@ export default function LabourCostDashboard() {
 
       <main className="flex flex-1 flex-col gap-6 px-6 py-6">
         {/* Week-over-week trend */}
-        <section className="rounded-lg border border-border bg-card p-5">
+        <section className="border-border bg-card rounded-lg border p-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="font-sans text-sm font-semibold">
                 Week-over-week labour cost
               </h2>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {venue.name} — trailing {trailingWeeks} weeks
               </p>
             </div>
-            <div className="flex items-center gap-1 rounded-lg border border-border p-0.5">
+            <div className="border-border flex items-center gap-1 rounded-lg border p-0.5">
               {TRAILING_WINDOW_OPTIONS.map(weeks => (
                 <Button
                   key={weeks}
@@ -164,7 +169,7 @@ export default function LabourCostDashboard() {
 
         {/* Cost by role + forecast-vs-actual, for a selected week */}
         <div className="grid gap-6 lg:grid-cols-2">
-          <section className="rounded-lg border border-border bg-card p-5">
+          <section className="border-border bg-card rounded-lg border p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <h2 className="font-sans text-sm font-semibold">Cost by pay tier</h2>
               {trend.length > 0 && effectiveWeekIso && (
@@ -194,7 +199,7 @@ export default function LabourCostDashboard() {
             />
           </section>
 
-          <section className="rounded-lg border border-border bg-card p-5">
+          <section className="border-border bg-card rounded-lg border p-5">
             <h2 className="mb-4 font-sans text-sm font-semibold">Forecast vs actual</h2>
             <ForecastActualStub
               summary={forecastQuery.data}
@@ -203,7 +208,7 @@ export default function LabourCostDashboard() {
           </section>
         </div>
 
-        <p className="text-xs text-muted-foreground">
+        <p className="text-muted-foreground text-xs">
           Figures shown are illustrative for demo purposes — not authoritative payroll or
           legal advice.
         </p>

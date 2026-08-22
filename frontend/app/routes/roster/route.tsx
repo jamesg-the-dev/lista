@@ -46,7 +46,7 @@ import {
   shiftKey,
   totalAwardCost,
 } from './types';
-import { initials } from '~/lib/utils';
+import { initials, usePageTitle } from '~/lib/utils';
 
 const WEEK_START = DateTime.local(2026, 8, 17); // Mon 17 Aug 2026
 const TODAY_INDEX = 1; // Tue 18 Aug 2026
@@ -57,6 +57,9 @@ export default function RosterBuilder() {
   const weekStartIso = weekStart.toISODate()!;
 
   const venuesQuery = useVenues();
+  usePageTitle(
+    `Roster | ${mustFindVenue(venuesQuery.data ?? [], activeVenueId)?.name ?? ''}`,
+  );
   const staffQuery = useRosterStaffMembers(activeVenueId);
   const shiftsQuery = useShifts(activeVenueId, weekStartIso);
   const budgetSummaryQuery = useBudgetSummary(activeVenueId, weekStartIso);
@@ -175,7 +178,7 @@ export default function RosterBuilder() {
 
   if (venuesQuery.isLoading || staffQuery.isLoading || shiftsQuery.isLoading) {
     return (
-      <div className="flex min-h-screen w-full items-center justify-center bg-background">
+      <div className="bg-background flex min-h-screen w-full items-center justify-center">
         <Spinner className="size-6" />
       </div>
     );
@@ -183,7 +186,7 @@ export default function RosterBuilder() {
 
   if (venuesQuery.isError || staffQuery.isError || shiftsQuery.isError) {
     return (
-      <div className="flex min-h-screen w-full items-center justify-center bg-background p-6">
+      <div className="bg-background flex min-h-screen w-full items-center justify-center p-6">
         <Empty>
           <EmptyTitle>Couldn't load the roster</EmptyTitle>
           <EmptyDescription>
@@ -198,7 +201,7 @@ export default function RosterBuilder() {
   const venue = mustFindVenue(venues, activeVenueId);
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-background font-sans text-foreground">
+    <div className="bg-background text-foreground flex min-h-screen w-full flex-col font-sans">
       <style>{`
         ::-webkit-scrollbar { height: 10px; width: 10px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -208,26 +211,29 @@ export default function RosterBuilder() {
       `}</style>
 
       {/* Top bar */}
-      <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4 border-b border-border bg-card px-6 py-4">
+      <header className="border-border bg-card sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4 border-b px-6 py-4">
         <div className="flex min-w-0 items-center gap-4">
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
                 <Button
                   variant="outline"
-                  className="h-auto gap-2 rounded-lg bg-muted px-3 py-2"
+                  className="bg-muted h-auto gap-2 rounded-lg px-3 py-2"
                 />
               }
             >
-              <span className="h-2 w-2 shrink-0 rounded-full bg-foreground" />
+              <span className="bg-foreground h-2 w-2 shrink-0 rounded-full" />
               <div className="text-left">
                 <p className="font-sans text-sm leading-tight font-semibold uppercase">
                   {venue.name}
                 </p>
               </div>
-              <ChevronDownIcon size={14} className="ml-1 shrink-0 text-muted-foreground" />
+              <ChevronDownIcon
+                size={14}
+                className="text-muted-foreground ml-1 shrink-0"
+              />
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-64 bg-muted">
+            <DropdownMenuContent className="bg-muted w-64">
               {venues.map(v => (
                 <DropdownMenuItem
                   key={v.id}
@@ -238,14 +244,14 @@ export default function RosterBuilder() {
                     <p className="text-sm font-medium">{v.name}</p>
                   </div>
                   {v.id === activeVenueId && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-foreground" />
+                    <span className="bg-foreground h-1.5 w-1.5 rounded-full" />
                   )}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <div className="hidden items-center gap-2 border-l border-border pl-4 md:flex">
+          <div className="border-border hidden items-center gap-2 border-l pl-4 md:flex">
             <Button
               variant="ghost"
               size="icon"
@@ -271,7 +277,7 @@ export default function RosterBuilder() {
 
         <div className="flex items-center gap-3">
           <div className="hidden text-right lg:block">
-            <p className="text-[10px] tracking-wide text-muted-foreground uppercase">
+            <p className="text-muted-foreground text-[10px] tracking-wide uppercase">
               Award engine
             </p>
             <p className="text-xs font-medium">Hospitality Industry General Award</p>
@@ -293,7 +299,7 @@ export default function RosterBuilder() {
       </header>
 
       {/* Day cost strip */}
-      <div className="border-b border-border bg-background px-6 py-3">
+      <div className="border-border bg-background border-b px-6 py-3">
         <div className="grid grid-cols-7 gap-2">
           {DAY_LABELS.map((d, i) => {
             const isToday = i === TODAY_INDEX;
@@ -306,7 +312,7 @@ export default function RosterBuilder() {
                     style={{ height: `${h}px` }}
                   />
                 </div>
-                <p className="font-sans text-[11px] font-medium tabular-nums text-muted-foreground">
+                <p className="text-muted-foreground font-sans text-[11px] font-medium tabular-nums">
                   {currency(perDayTotals[i])}
                 </p>
                 <p
@@ -351,7 +357,7 @@ export default function RosterBuilder() {
                 const meta = ROLE_META[st.role];
                 return (
                   <Fragment key={st.id}>
-                    <div className="flex items-center gap-3 border-t border-border py-3 pr-4">
+                    <div className="border-border flex items-center gap-3 border-t py-3 pr-4">
                       <div
                         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-sans text-sm font-bold"
                         style={{ background: meta.tint, color: meta.color }}
@@ -373,14 +379,14 @@ export default function RosterBuilder() {
                       return (
                         <div
                           key={key}
-                          className="flex flex-col gap-1.5 border-t border-border px-1.5 py-2"
+                          className="border-border flex flex-col gap-1.5 border-t px-1.5 py-2"
                         >
                           {list.map(sh => (
                             <div key={sh.id} className="relative">
                               <Button
                                 variant="outline"
                                 onClick={() => openEdit(st.id, dayOfWeek, sh)}
-                                className="h-auto w-full items-stretch justify-start gap-0 overflow-hidden rounded-lg bg-card p-0 text-left"
+                                className="bg-card h-auto w-full items-stretch justify-start gap-0 overflow-hidden rounded-lg p-0 text-left"
                               >
                                 <div
                                   className="flex w-6 shrink-0 items-center justify-center font-sans text-xs font-bold"
@@ -395,7 +401,7 @@ export default function RosterBuilder() {
                                   <p className="font-sans text-xs leading-tight font-medium tabular-nums">
                                     {sh.start}–{sh.end}
                                   </p>
-                                  <p className="font-sans text-[10px] font-medium tabular-nums text-muted-foreground">
+                                  <p className="text-muted-foreground font-sans text-[10px] font-medium tabular-nums">
                                     {currency2(totalAwardCost(sh.awardBreakdown))}
                                   </p>
                                 </div>
@@ -411,7 +417,7 @@ export default function RosterBuilder() {
                             variant="ghost"
                             size="icon-sm"
                             onClick={() => openAdd(st.id, dayOfWeek)}
-                            className="h-auto w-full rounded-lg border border-dashed border-border py-2 text-muted-foreground"
+                            className="border-border text-muted-foreground h-auto w-full rounded-lg border border-dashed py-2"
                           >
                             <PlusIcon size={14} />
                           </Button>
@@ -434,10 +440,10 @@ export default function RosterBuilder() {
               className="h-2.5 w-2.5 rounded-full"
               style={{ background: meta.color }}
             />
-            <span className="text-xs text-muted-foreground">{meta.label}</span>
+            <span className="text-muted-foreground text-xs">{meta.label}</span>
           </div>
         ))}
-        <span className="ml-auto text-xs text-muted-foreground">
+        <span className="text-muted-foreground ml-auto text-xs">
           Rates and compliance rules shown are illustrative for demo purposes — not
           authoritative payroll or legal advice.
         </span>

@@ -10,7 +10,7 @@ export default function StaffNewRoute() {
   const navigate = useNavigate();
   const { activeVenueId } = useVenueContextStore();
   const venuesQuery = useVenues();
-  usePageTitle('New staff member');
+  usePageTitle('Staff | New Staff Member');
 
   return (
     <NewStaffMember

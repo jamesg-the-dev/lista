@@ -347,7 +347,9 @@ export default function StaffProfile({ staffId, venues, onBack }: StaffProfilePr
   const saveMutation = useSaveStaffMember();
 
   const form = useForm({
-    defaultValues: blankStaffMemberForm(''),
+    defaultValues: staffQuery.data
+      ? toStaffMemberFormValue(staffQuery.data)
+      : blankStaffMemberForm(''),
     onSubmit: async ({ value }) => {
       await saveMutation.mutateAsync({ id: staffId, ...value });
     },

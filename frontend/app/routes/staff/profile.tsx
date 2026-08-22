@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from 'react-router';
 
 import StaffProfile from './components/StaffProfile';
-import { useVenues } from './hooks';
+import { useStaffMember, useVenues } from './hooks';
 import { usePageTitle } from '~/lib/utils';
 
 export default function StaffProfileRoute() {
@@ -13,7 +13,9 @@ export default function StaffProfileRoute() {
     throw new Error('staff/:staffId route rendered without a staffId param');
   }
 
-  usePageTitle(`Staff profile | Adam`);
+  const staffQuery = useStaffMember(staffId);
+
+  usePageTitle(`Staff | ${staffQuery.data?.name ?? ''}`);
 
   return (
     <StaffProfile
