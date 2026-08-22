@@ -14,6 +14,7 @@ interface DatePickerSimpleProps {
   value?: Date;
   onChange?: (date: Date | undefined) => void;
   className?: string;
+  required?: boolean;
 }
 
 export function DatePickerSimple({
@@ -22,6 +23,7 @@ export function DatePickerSimple({
   value,
   onChange,
   className,
+  required,
 }: DatePickerSimpleProps) {
   const [internalDate, setInternalDate] = React.useState<Date>();
   const [open, setOpen] = React.useState(false);
@@ -39,7 +41,10 @@ export function DatePickerSimple({
 
   return (
     <Field className={className}>
-      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      <FieldLabel htmlFor={id}>
+        {label}
+        {required && <span className="text-destructive">*</span>}
+      </FieldLabel>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
           render={
@@ -59,6 +64,7 @@ export function DatePickerSimple({
             onSelect={handleSelect}
             defaultMonth={date}
             captionLayout="dropdown"
+            {...(required ? { required: true } : {})}
           />
         </PopoverContent>
       </Popover>

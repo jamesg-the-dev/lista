@@ -131,10 +131,13 @@ export default function StaffMemberForm({ form, venues }: StaffMemberFormProps) 
           <form.Field name="name">
             {field => (
               <Field className="col-span-2">
-                <FieldLabel htmlFor="staff-name">Name</FieldLabel>
+                <FieldLabel htmlFor="staff-name">
+                  Name<span className="text-destructive">*</span>
+                </FieldLabel>
                 <Input
                   id="staff-name"
                   value={field.state.value}
+                  required
                   onBlur={field.handleBlur}
                   onChange={e => field.handleChange(e.target.value)}
                   placeholder="Full name"
@@ -145,10 +148,13 @@ export default function StaffMemberForm({ form, venues }: StaffMemberFormProps) 
           <form.Field name="email">
             {field => (
               <Field>
-                <FieldLabel htmlFor="staff-email">Email</FieldLabel>
+                <FieldLabel htmlFor="staff-email">
+                  Email<span className="text-destructive">*</span>
+                </FieldLabel>
                 <Input
                   id="staff-email"
                   type="email"
+                  required
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={e => field.handleChange(e.target.value)}
@@ -160,9 +166,12 @@ export default function StaffMemberForm({ form, venues }: StaffMemberFormProps) 
           <form.Field name="phone">
             {field => (
               <Field>
-                <FieldLabel htmlFor="staff-phone">Phone</FieldLabel>
+                <FieldLabel htmlFor="staff-phone">
+                  Phone<span className="text-destructive">*</span>
+                </FieldLabel>
                 <Input
                   id="staff-phone"
+                  required
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={e => field.handleChange(e.target.value)}
@@ -178,6 +187,7 @@ export default function StaffMemberForm({ form, venues }: StaffMemberFormProps) 
             <DatePickerSimple
               id="staff-date-of-birth"
               label="Date of birth"
+              required
               value={field.state.value.getTime() === 0 ? undefined : field.state.value}
               onChange={date => date && field.handleChange(date)}
               className="max-w-xs"
