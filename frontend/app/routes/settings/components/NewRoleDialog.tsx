@@ -161,7 +161,7 @@ export default function NewRoleDialog({
             {field => (
               <Field>
                 <FieldLabel htmlFor="role-classification">
-                  Award classification (required)
+                  Award classification <span className="text-destructive">*</span>
                 </FieldLabel>
                 {!awardId ? (
                   <FieldDescription>
@@ -171,6 +171,7 @@ export default function NewRoleDialog({
                   <Select
                     items={classifications.map(c => ({ value: c.id, label: c.name }))}
                     value={field.state.value || null}
+                    required
                     onValueChange={value => value !== null && field.handleChange(value)}
                   >
                     <SelectTrigger id="role-classification">

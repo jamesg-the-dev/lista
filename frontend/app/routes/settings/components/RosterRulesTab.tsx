@@ -55,16 +55,18 @@ export default function RosterRulesTab({ venueId }: { venueId: string }) {
   const loadError = profileQuery.error ?? configQuery.error;
   const isLoading = profileQuery.isLoading || configQuery.isLoading;
   const isError = profileQuery.isError || configQuery.isError;
-  const isReady = !isLoading && !isError && syncedVenueId === venueId && !!profileQuery.data;
+  const isReady =
+    !isLoading && !isError && syncedVenueId === venueId && !!profileQuery.data;
   const isSaving = updateMutation.isPending;
+  const venueState = profileQuery.data!.address.state;
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Roster Rules & Compliance</CardTitle>
         <CardDescription>
-          Hard rules (legal minimums) can't be overridden. Soft rules warn and let a manager
-          override with a reason when a roster is built.
+          Hard rules (legal minimums) can't be overridden. Soft rules warn and let a
+          manager override with a reason when a roster is built.
         </CardDescription>
       </CardHeader>
 
@@ -111,7 +113,7 @@ export default function RosterRulesTab({ venueId }: { venueId: string }) {
 
             <Separator />
 
-            <PublicHolidayList venueId={venueId} state={profileQuery.data!.address.state} />
+            <PublicHolidayList venueId={venueId} state={venueState} />
 
             <Separator />
 
