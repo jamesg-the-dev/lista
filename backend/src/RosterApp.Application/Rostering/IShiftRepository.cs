@@ -17,4 +17,7 @@ public interface IShiftRepository
 
     /// <summary>Backs DeactivateVenueCommandHandler's "can't deactivate a venue with a published future roster" check.</summary>
     Task<bool> HasFuturePublishedShiftsAsync(Guid venueId, DateOnly onOrAfter, CancellationToken cancellationToken);
+
+    /// <summary>Backs DeactivateStaffMemberCommandHandler's equivalent check, scoped to one employee rather than a venue.</summary>
+    Task<bool> HasFuturePublishedShiftsForStaffMemberAsync(Guid staffMemberId, DateOnly onOrAfter, CancellationToken cancellationToken);
 }

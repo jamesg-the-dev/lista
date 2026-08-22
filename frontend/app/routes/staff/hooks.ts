@@ -117,6 +117,19 @@ export function useClearStaffPayRateOverride() {
   });
 }
 
+export function useDeactivateStaffMember() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (staffId: string) => api.deactivateStaffMember(staffId),
+    onSuccess: (_, staffId) => {
+      queryClient.invalidateQueries({
+        predicate: query => query.queryKey[0] === 'staff' && query.queryKey[1] === 'list',
+      });
+      queryClient.invalidateQueries({ queryKey: ['staff', 'detail', staffId] });
+    },
+  });
+}
+
 export function useAddAvailabilityException(staffId: string) {
   const queryClient = useQueryClient();
   return useMutation({

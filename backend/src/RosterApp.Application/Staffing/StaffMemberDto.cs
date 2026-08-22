@@ -28,7 +28,8 @@ public sealed record StaffMemberDto(
     PayRateOverrideDto? PayRateOverride,
     IReadOnlyList<Guid> VenueIds,
     IReadOnlyList<AvailabilityExceptionDto> Unavailability,
-    IReadOnlyList<LeaveRequestDto> LeaveRequests)
+    IReadOnlyList<LeaveRequestDto> LeaveRequests,
+    bool IsActive)
 {
     public static StaffMemberDto FromDomain(
         StaffMember staff,
@@ -47,7 +48,8 @@ public sealed record StaffMemberDto(
             staff.PayRateOverride is null ? null : PayRateOverrideDto.FromDomain(staff.PayRateOverride),
             staff.VenueIds,
             unavailability.Select(AvailabilityExceptionDto.FromDomain).ToList(),
-            leaveRequests.Select(LeaveRequestDto.FromDomain).ToList());
+            leaveRequests.Select(LeaveRequestDto.FromDomain).ToList(),
+            staff.IsActive);
 }
 
 public sealed record AvailabilityExceptionDto(Guid Id, string DayOfWeek, bool IsAllDay, IReadOnlyList<string> Blocks)

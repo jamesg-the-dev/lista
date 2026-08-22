@@ -13,3 +13,5 @@ public sealed record StaffMemberPermissionLevelChanged(Guid StaffMemberId, Permi
 public sealed record StaffMemberPayRateOverrideSet(Guid StaffMemberId, DateTime OccurredAtUtc) : IDomainEvent;
 
 public sealed record StaffMemberPayRateOverrideCleared(Guid StaffMemberId, DateTime OccurredAtUtc) : IDomainEvent;
+
+public sealed record StaffMemberDeactivated(Guid StaffMemberId, DateTime OccurredAtUtc) : IDomainEvent;

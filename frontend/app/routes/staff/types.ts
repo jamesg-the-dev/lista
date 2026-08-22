@@ -395,6 +395,7 @@ export interface StaffMemberDto {
   venueIds: string[];
   unavailability: AvailabilityExceptionDto[];
   leaveRequests: LeaveRequestDto[];
+  isActive: boolean;
 }
 
 export interface StaffMember {
@@ -412,6 +413,7 @@ export interface StaffMember {
   venueIds: string[];
   unavailability: AvailabilityException[];
   leaveRequests: LeaveRequest[];
+  isActive: boolean;
 }
 
 export function mapStaffMember(dto: StaffMemberDto): StaffMember {
@@ -430,6 +432,7 @@ export function mapStaffMember(dto: StaffMemberDto): StaffMember {
     venueIds: dto.venueIds,
     unavailability: dto.unavailability.map(mapAvailabilityException),
     leaveRequests: dto.leaveRequests.map(mapLeaveRequest),
+    isActive: dto.isActive,
   };
 }
 

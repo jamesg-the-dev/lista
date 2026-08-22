@@ -20,6 +20,16 @@ import {
   UsersIcon,
 } from 'lucide-react';
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '~/components/ui/alert-dialog';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import {
@@ -28,9 +38,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu';
-import { InputGroup, InputGroupAddon, InputGroupInput } from '~/components/ui/input-group';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from '~/components/ui/input-group';
 import { Label } from '~/components/ui/label';
-import { Pagination, PaginationContent, PaginationItem } from '~/components/ui/pagination';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+} from '~/components/ui/pagination';
 import {
   Select,
   SelectContent,
@@ -48,12 +66,30 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table';
+import { ApiClientError } from '~/lib/api-client';
 import { initials } from '~/lib/utils';
 import { useVenueContextStore } from '~/lib/venue-context';
 
-import { useStaffMembers } from '../hooks';
-import { CLASSIFICATION_META, EMPLOYMENT_TYPE_META, PERMISSION_LEVEL_META } from '../types';
+import { useDeactivateStaffMember, useStaffMembers } from '../hooks';
+import {
+  CLASSIFICATION_META,
+  EMPLOYMENT_TYPE_META,
+  PERMISSION_LEVEL_META,
+} from '../types';
 import type { StaffMember } from '../types';
+
+// FluentValidation failures (e.g. DeactivateStaffMemberCommandValidator's
+// "still has future published shifts" / "last remaining Owner" guards)
+// arrive as ApiClientError with a generic message and the real reason in
+// `details` — unwrap that instead of showing "One or more validation
+// errors occurred."
+function deactivateErrorMessage(error: unknown): string {
+  if (error instanceof ApiClientError && error.details) {
+    const messages = Object.values(error.details).flat();
+    if (messages.length > 0) return messages.join(' ');
+  }
+  return error instanceof Error ? error.message : 'Something went wrong.';
+}
 
 const PAGE_SIZE_ITEMS = [
   { label: '10', value: '10' },
@@ -68,9 +104,6 @@ function NameCell({ staff, onSelect }: { staff: StaffMember; onSelect: () => voi
       onClick={onSelect}
       className="flex min-w-0 items-center gap-3 text-left"
     >
-      <div className="bg-muted text-foreground flex size-9 shrink-0 items-center justify-center rounded-full font-sans text-sm font-bold">
-        {initials(staff.name)}
-      </div>
       <div className="min-w-0">
         <p className="truncate text-sm font-medium">{staff.name}</p>
         <p className="text-muted-foreground truncate text-xs">{staff.email}</p>
@@ -129,6 +162,9 @@ function StaffDataTable({ staff }: { staff: StaffMember[] }) {
     pageIndex: 0,
     pageSize: 10,
   });
+  const [deactivateTarget, setDeactivateTarget] = useState<StaffMember | null>(null);
+
+  const deactivateStaffMember = useDeactivateStaffMember();
 
   const filteredStaff = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -147,7 +183,10 @@ function StaffDataTable({ staff }: { staff: StaffMember[] }) {
         header: 'Name',
         accessorKey: 'name',
         cell: ({ row }) => (
-          <NameCell staff={row.original} onSelect={() => navigate(`/staff/${row.original.id}`)} />
+          <NameCell
+            staff={row.original}
+            onSelect={() => navigate(`/staff/${row.original.id}`)}
+          />
         ),
       },
       {
@@ -159,7 +198,9 @@ function StaffDataTable({ staff }: { staff: StaffMember[] }) {
           return (
             <div>
               <p className="text-sm font-medium">{classification.label}</p>
-              <p className="text-muted-foreground text-xs">{classification.description}</p>
+              <p className="text-muted-foreground text-xs">
+                {classification.description}
+              </p>
             </div>
           );
         },
@@ -169,7 +210,9 @@ function StaffDataTable({ staff }: { staff: StaffMember[] }) {
         header: 'Employment type',
         accessorFn: row => EMPLOYMENT_TYPE_META[row.employmentType].label,
         cell: ({ row }) => (
-          <Badge variant="outline">{EMPLOYMENT_TYPE_META[row.original.employmentType].label}</Badge>
+          <Badge variant="outline">
+            {EMPLOYMENT_TYPE_META[row.original.employmentType].label}
+          </Badge>
         ),
       },
       {
@@ -177,8 +220,23 @@ function StaffDataTable({ staff }: { staff: StaffMember[] }) {
         header: 'Permission',
         accessorFn: row => PERMISSION_LEVEL_META[row.permissionLevel].label,
         cell: ({ row }) => (
-          <Badge variant="outline">{PERMISSION_LEVEL_META[row.original.permissionLevel].label}</Badge>
+          <Badge variant="outline">
+            {PERMISSION_LEVEL_META[row.original.permissionLevel].label}
+          </Badge>
         ),
+      },
+      {
+        id: 'status',
+        header: 'Status',
+        accessorFn: row => (row.isActive ? 'Active' : 'Inactive'),
+        cell: ({ row }) =>
+          row.original.isActive ? (
+            <Badge className="bg-success-tint text-success">Active</Badge>
+          ) : (
+            <Badge variant="outline" className="text-muted-foreground">
+              Inactive
+            </Badge>
+          ),
       },
       {
         id: 'actions',
@@ -193,10 +251,11 @@ function StaffDataTable({ staff }: { staff: StaffMember[] }) {
               <DropdownMenuItem onClick={() => navigate(`/staff/${row.original.id}`)}>
                 View profile
               </DropdownMenuItem>
-              {/* No backend command exists yet to deactivate a staff member
-                  (StaffMember has no IsActive/status concept) — surfaced as a
-                  disabled placeholder until that lands. */}
-              <DropdownMenuItem variant="destructive" disabled>
+              <DropdownMenuItem
+                variant="destructive"
+                disabled={!row.original.isActive}
+                onClick={() => setDeactivateTarget(row.original)}
+              >
                 Deactivate
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -259,8 +318,12 @@ function StaffDataTable({ staff }: { staff: StaffMember[] }) {
                       >
                         {flexRender(header.column.columnDef.header, header.getContext())}
                         {{
-                          asc: <ChevronUpIcon className="shrink-0 opacity-60" size={16} />,
-                          desc: <ChevronDownIcon className="shrink-0 opacity-60" size={16} />,
+                          asc: (
+                            <ChevronUpIcon className="shrink-0 opacity-60" size={16} />
+                          ),
+                          desc: (
+                            <ChevronDownIcon className="shrink-0 opacity-60" size={16} />
+                          ),
                         }[header.column.getIsSorted() as string] ?? null}
                       </div>
                     ) : (
@@ -322,10 +385,13 @@ function StaffDataTable({ staff }: { staff: StaffMember[] }) {
           <span className="text-foreground">
             {filteredStaff.length === 0
               ? 0
-              : table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
+              : table.getState().pagination.pageIndex *
+                  table.getState().pagination.pageSize +
+                1}
             -
             {Math.min(
-              table.getState().pagination.pageIndex * table.getState().pagination.pageSize +
+              table.getState().pagination.pageIndex *
+                table.getState().pagination.pageSize +
                 table.getState().pagination.pageSize,
               filteredStaff.length,
             )}
@@ -382,6 +448,48 @@ function StaffDataTable({ staff }: { staff: StaffMember[] }) {
           </PaginationContent>
         </Pagination>
       </div>
+
+      <AlertDialog
+        open={deactivateTarget !== null}
+        onOpenChange={open => {
+          if (!open) {
+            setDeactivateTarget(null);
+            deactivateStaffMember.reset();
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deactivate {deactivateTarget?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              They'll no longer be available to roster at this venue. Past shifts and
+              timesheets are kept — this can't be undone from here.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {deactivateStaffMember.isError && (
+            <p className="text-destructive text-sm">
+              {deactivateErrorMessage(deactivateStaffMember.error)}
+            </p>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deactivateStaffMember.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={deactivateStaffMember.isPending}
+              onClick={() => {
+                if (!deactivateTarget) return;
+                deactivateStaffMember.mutate(deactivateTarget.id, {
+                  onSuccess: () => setDeactivateTarget(null),
+                });
+              }}
+            >
+              {deactivateStaffMember.isPending ? 'Deactivating…' : 'Deactivate'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

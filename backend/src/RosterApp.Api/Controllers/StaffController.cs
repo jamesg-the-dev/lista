@@ -107,6 +107,13 @@ public sealed class StaffController(ISender mediator) : ApiControllerBase(mediat
         return Ok(ApiResponse<StaffMemberDto>.Ok(staff));
     }
 
+    [HttpPost("~/api/staff/{id:guid}/deactivate")]
+    public async Task<ActionResult> DeactivateStaffMember(Guid id, CancellationToken cancellationToken)
+    {
+        await Mediator.Send(new DeactivateStaffMemberCommand(id), cancellationToken);
+        return NoContent();
+    }
+
     [HttpGet("~/api/staff/{id:guid}/availability")]
     public async Task<ActionResult<ApiResponse<StaffAvailabilityDto>>> GetAvailability(
         Guid id,

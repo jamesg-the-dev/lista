@@ -398,6 +398,7 @@ namespace RosterApp.Infrastructure.Migrations
                     CreatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     DateOfBirth = table.Column<DateOnly>(type: "date", nullable: false),
                     PermissionLevel = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false, defaultValue: "Staff"),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                     PrimaryRoleId = table.Column<Guid>(type: "uuid", nullable: true),
                     OverrideHourlyRate = table.Column<decimal>(type: "numeric(8,2)", precision: 8, scale: 2, nullable: true),
                     OverrideReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),

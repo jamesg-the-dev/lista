@@ -72,6 +72,10 @@ export function clearStaffPayRateOverride(staffId: string): Promise<StaffMemberD
   return apiClient.delete<StaffMemberDto>(`/api/staff/${staffId}/pay-rate-override`);
 }
 
+export function deactivateStaffMember(staffId: string): Promise<void> {
+  return apiClient.post<void>(`/api/staff/${staffId}/deactivate`);
+}
+
 export function fetchStaffAvailability(
   staffId: string,
   from: string,

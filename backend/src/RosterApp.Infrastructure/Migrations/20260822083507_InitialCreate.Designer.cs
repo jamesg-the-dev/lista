@@ -12,7 +12,7 @@ using RosterApp.Infrastructure;
 namespace RosterApp.Infrastructure.Migrations
 {
     [DbContext(typeof(RosterDbContext))]
-    [Migration("20260822054627_InitialCreate")]
+    [Migration("20260822083507_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -529,6 +529,11 @@ namespace RosterApp.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
 
                     b.Property<int>("MaxWeeklyHours")
                         .HasColumnType("integer");

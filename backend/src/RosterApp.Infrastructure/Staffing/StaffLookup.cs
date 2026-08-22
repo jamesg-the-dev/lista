@@ -60,10 +60,15 @@ public sealed class StaffLookup(RosterDbContext dbContext) : IStaffLookup
     public Task<bool> AnyStaffWithPrimaryRoleAsync(Guid roleId, CancellationToken cancellationToken) =>
         dbContext.StaffMembers.AsNoTracking().AnyAsync(s => s.PrimaryRoleId == roleId, cancellationToken);
 
+    // Filtered to IsActive: this backs the "last remaining Owner" invariant
+    // (UpdateStaffPermissionLevelCommandHandler, DeactivateStaffMemberCommand),
+    // which only ever needs to know how many active Owners can still log in
+    // and manage the organisation — a deactivated Owner must not count
+    // towards keeping that invariant satisfied.
     public Task<int> CountByPermissionLevelAsync(Guid organisationId, PermissionLevel permissionLevel, CancellationToken cancellationToken) =>
         dbContext.StaffMembers
             .AsNoTracking()
-            .Where(s => s.OrganisationId == organisationId && s.PermissionLevel == permissionLevel)
+            .Where(s => s.OrganisationId == organisationId && s.PermissionLevel == permissionLevel && s.IsActive)
             .CountAsync(cancellationToken);
 
     private async Task<IReadOnlyList<StaffMemberDto>> ComposeAsync(

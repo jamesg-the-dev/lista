@@ -17,4 +17,9 @@ public sealed class ShiftRepository(RosterDbContext dbContext) : IShiftRepositor
         dbContext.Shifts.AnyAsync(
             s => s.VenueId == venueId && s.ShiftDate >= onOrAfter && s.Status == ShiftStatus.Published,
             cancellationToken);
+
+    public Task<bool> HasFuturePublishedShiftsForStaffMemberAsync(Guid staffMemberId, DateOnly onOrAfter, CancellationToken cancellationToken) =>
+        dbContext.Shifts.AnyAsync(
+            s => s.EmployeeId == staffMemberId && s.ShiftDate >= onOrAfter && s.Status == ShiftStatus.Published,
+            cancellationToken);
 }

@@ -119,6 +119,16 @@ public sealed class StaffMember : AggregateRoot
     public PermissionLevel PermissionLevel { get; private set; }
 
     /// <summary>
+    /// Soft-delete flag, same pattern as Role.IsActive/Venue.IsActive — a
+    /// staff member is never hard-deleted since past shifts/timesheets
+    /// reference them by EmployeeId with no FK (see Shift.EmployeeId's doc
+    /// comment). Defaults true; flipped false only by Deactivate(), never
+    /// back — there is no reactivate, matching Role's soft-delete-only
+    /// contract.
+    /// </summary>
+    public bool IsActive { get; private set; } = true;
+
+    /// <summary>
     /// A staff member can be rostered under multiple roles but has a
     /// "usual" one for default rostering — see Role's doc comment for why
     /// this is a plain FK rather than an owned reference (RoleAwardMapping
@@ -272,6 +282,31 @@ public sealed class StaffMember : AggregateRoot
 
         PayRateOverride = null;
         AddDomainEvent(new StaffMemberPayRateOverrideCleared(Id, DateTime.UtcNow));
+    }
+
+    /// <summary>
+    /// Soft-delete only, mirroring Role.Deactivate — see IsActive's doc
+    /// comment. isLastActiveOwner is caller-resolved (
+    /// DeactivateStaffMemberCommandHandler queries it via
+    /// IStaffLookup.CountByPermissionLevelAsync), same
+    /// caller-resolved-invariant pattern as UpdatePermissionLevel's
+    /// isLastOwner — this aggregate can't count other Owners on its own.
+    /// </summary>
+    public void Deactivate(bool isLastActiveOwner)
+    {
+        if (!IsActive)
+        {
+            return;
+        }
+
+        if (PermissionLevel == PermissionLevel.Owner && isLastActiveOwner)
+        {
+            throw new InvalidOperationException(
+                "Cannot deactivate the last remaining Owner. Promote another staff member to Owner first.");
+        }
+
+        IsActive = false;
+        AddDomainEvent(new StaffMemberDeactivated(Id, DateTime.UtcNow));
     }
 
     // Case/whitespace differences shouldn't defeat the email/phone

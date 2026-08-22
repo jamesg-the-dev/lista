@@ -46,6 +46,8 @@ public sealed class StaffMemberConfiguration : IEntityTypeConfiguration<StaffMem
             .HasMaxLength(20)
             .HasDefaultValue(PermissionLevel.Staff);
 
+        builder.Property(s => s.IsActive).IsRequired().HasDefaultValue(true);
+
         builder.HasIndex(s => s.PrimaryRoleId);
 
         builder
