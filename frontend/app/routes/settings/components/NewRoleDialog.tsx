@@ -44,15 +44,6 @@ interface NewRoleDialogProps {
   existingRole?: Role;
 }
 
-// This is the single most important UI moment in the whole Staff & Roles
-// screen (§7): the award classification select sits directly under the name
-// field and is required, with the info line making the "why" explicit —
-// operationalising "every role must map to an award classification before
-// it can be used on a published roster." Three fields read together at
-// submit time (name, colour, classification) — qualifies for TanStack Form
-// per CLAUDE.md §4's first bullet, even though this dialog stays
-// self-contained rather than splitting into a separate field component,
-// since nothing else needs to render these fields.
 export default function NewRoleDialog({
   venueId,
   open,
@@ -77,10 +68,12 @@ export default function NewRoleDialog({
     onSubmit: async ({ value }) => {
       const roleId = existingRole
         ? existingRole.id
-        : (await createRoleMutation.mutateAsync({
-            displayName: value.displayName,
-            colorTag: value.colorTag,
-          })).id;
+        : (
+            await createRoleMutation.mutateAsync({
+              displayName: value.displayName,
+              colorTag: value.colorTag,
+            })
+          ).id;
 
       await setMappingMutation.mutateAsync({
         roleId,
@@ -119,10 +112,13 @@ export default function NewRoleDialog({
           <form.Field name="displayName">
             {field => (
               <Field>
-                <FieldLabel htmlFor="role-name">Role name</FieldLabel>
+                <FieldLabel htmlFor="role-name">
+                  Role name<span className="text-destructive">*</span>
+                </FieldLabel>
                 <Input
                   id="role-name"
                   value={field.state.value}
+                  required
                   onChange={e => field.handleChange(e.target.value)}
                   placeholder="Cellar Hand"
                   disabled={!!existingRole}
@@ -149,9 +145,11 @@ export default function NewRoleDialog({
                       key={swatch.value}
                       value={swatch.value}
                       aria-label={swatch.value}
-                      className="size-8 rounded-full p-0"
+                      className={`*:focus-visible:ring-ring rounded-full ${swatch.twClass} ${field.state.value === swatch.value ? 'ring-ring ring-1 ring-offset-1' : ''} size-6 min-h-6 min-w-6 p-0 *:focus-visible:ring-1 *:focus-visible:ring-offset-1`}
                     >
-                      <span className={`block size-4 rounded-full ${swatch.twClass}`} />
+                      <span
+                        className={`block size-full rounded-full ${swatch.twClass}`}
+                      />
                     </ToggleGroupItem>
                   ))}
                 </ToggleGroup>
@@ -201,7 +199,10 @@ export default function NewRoleDialog({
         <DialogFooter>
           <DialogClose render={<Button variant="outline" />}>Cancel</DialogClose>
           <form.Subscribe
-            selector={state => [state.values.displayName, state.values.awardClassificationId]}
+            selector={state => [
+              state.values.displayName,
+              state.values.awardClassificationId,
+            ]}
           >
             {([displayName, awardClassificationId]) => (
               <Button
