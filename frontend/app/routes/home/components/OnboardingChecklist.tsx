@@ -1,15 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import {
-  Banknote,
-  Building2,
-  CalendarDays,
-  CheckCircle2,
-  ChevronDown,
-  CircleDashed,
-  Users,
-} from 'lucide-react';
+import { Banknote, Building2, CalendarDays, CheckCircle2, CircleDashed, Users } from 'lucide-react';
 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '~/components/ui/accordion';
 import { Button } from '~/components/ui/button';
 import {
   Card,
@@ -47,25 +45,12 @@ interface OnboardingStepItem {
   renderBody?: () => React.ReactNode;
 }
 
-function OnboardingAccordionItem({
-  item,
-  isOpen,
-  onToggle,
-}: {
-  item: OnboardingStepItem;
-  isOpen: boolean;
-  onToggle: () => void;
-}) {
+function OnboardingAccordionItem({ item }: { item: OnboardingStepItem }) {
   const isResolved = item.status !== 'pending';
 
   return (
-    <div className="border-border rounded-md border bg-transparent">
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={isOpen}
-        className="flex w-full items-center justify-between px-5 py-4 text-sm font-medium transition-colors"
-      >
+    <AccordionItem value={item.key} className="border-border not-last:border-b-0 rounded-md border">
+      <AccordionTrigger className="items-center px-5 py-4 hover:no-underline">
         <span className="flex items-center gap-2">
           {isResolved ? (
             <CheckCircle2 className="text-primary size-4 shrink-0" />
@@ -77,55 +62,33 @@ function OnboardingAccordionItem({
             <span className="text-muted-foreground text-xs font-normal">(Skipped)</span>
           )}
         </span>
-        <ChevronDown
-          className={`text-muted-foreground size-4 shrink-0 transition-transform duration-200 ${
-            isOpen ? 'rotate-180' : ''
-          }`}
-        />
-      </button>
+      </AccordionTrigger>
 
-      <div
-        className={`grid transition-all duration-200 ease-in-out ${
-          isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-        }`}
-      >
-        <div className="overflow-hidden">
-          <div className="px-5 pb-5">
-            {isResolved ? (
-              <div className="bg-muted text-muted-foreground rounded-md px-5 py-4 text-center text-sm">
-                {item.status === 'completed' ? 'Completed' : 'Skipped for now'}
-              </div>
-            ) : item.renderBody ? (
-              item.renderBody()
-            ) : (
-              <div className="bg-muted flex flex-col items-center justify-center gap-2 rounded-md px-5 py-4 text-center">
-                {item.icon}
-                <span className="text-muted-foreground max-w-xs text-sm">
-                  {item.description}
-                </span>
-                <div className="mt-3 flex gap-2">
-                  {item.onSkip && (
-                    <Button
-                      variant="ghost"
-                      disabled={item.skipPending}
-                      onClick={item.onSkip}
-                    >
-                      Skip for now
-                    </Button>
-                  )}
-                  <Button
-                    disabled={item.actionPending || item.actionDisabled}
-                    onClick={item.onAction}
-                  >
-                    {item.actionPending ? 'Working…' : item.actionLabel}
-                  </Button>
-                </div>
-              </div>
-            )}
+      <AccordionContent className="px-5 pb-5">
+        {isResolved ? (
+          <div className="bg-muted text-muted-foreground rounded-md px-5 py-4 text-center text-sm">
+            {item.status === 'completed' ? 'Completed' : 'Skipped for now'}
           </div>
-        </div>
-      </div>
-    </div>
+        ) : item.renderBody ? (
+          item.renderBody()
+        ) : (
+          <div className="bg-muted flex flex-col items-center justify-center gap-2 rounded-md px-5 py-4 text-center">
+            {item.icon}
+            <span className="text-muted-foreground max-w-xs text-sm">{item.description}</span>
+            <div className="mt-3 flex gap-2">
+              {item.onSkip && (
+                <Button variant="ghost" disabled={item.skipPending} onClick={item.onSkip}>
+                  Skip for now
+                </Button>
+              )}
+              <Button disabled={item.actionPending || item.actionDisabled} onClick={item.onAction}>
+                {item.actionPending ? 'Working…' : item.actionLabel}
+              </Button>
+            </div>
+          </div>
+        )}
+      </AccordionContent>
+    </AccordionItem>
   );
 }
 
@@ -296,16 +259,15 @@ export default function OnboardingChecklist({ venueId }: { venueId: string }) {
               <Progress value={progress} />
             </div>
 
-            <div className="space-y-3">
+            <Accordion
+              value={openKey ? [openKey] : []}
+              onValueChange={value => setOpenKey((value[0] as OnboardingStepKey | undefined) ?? null)}
+              className="space-y-3"
+            >
               {steps.map(step => (
-                <OnboardingAccordionItem
-                  key={step.key}
-                  item={step}
-                  isOpen={openKey === step.key}
-                  onToggle={() => setOpenKey(openKey === step.key ? null : step.key)}
-                />
+                <OnboardingAccordionItem key={step.key} item={step} />
               ))}
-            </div>
+            </Accordion>
 
             {resolved && (
               <div className="flex justify-end">

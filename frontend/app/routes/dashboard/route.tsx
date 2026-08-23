@@ -207,11 +207,6 @@ export default function LabourCostDashboard() {
             />
           </section>
         </div>
-
-        <p className="text-muted-foreground text-xs">
-          Figures shown are illustrative for demo purposes — not authoritative payroll or
-          legal advice.
-        </p>
       </main>
     </div>
   );
