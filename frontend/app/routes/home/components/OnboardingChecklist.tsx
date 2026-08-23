@@ -1,6 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Banknote, Building2, CalendarDays, CheckCircle2, CircleDashed, Users } from 'lucide-react';
+import {
+  Banknote,
+  Building2,
+  CalendarDays,
+  CheckCircle2,
+  CircleDashed,
+  Users,
+} from 'lucide-react';
 
 import {
   Accordion,
@@ -41,7 +48,6 @@ interface OnboardingStepItem {
   actionDisabled?: boolean;
   onSkip?: () => void;
   skipPending?: boolean;
-  /** Overrides the default centered icon/description/button block — used by Add Staff for its invite textarea. */
   renderBody?: () => React.ReactNode;
 }
 
@@ -49,11 +55,14 @@ function OnboardingAccordionItem({ item }: { item: OnboardingStepItem }) {
   const isResolved = item.status !== 'pending';
 
   return (
-    <AccordionItem value={item.key} className="border-border not-last:border-b-0 rounded-md border">
+    <AccordionItem
+      value={item.key}
+      className="border-border rounded-md border not-last:border-b-0"
+    >
       <AccordionTrigger className="items-center px-5 py-4 hover:no-underline">
         <span className="flex items-center gap-2">
           {isResolved ? (
-            <CheckCircle2 className="text-primary size-4 shrink-0" />
+            <CheckCircle2 color="green" className="text-primary size-4 shrink-0" />
           ) : (
             <CircleDashed className="text-muted-foreground size-4 shrink-0" />
           )}
@@ -64,38 +73,41 @@ function OnboardingAccordionItem({ item }: { item: OnboardingStepItem }) {
         </span>
       </AccordionTrigger>
 
-      <AccordionContent className="px-5 pb-5">
-        {isResolved ? (
-          <div className="bg-muted text-muted-foreground rounded-md px-5 py-4 text-center text-sm">
-            {item.status === 'completed' ? 'Completed' : 'Skipped for now'}
-          </div>
-        ) : item.renderBody ? (
-          item.renderBody()
-        ) : (
-          <div className="bg-muted flex flex-col items-center justify-center gap-2 rounded-md px-5 py-4 text-center">
-            {item.icon}
-            <span className="text-muted-foreground max-w-xs text-sm">{item.description}</span>
-            <div className="mt-3 flex gap-2">
-              {item.onSkip && (
-                <Button variant="ghost" disabled={item.skipPending} onClick={item.onSkip}>
-                  Skip for now
+      {isResolved ? null : (
+        <AccordionContent className="px-5 pb-5">
+          {item.renderBody ? (
+            item.renderBody()
+          ) : (
+            <div className="bg-muted flex flex-col items-center justify-center gap-2 rounded-md px-5 py-4 text-center">
+              {item.icon}
+              <span className="text-muted-foreground max-w-xs text-sm">
+                {item.description}
+              </span>
+              <div className="mt-3 flex gap-2">
+                {item.onSkip && (
+                  <Button
+                    variant="ghost"
+                    disabled={item.skipPending}
+                    onClick={item.onSkip}
+                  >
+                    Skip for now
+                  </Button>
+                )}
+                <Button
+                  disabled={item.actionPending || item.actionDisabled}
+                  onClick={item.onAction}
+                >
+                  {item.actionPending ? 'Working…' : item.actionLabel}
                 </Button>
-              )}
-              <Button disabled={item.actionPending || item.actionDisabled} onClick={item.onAction}>
-                {item.actionPending ? 'Working…' : item.actionLabel}
-              </Button>
+              </div>
             </div>
-          </div>
-        )}
-      </AccordionContent>
+          )}
+        </AccordionContent>
+      )}
     </AccordionItem>
   );
 }
 
-// Onboarding Feed pattern (FEATURE_ONBOARDING_FLOW.md Phase 2) — card-based
-// checklist with a progress indicator, each card a setup task, skippable
-// except the last. Zustand (home/store.ts) holds the live step statuses for
-// instant feedback; home/route.tsx hydrates it from the server on load.
 export default function OnboardingChecklist({ venueId }: { venueId: string }) {
   const navigate = useNavigate();
   const status = useOnboardingStore();
@@ -106,10 +118,6 @@ export default function OnboardingChecklist({ venueId }: { venueId: string }) {
 
   const [inviteEmails, setInviteEmails] = useState('');
 
-  // Opens on the first unresolved step by default, same "work through the
-  // list top to bottom" flow as the original design — computed once from
-  // the store snapshot at mount (already hydrated by home/route.tsx by the
-  // time this component renders).
   const [openKey, setOpenKey] = useState<OnboardingStepKey | null>(
     () => ONBOARDING_STEP_KEYS.find(key => status[key] === 'pending') ?? null,
   );
@@ -261,7 +269,9 @@ export default function OnboardingChecklist({ venueId }: { venueId: string }) {
 
             <Accordion
               value={openKey ? [openKey] : []}
-              onValueChange={value => setOpenKey((value[0] as OnboardingStepKey | undefined) ?? null)}
+              onValueChange={value =>
+                setOpenKey((value[0] as OnboardingStepKey | undefined) ?? null)
+              }
               className="space-y-3"
             >
               {steps.map(step => (

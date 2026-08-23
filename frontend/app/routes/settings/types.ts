@@ -316,6 +316,12 @@ export interface VenueProfile {
   availabilitySettings: VenueAvailabilitySettings;
 }
 
+// TODO: 'VIC' here is a silent placeholder, not a real default — a venue
+// that skipped the onboarding Venue Profile step has no state on record,
+// but RosterRulesTab reads this fallback and queries/displays VIC public
+// holidays with nothing telling the manager it's wrong. Should surface an
+// explicit "set your venue's state" prompt instead once there's time to
+// fix it.
 function blankAddress(): Address {
   return { line1: '', line2: '', suburb: '', state: 'VIC', postcode: '', country: 'AU' };
 }

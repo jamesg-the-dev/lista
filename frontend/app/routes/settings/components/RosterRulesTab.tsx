@@ -58,6 +58,10 @@ export default function RosterRulesTab({ venueId }: { venueId: string }) {
   const isReady =
     !isLoading && !isError && syncedVenueId === venueId && !!profileQuery.data;
   const isSaving = updateMutation.isPending;
+  // TODO: silently 'VIC' for a venue with no Address on record (see
+  // blankAddress() in ../types.ts) — the public holiday panel below shows
+  // Victorian holidays for any un-profiled venue with no indication it's a
+  // fallback.
   const venueState = profileQuery.data!.address.state;
 
   return (
