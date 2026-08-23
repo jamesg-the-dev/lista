@@ -34,7 +34,14 @@ function blankFormValue(): VenueProfileTabValue {
   };
 }
 
-export default function VenueProfileTab({ venueId }: { venueId: string }) {
+export default function VenueProfileTab({
+  venueId,
+  onSaved,
+}: {
+  venueId: string;
+  /** Fired after a successful save — used by the onboarding checklist (Card 1) to mark its step complete. */
+  onSaved?: () => void;
+}) {
   const profileQuery = useVenueProfile(venueId);
   const updateProfileMutation = useUpdateVenueProfile(venueId);
   const updateTradingHoursMutation = useUpdateVenueTradingHours(venueId);
@@ -53,6 +60,7 @@ export default function VenueProfileTab({ venueId }: { venueId: string }) {
         updateProfileMutation.mutateAsync(value),
         updateTradingHoursMutation.mutateAsync(value.tradingHours),
       ]);
+      onSaved?.();
     },
   });
 

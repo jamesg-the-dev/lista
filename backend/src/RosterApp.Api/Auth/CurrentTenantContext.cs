@@ -13,7 +13,17 @@ public sealed class CurrentTenantContext(IHttpContextAccessor httpContextAccesso
     private string? OrganisationIdClaim => User?.FindFirst(TenantClaimTypes.OrganisationId)?.Value;
     private string? PermissionLevelClaim => User?.FindFirst(TenantClaimTypes.PermissionLevel)?.Value;
 
-    public bool IsAuthenticated => StaffMemberIdClaim is not null && OrganisationIdClaim is not null;
+    // Deliberately just "does this request carry a validated Supabase JWT" —
+    // NOT "has this JWT been resolved to a StaffMember row yet". Those are
+    // separate questions (see StaffMemberId/OrganisationId below, both
+    // nullable/defaulted for exactly the unresolved case). Onboarding
+    // sign-up and LinkStaffSupabaseAccountCommand both need to run with a
+    // valid JWT before any StaffMember/Organisation exists for this user —
+    // gating IsAuthenticated on the resolved claims made those commands
+    // unreachable (AuthorizationBehavior would reject every request from a
+    // brand-new Supabase user, including the one command meant to resolve
+    // that exact state).
+    public bool IsAuthenticated => User?.Identity?.IsAuthenticated == true;
 
     public Guid? StaffMemberId => StaffMemberIdClaim is { } value ? Guid.Parse(value) : null;
 

@@ -277,17 +277,31 @@ export function toUpdateVenueAvailabilitySettingsRequestDto(
   };
 }
 
+// Onboarding step wire member names — see backend RosterApp.Domain.Tenancy.
+// OnboardingStep/OnboardingStepState. Lives here (not under routes/onboarding)
+// because it's part of VenueProfileDto's wire shape, matching CLAUDE.md's
+// "DTOs match the backend query response exactly" rule; the onboarding route
+// reads this field directly off the DTO rather than duplicating the fetch.
+export interface VenueOnboardingStatusDto {
+  venueProfile: string;
+  awardPaySetup: string;
+  addStaff: string;
+  buildFirstRoster: string;
+  checklistDismissed: boolean;
+}
+
 export interface VenueProfileDto {
   id: string;
   organisationId: string;
   name: string;
-  abn: string;
-  address: AddressDto;
+  abn: string | null;
+  address: AddressDto | null;
   timezone: string;
   isActive: boolean;
   forecastSalesTarget: number | null;
   tradingHours: TradingHourSessionDto[];
   availabilitySettings: VenueAvailabilitySettingsDto;
+  onboardingStatus: VenueOnboardingStatusDto;
 }
 
 export interface VenueProfile {
@@ -302,13 +316,21 @@ export interface VenueProfile {
   availabilitySettings: VenueAvailabilitySettings;
 }
 
+function blankAddress(): Address {
+  return { line1: '', line2: '', suburb: '', state: 'VIC', postcode: '', country: 'AU' };
+}
+
+// A venue bootstrapped through onboarding sign-up has no ABN/address yet
+// (see backend Venue.CreateBootstrap) — represented here as the same blank
+// strings the Venue Profile form already treats as "not filled in yet",
+// so VenueProfileForm/TradingHoursEditor need no null-handling of their own.
 export function mapVenueProfile(dto: VenueProfileDto): VenueProfile {
   return {
     id: dto.id,
     organisationId: dto.organisationId,
     name: dto.name,
-    abn: dto.abn,
-    address: mapAddress(dto.address),
+    abn: dto.abn ?? '',
+    address: dto.address ? mapAddress(dto.address) : blankAddress(),
     timezone: dto.timezone,
     isActive: dto.isActive,
     tradingHours: toTradingHoursFormValue(dto.tradingHours),

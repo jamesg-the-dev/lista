@@ -33,28 +33,46 @@ public sealed record VenueAvailabilitySettingsDto(string SelfServiceMode, int Ad
         new(settings.SelfServiceMode.ToString(), settings.AdvanceNoticeDays);
 }
 
+public sealed record VenueOnboardingStatusDto(
+    string VenueProfile,
+    string AwardPaySetup,
+    string AddStaff,
+    string BuildFirstRoster,
+    bool ChecklistDismissed)
+{
+    public static VenueOnboardingStatusDto FromDomain(VenueOnboardingStatus status) =>
+        new(
+            status.VenueProfile.ToString(),
+            status.AwardPaySetup.ToString(),
+            status.AddStaff.ToString(),
+            status.BuildFirstRoster.ToString(),
+            status.ChecklistDismissed);
+}
+
 public sealed record VenueDto(
     Guid Id,
     Guid OrganisationId,
     string Name,
-    string Abn,
-    AddressDto Address,
+    string? Abn,
+    AddressDto? Address,
     string Timezone,
     bool IsActive,
     decimal? ForecastSalesTarget,
     IReadOnlyList<TradingHourSessionDto> TradingHours,
-    VenueAvailabilitySettingsDto AvailabilitySettings)
+    VenueAvailabilitySettingsDto AvailabilitySettings,
+    VenueOnboardingStatusDto OnboardingStatus)
 {
     public static VenueDto FromDomain(Venue venue) =>
         new(
             venue.Id,
             venue.OrganisationId,
             venue.Name,
-            venue.Abn.Value,
-            AddressDto.FromDomain(venue.Address),
+            venue.Abn?.Value,
+            venue.Address is null ? null : AddressDto.FromDomain(venue.Address),
             venue.Timezone,
             venue.IsActive,
             venue.ForecastSalesTarget,
             venue.TradingHours.Select(TradingHourSessionDto.FromDomain).ToList(),
-            VenueAvailabilitySettingsDto.FromDomain(venue.AvailabilitySettings));
+            VenueAvailabilitySettingsDto.FromDomain(venue.AvailabilitySettings),
+            VenueOnboardingStatusDto.FromDomain(venue.OnboardingStatus));
 }

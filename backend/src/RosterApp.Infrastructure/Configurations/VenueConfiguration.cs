@@ -26,53 +26,44 @@ public sealed class VenueConfiguration : IEntityTypeConfiguration<Venue>
             .HasForeignKey(v => v.OrganisationId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        var abnComparer = new ValueComparer<Abn>(
-            (left, right) => left!.Value == right!.Value,
-            abn => abn.Value.GetHashCode(),
-            abn => Abn.Create(abn.Value)
+        var abnComparer = new ValueComparer<Abn?>(
+            (left, right) => left == null || right == null ? left == right : left.Value == right.Value,
+            abn => abn == null ? 0 : abn.Value.GetHashCode(),
+            abn => abn == null ? null : Abn.Create(abn.Value)
         );
 
+        // Nullable — see Abn's doc comment on Venue: unset until the owner
+        // completes the Venue Profile onboarding step/settings form.
         builder
             .Property(v => v.Abn)
-            .HasConversion(abn => abn.Value, value => Abn.Create(value), abnComparer)
-            .IsRequired()
+            .HasConversion(abn => abn == null ? null : abn.Value, value => value == null ? null : Abn.Create(value), abnComparer)
             .HasMaxLength(11);
 
+        // Optional owned entity — see Address's doc comment on Venue: unset
+        // until the owner completes the Venue Profile onboarding step. None
+        // of the sub-properties are marked .IsRequired() (even though the
+        // Address record's own C# properties are non-nullable) so their
+        // columns stay nullable in the DB; EF Core materializes the whole
+        // navigation as null when every column in the row is null, and as a
+        // real Address otherwise. Field-level "must be fully filled in"
+        // validation still lives in UpdateVenueProfileCommandValidator,
+        // same as before.
         builder.OwnsOne(
             v => v.Address,
             address =>
             {
-                address
-                    .Property(a => a.Line1)
-                    .HasColumnName("Address_Line1")
-                    .IsRequired()
-                    .HasMaxLength(200);
+                address.Property(a => a.Line1).HasColumnName("Address_Line1").HasMaxLength(200);
                 address.Property(a => a.Line2).HasColumnName("Address_Line2").HasMaxLength(200);
-                address
-                    .Property(a => a.Suburb)
-                    .HasColumnName("Address_Suburb")
-                    .IsRequired()
-                    .HasMaxLength(100);
+                address.Property(a => a.Suburb).HasColumnName("Address_Suburb").HasMaxLength(100);
                 address
                     .Property(a => a.State)
                     .HasColumnName("Address_State")
                     .HasConversion<string>()
-                    .HasMaxLength(10)
-                    .IsRequired();
-                address
-                    .Property(a => a.Postcode)
-                    .HasColumnName("Address_Postcode")
-                    .IsRequired()
-                    .HasMaxLength(4);
-                address
-                    .Property(a => a.Country)
-                    .HasColumnName("Address_Country")
-                    .IsRequired()
-                    .HasMaxLength(60);
+                    .HasMaxLength(10);
+                address.Property(a => a.Postcode).HasColumnName("Address_Postcode").HasMaxLength(4);
+                address.Property(a => a.Country).HasColumnName("Address_Country").HasMaxLength(60);
             }
         );
-
-        builder.Navigation(v => v.Address).IsRequired();
 
         builder.OwnsOne(
             v => v.AvailabilitySettings,
@@ -97,6 +88,57 @@ public sealed class VenueConfiguration : IEntityTypeConfiguration<Venue>
         );
 
         builder.Navigation(v => v.AvailabilitySettings).IsRequired();
+
+        builder.OwnsOne(
+            v => v.OnboardingStatus,
+            status =>
+            {
+                status
+                    .Property(s => s.VenueProfile)
+                    .HasColumnName("OnboardingVenueProfileStatus")
+                    .HasConversion<string>()
+                    .HasMaxLength(20)
+                    .IsRequired()
+                    .HasDefaultValue(OnboardingStepState.Pending)
+                    .ValueGeneratedNever();
+
+                status
+                    .Property(s => s.AwardPaySetup)
+                    .HasColumnName("OnboardingAwardPaySetupStatus")
+                    .HasConversion<string>()
+                    .HasMaxLength(20)
+                    .IsRequired()
+                    .HasDefaultValue(OnboardingStepState.Pending)
+                    .ValueGeneratedNever();
+
+                status
+                    .Property(s => s.AddStaff)
+                    .HasColumnName("OnboardingAddStaffStatus")
+                    .HasConversion<string>()
+                    .HasMaxLength(20)
+                    .IsRequired()
+                    .HasDefaultValue(OnboardingStepState.Pending)
+                    .ValueGeneratedNever();
+
+                status
+                    .Property(s => s.BuildFirstRoster)
+                    .HasColumnName("OnboardingBuildFirstRosterStatus")
+                    .HasConversion<string>()
+                    .HasMaxLength(20)
+                    .IsRequired()
+                    .HasDefaultValue(OnboardingStepState.Pending)
+                    .ValueGeneratedNever();
+
+                status
+                    .Property(s => s.ChecklistDismissed)
+                    .HasColumnName("OnboardingChecklistDismissed")
+                    .IsRequired()
+                    .HasDefaultValue(false)
+                    .ValueGeneratedNever();
+            }
+        );
+
+        builder.Navigation(v => v.OnboardingStatus).IsRequired();
 
         // Real relational table, not jsonb — same rationale as Shift's
         // owned collections (see ShiftConfiguration): a manager's trading

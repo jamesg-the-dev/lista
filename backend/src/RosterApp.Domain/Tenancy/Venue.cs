@@ -16,8 +16,17 @@ public sealed class Venue : AggregateRoot
     public Guid Id { get; private set; }
     public Guid OrganisationId { get; private set; }
     public string Name { get; private set; } = null!;
-    public Abn Abn { get; private set; } = null!;
-    public Address Address { get; private set; } = null!;
+
+    /// <summary>
+    /// Null until the owner completes the Venue Profile onboarding step (or
+    /// the equivalent settings form) — see Venue.CreateBootstrap. A venue
+    /// created via the full CreateVenueCommand always has both set from
+    /// creation; only the onboarding bootstrap path leaves them unset.
+    /// </summary>
+    public Abn? Abn { get; private set; }
+
+    /// <summary>Null under the same "not yet completed venue profile" condition as Abn — see its doc comment.</summary>
+    public Address? Address { get; private set; }
     public string Timezone { get; private set; } = "Australia/Melbourne";
     public bool IsActive { get; private set; } = true;
     public DateTime CreatedAtUtc { get; private set; }
@@ -40,6 +49,12 @@ public sealed class Venue : AggregateRoot
     /// </summary>
     public VenueAvailabilitySettings AvailabilitySettings { get; private set; } = null!;
 
+    /// <summary>
+    /// Never null — defaulted at creation same as AvailabilitySettings.
+    /// See FEATURE_ONBOARDING_FLOW.md.
+    /// </summary>
+    public VenueOnboardingStatus OnboardingStatus { get; private set; } = null!;
+
     private readonly List<TradingHourSession> _tradingHours = [];
     public IReadOnlyList<TradingHourSession> TradingHours => _tradingHours.AsReadOnly();
 
@@ -48,8 +63,8 @@ public sealed class Venue : AggregateRoot
     public static Venue Create(
         Guid organisationId,
         string name,
-        Abn abn,
-        Address address,
+        Abn? abn,
+        Address? address,
         string timezone,
         Guid createdByStaffMemberId
     )
@@ -66,12 +81,23 @@ public sealed class Venue : AggregateRoot
             CreatedAtUtc = DateTime.UtcNow,
             CreatedByStaffMemberId = createdByStaffMemberId,
             AvailabilitySettings = VenueAvailabilitySettings.CreateDefault(),
+            OnboardingStatus = VenueOnboardingStatus.CreateDefault(),
         };
 
         venue.AddDomainEvent(new VenueCreated(venue.Id, venue.OrganisationId, DateTime.UtcNow));
 
         return venue;
     }
+
+    /// <summary>
+    /// Onboarding sign-up (FEATURE_ONBOARDING_FLOW.md Phase 1) only collects
+    /// a venue name — no ABN, no address, no timezone. Those are filled in
+    /// later via the Venue Profile onboarding card/settings form
+    /// (UpdateVenueProfileCommand), which requires them in full. Timezone
+    /// keeps the field's own default until then.
+    /// </summary>
+    public static Venue CreateBootstrap(Guid organisationId, string name, Guid createdByStaffMemberId) =>
+        Create(organisationId, name, abn: null, address: null, timezone: "Australia/Melbourne", createdByStaffMemberId);
 
     public void UpdateProfile(string name, Abn abn, Address address, string timezone)
     {
@@ -101,6 +127,18 @@ public sealed class Venue : AggregateRoot
     {
         AvailabilitySettings = new VenueAvailabilitySettings(selfServiceMode, advanceNoticeDays);
         AddDomainEvent(new VenueAvailabilitySettingsUpdated(Id, OrganisationId, DateTime.UtcNow));
+    }
+
+    public void SetOnboardingStepStatus(OnboardingStep step, OnboardingStepState state)
+    {
+        OnboardingStatus = OnboardingStatus.WithStepState(step, state);
+        AddDomainEvent(new VenueOnboardingStepStatusChanged(Id, OrganisationId, step, state, DateTime.UtcNow));
+    }
+
+    public void DismissOnboardingChecklist()
+    {
+        OnboardingStatus = OnboardingStatus.Dismiss();
+        AddDomainEvent(new VenueOnboardingChecklistDismissed(Id, OrganisationId, DateTime.UtcNow));
     }
 
     public void Deactivate()

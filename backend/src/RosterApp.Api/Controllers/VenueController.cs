@@ -125,6 +125,29 @@ public sealed class VenueController(ISender mediator) : ApiControllerBase(mediat
         await Mediator.Send(new DeactivateVenueCommand(venueId), cancellationToken);
         return NoContent();
     }
+
+    /// <summary>Onboarding setup checklist (FEATURE_ONBOARDING_FLOW.md Phase 2). Status itself is read via GetVenueProfile's VenueDto.OnboardingStatus, not a separate endpoint.</summary>
+    [HttpPost("~/api/venues/{venueId:guid}/onboarding-status/steps")]
+    public async Task<ActionResult<ApiResponse<VenueDto>>> SetOnboardingStepStatus(
+        Guid venueId,
+        SetOnboardingStepStatusRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        var command = new SetOnboardingStepStatusCommand(venueId, request.Step, request.Status);
+        var venue = await Mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<VenueDto>.Ok(venue));
+    }
+
+    [HttpPost("~/api/venues/{venueId:guid}/onboarding-status/dismiss")]
+    public async Task<ActionResult<ApiResponse<VenueDto>>> DismissOnboardingChecklist(
+        Guid venueId,
+        CancellationToken cancellationToken
+    )
+    {
+        var venue = await Mediator.Send(new DismissOnboardingChecklistCommand(venueId), cancellationToken);
+        return Ok(ApiResponse<VenueDto>.Ok(venue));
+    }
 }
 
 public sealed record CreateVenueRequest(
@@ -159,3 +182,5 @@ public sealed record UpdateVenueAvailabilitySettingsRequest(
     string SelfServiceMode,
     int AdvanceNoticeDays
 );
+
+public sealed record SetOnboardingStepStatusRequest(string Step, string Status);
