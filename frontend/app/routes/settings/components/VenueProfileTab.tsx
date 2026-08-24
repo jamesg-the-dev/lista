@@ -14,7 +14,11 @@ import {
 import { Separator } from '~/components/ui/separator';
 import { Skeleton } from '~/components/ui/skeleton';
 
-import { useUpdateVenueProfile, useUpdateVenueTradingHours, useVenueProfile } from '../hooks';
+import {
+  useUpdateVenueProfile,
+  useUpdateVenueTradingHours,
+  useVenueProfile,
+} from '../hooks';
 import type { VenueProfile, VenueProfileTabValue } from '../types';
 import { toVenueProfileTabValue } from '../types';
 import TradingHoursEditor from './TradingHoursEditor';
@@ -62,7 +66,9 @@ export default function VenueProfileTab({
   // make it clobber the real data back to blank the render right after it
   // loads.
   const form = useForm({
-    defaultValues: profileQuery.data ? toVenueProfileTabValue(profileQuery.data) : blankFormValue(),
+    defaultValues: profileQuery.data
+      ? toVenueProfileTabValue(profileQuery.data)
+      : blankFormValue(),
     onSubmit: async ({ value }) => {
       await Promise.all([
         updateProfileMutation.mutateAsync(value),
@@ -84,7 +90,8 @@ export default function VenueProfileTab({
     resetFromProfile(profileQuery.data);
   }
 
-  const isSaving = updateProfileMutation.isPending || updateTradingHoursMutation.isPending;
+  const isSaving =
+    updateProfileMutation.isPending || updateTradingHoursMutation.isPending;
   const saveError = updateProfileMutation.error ?? updateTradingHoursMutation.error;
   const isReady = !profileQuery.isLoading && !profileQuery.isError && !!syncedVenueId;
 
@@ -124,7 +131,9 @@ export default function VenueProfileTab({
               <Alert variant="destructive">
                 <AlertTitle>Couldn't save changes</AlertTitle>
                 <AlertDescription>
-                  {saveError instanceof Error ? saveError.message : 'Something went wrong.'}
+                  {saveError instanceof Error
+                    ? saveError.message
+                    : 'Something went wrong.'}
                 </AlertDescription>
               </Alert>
             )}

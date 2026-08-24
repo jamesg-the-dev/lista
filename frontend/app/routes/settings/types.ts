@@ -219,9 +219,21 @@ export function toTradingHourSessionInputDto(session: TradingHourSession) {
 // §3) — a plain in-place setting, not versioned like AwardConfiguration,
 // since it's a workflow choice rather than a compliance/pay figure.
 export const SELF_SERVICE_MODE_ITEMS = [
-  { value: 'disabled', label: 'Disabled', description: "Staff can't submit availability requests" },
-  { value: 'requires_approval', label: 'Requires manager approval', description: 'Default — every request needs sign-off' },
-  { value: 'auto_approved', label: 'Auto-approved', description: 'Requests apply immediately, no approval step' },
+  {
+    value: 'disabled',
+    label: 'Disabled',
+    description: "Staff can't submit availability requests",
+  },
+  {
+    value: 'requires_approval',
+    label: 'Requires manager approval',
+    description: 'Default — every request needs sign-off',
+  },
+  {
+    value: 'auto_approved',
+    label: 'Auto-approved',
+    description: 'Requests apply immediately, no approval step',
+  },
 ] as const;
 export type SelfServiceMode = (typeof SELF_SERVICE_MODE_ITEMS)[number]['value'];
 
@@ -623,7 +635,12 @@ function newRowKey(): string {
 }
 
 export function blankMealBreakRuleRow(): MealBreakRuleRow {
-  return { key: newRowKey(), afterHoursWorked: 5, breakDurationMinutes: 30, isPaid: false };
+  return {
+    key: newRowKey(),
+    afterHoursWorked: 5,
+    breakDurationMinutes: 30,
+    isPaid: false,
+  };
 }
 
 // Sensible pre-filled defaults so a new venue isn't starting from a blank,
@@ -682,7 +699,9 @@ export function toRosterRulesTabValue(
 
 // Request body for PUT /api/venues/{id}/roster-compliance-configuration
 // (UpdateRosterComplianceConfigurationCommand).
-export function toUpdateRosterComplianceConfigurationRequestDto(value: RosterRulesTabValue) {
+export function toUpdateRosterComplianceConfigurationRequestDto(
+  value: RosterRulesTabValue,
+) {
   return {
     minShiftLengthMinutes: hoursToMinutes(value.minShiftLengthHours),
     maxShiftLengthMinutes: hoursToMinutes(value.maxShiftLengthHours),
@@ -767,6 +786,7 @@ export interface RoleDto {
   createdAtUtc: string;
   mappedAwardClassificationId: string | null;
   mappedAwardClassificationName: string | null;
+  mappedAwardClassificationBaseHourlyRate: number | null;
 }
 
 export interface Role {
@@ -777,6 +797,7 @@ export interface Role {
   isActive: boolean;
   mappedAwardClassificationId: string | null;
   mappedAwardClassificationName: string | null;
+  mappedAwardClassificationBaseHourlyRate: number | null;
 }
 
 export function mapRole(dto: RoleDto): Role {
@@ -788,6 +809,7 @@ export function mapRole(dto: RoleDto): Role {
     isActive: dto.isActive,
     mappedAwardClassificationId: dto.mappedAwardClassificationId,
     mappedAwardClassificationName: dto.mappedAwardClassificationName,
+    mappedAwardClassificationBaseHourlyRate: dto.mappedAwardClassificationBaseHourlyRate,
   };
 }
 

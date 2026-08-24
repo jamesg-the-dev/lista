@@ -16,7 +16,9 @@ namespace RosterApp.Application.Staffing;
 /// backend-transaction one.
 /// </summary>
 public sealed record CreateRoleCommand(Guid VenueId, string DisplayName, string? ColorTag)
-    : IRequest<RoleDto>, IVenueScopedRequest, IRequiresPermissionLevel
+    : IRequest<RoleDto>,
+        IVenueScopedRequest,
+        IRequiresPermissionLevel
 {
     public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Owner;
 }
@@ -30,8 +32,15 @@ public sealed class CreateRoleCommandValidator : AbstractValidator<CreateRoleCom
         RuleFor(c => c.ColorTag).MaximumLength(30);
 
         RuleFor(c => c)
-            .MustAsync(async (command, ct) =>
-                !await uniquenessChecker.IsDisplayNameTakenAsync(command.VenueId, command.DisplayName, null, ct))
+            .MustAsync(
+                async (command, ct) =>
+                    !await uniquenessChecker.IsDisplayNameTakenAsync(
+                        command.VenueId,
+                        command.DisplayName,
+                        null,
+                        ct
+                    )
+            )
             .WithMessage("A role with this name already exists.")
             .WithName(nameof(CreateRoleCommand.DisplayName));
     }
@@ -43,18 +52,31 @@ public sealed class CreateRoleCommandHandler(
     IUnitOfWork unitOfWork
 ) : IRequestHandler<CreateRoleCommand, RoleDto>
 {
-    public async Task<RoleDto> Handle(CreateRoleCommand request, CancellationToken cancellationToken)
+    public async Task<RoleDto> Handle(
+        CreateRoleCommand request,
+        CancellationToken cancellationToken
+    )
     {
         if (tenantContext.StaffMemberId is not { } staffMemberId)
         {
             throw new ForbiddenAccessException("No authenticated tenant context.");
         }
 
-        var role = Role.Create(request.VenueId, request.DisplayName, request.ColorTag, staffMemberId);
+        var role = Role.Create(
+            request.VenueId,
+            request.DisplayName,
+            request.ColorTag,
+            staffMemberId
+        );
 
         roleRepository.Add(role);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return RoleDto.FromDomain(role, mappedAwardClassificationId: null, mappedAwardClassificationName: null);
+        return RoleDto.FromDomain(
+            role,
+            mappedAwardClassificationId: null,
+            mappedAwardClassificationName: null,
+            mappedAwardClassificationBaseHourlyRate: null
+        );
     }
 }

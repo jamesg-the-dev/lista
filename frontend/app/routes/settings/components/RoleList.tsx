@@ -13,7 +13,9 @@ import { SectionHeader } from './form-ui';
 import NewRoleDialog from './NewRoleDialog';
 
 function swatchClass(colorTag: string | null): string {
-  return ROLE_COLOR_SWATCHES.find(s => s.value === colorTag)?.twClass ?? 'bg-muted-foreground';
+  return (
+    ROLE_COLOR_SWATCHES.find(s => s.value === colorTag)?.twClass ?? 'bg-muted-foreground'
+  );
 }
 
 export default function RoleList({ venueId }: { venueId: string }) {
@@ -62,7 +64,8 @@ export default function RoleList({ venueId }: { venueId: string }) {
 
       {rolesQuery.isSuccess && roles.length === 0 && (
         <p className="text-muted-foreground text-sm">
-          No roles yet — create one to start assigning staff and rostering shifts under it.
+          No roles yet — create one to start assigning staff and rostering shifts under
+          it.
         </p>
       )}
 
@@ -74,7 +77,9 @@ export default function RoleList({ venueId }: { venueId: string }) {
               className="border-border flex items-center justify-between gap-3 rounded-md border px-3 py-2"
             >
               <div className="flex min-w-0 items-center gap-2.5">
-                <span className={`size-2.5 shrink-0 rounded-full ${swatchClass(role.colorTag)}`} />
+                <span
+                  className={`size-2.5 shrink-0 rounded-full ${swatchClass(role.colorTag)}`}
+                />
                 <span className="truncate text-sm font-medium">{role.displayName}</span>
                 {role.mappedAwardClassificationName ? (
                   <Badge variant="outline" className="text-muted-foreground shrink-0">
@@ -120,11 +125,15 @@ export default function RoleList({ venueId }: { venueId: string }) {
       {/* Keyed by the edit target so the form resets to the right role each
           time — TanStack Form only reads defaultValues once at mount. */}
       <NewRoleDialog
-        key={dialogMode === 'closed' || dialogMode === 'create' ? 'create' : dialogMode.id}
+        key={
+          dialogMode === 'closed' || dialogMode === 'create' ? 'create' : dialogMode.id
+        }
         venueId={venueId}
         open={dialogMode !== 'closed'}
         onOpenChange={open => !open && setDialogMode('closed')}
-        existingRole={dialogMode === 'closed' || dialogMode === 'create' ? undefined : dialogMode}
+        existingRole={
+          dialogMode === 'closed' || dialogMode === 'create' ? undefined : dialogMode
+        }
       />
     </section>
   );

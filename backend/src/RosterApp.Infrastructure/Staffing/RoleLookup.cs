@@ -50,11 +50,29 @@ public sealed class RoleLookup(RosterDbContext dbContext) : IRoleLookup
                 (mapping, classification) => new { mapping.RoleId, classification.Id, classification.Name })
             .ToDictionaryAsync(x => x.RoleId, x => (x.Id, x.Name), cancellationToken);
 
+        // Separate dictionary rather than a single joined query — same
+        // "compose two independent lookups in memory" pattern
+        // AwardReferenceDataLookup.GetAvailableAwardsAsync already uses for
+        // its own AwardRates join, and a role's mapped classification can
+        // legitimately have no currently-active rate row (matches
+        // AwardReferenceDataLookup's own "simply has no entry" comment).
+        var classificationIds = activeMappings.Values.Select(x => x.Id).ToList();
+        var ratesByClassification = await dbContext.AwardRates
+            .AsNoTracking()
+            .Where(rate => classificationIds.Contains(rate.AwardClassificationId) && rate.EffectiveToUtc == null)
+            .ToDictionaryAsync(rate => rate.AwardClassificationId, rate => rate.BaseHourlyRate, cancellationToken);
+
         return roles
-            .Select(r => RoleDto.FromDomain(
-                r,
-                activeMappings.TryGetValue(r.Id, out var mapping) ? mapping.Id : null,
-                activeMappings.TryGetValue(r.Id, out var mapping2) ? mapping2.Name : null))
+            .Select(r =>
+            {
+                if (!activeMappings.TryGetValue(r.Id, out var mapping))
+                {
+                    return RoleDto.FromDomain(r, null, null, null);
+                }
+
+                var baseHourlyRate = ratesByClassification.TryGetValue(mapping.Id, out var rate) ? rate : (decimal?)null;
+                return RoleDto.FromDomain(r, mapping.Id, mapping.Name, baseHourlyRate);
+            })
             .ToList();
     }
 }

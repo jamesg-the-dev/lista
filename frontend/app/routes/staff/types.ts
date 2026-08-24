@@ -329,7 +329,10 @@ export function unmapPermissionLevel(value: PermissionLevel): string {
   return PERMISSION_LEVEL_REVERSE[value];
 }
 
-export const PERMISSION_LEVEL_META: Record<PermissionLevel, { label: string; description: string }> = {
+export const PERMISSION_LEVEL_META: Record<
+  PermissionLevel,
+  { label: string; description: string }
+> = {
   owner: { label: 'Owner', description: 'Full access, including settings' },
   manager: { label: 'Manager', description: 'Publish rosters, approve swaps' },
   supervisor: { label: 'Supervisor', description: 'Edit rosters for their own venue' },

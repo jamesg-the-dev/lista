@@ -2,7 +2,12 @@ import { ClockIcon, ShieldIcon } from 'lucide-react';
 
 import { Badge } from '~/components/ui/badge';
 import { Field, FieldDescription, FieldLabel } from '~/components/ui/field';
-import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '~/components/ui/input-group';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
+} from '~/components/ui/input-group';
 
 import type { RosterRulesTabFormApi } from './RosterRulesForm';
 

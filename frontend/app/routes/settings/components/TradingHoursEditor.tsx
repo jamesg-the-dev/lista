@@ -3,7 +3,11 @@ import { ClockIcon, PlusIcon, XIcon } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Checkbox } from '~/components/ui/checkbox';
 import { Input } from '~/components/ui/input';
-import { InputGroup, InputGroupAddon, InputGroupInput } from '~/components/ui/input-group';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from '~/components/ui/input-group';
 
 import { DAY_LABELS, blankSession } from '../types';
 import type { TradingHourSession } from '../types';
@@ -42,7 +46,10 @@ export default function TradingHoursEditor({ form }: TradingHoursEditorProps) {
                 };
 
                 return (
-                  <div key={dayOfWeek} className="border-border rounded-lg border px-3 py-2.5">
+                  <div
+                    key={dayOfWeek}
+                    className="border-border rounded-lg border px-3 py-2.5"
+                  >
                     <div className="flex flex-wrap items-center gap-3">
                       <span className="w-9 shrink-0 text-sm font-semibold">{label}</span>
 
@@ -63,7 +70,9 @@ export default function TradingHoursEditor({ form }: TradingHoursEditorProps) {
                               showLabel={openSessions.length > 1}
                               canRemove={openSessions.length > 1}
                               onChange={next =>
-                                update(sessions.map(s => (s.key === session.key ? next : s)))
+                                update(
+                                  sessions.map(s => (s.key === session.key ? next : s)),
+                                )
                               }
                               onRemove={() =>
                                 update(sessions.filter(s => s.key !== session.key))
@@ -74,7 +83,9 @@ export default function TradingHoursEditor({ form }: TradingHoursEditorProps) {
                             type="button"
                             variant="ghost"
                             size="sm"
-                            onClick={() => update([...sessions, blankSession(dayOfWeek, false)])}
+                            onClick={() =>
+                              update([...sessions, blankSession(dayOfWeek, false)])
+                            }
                           >
                             <PlusIcon data-icon="inline-start" size={14} />
                             Add session
@@ -148,7 +159,9 @@ function TradingHourSessionFields({
       <label className="flex items-center gap-1.5">
         <Checkbox
           checked={session.crossesMidnight}
-          onCheckedChange={checked => onChange({ ...session, crossesMidnight: checked === true })}
+          onCheckedChange={checked =>
+            onChange({ ...session, crossesMidnight: checked === true })
+          }
         />
         <span className="text-muted-foreground text-xs">Crosses midnight</span>
       </label>

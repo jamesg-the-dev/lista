@@ -31,7 +31,10 @@ export function fetchStaffMember(staffId: string): Promise<StaffMemberDto> {
 }
 
 export function createStaffMember(input: StaffMemberInput): Promise<StaffMemberDto> {
-  return apiClient.post<StaffMemberDto>('/api/staff', toCreateStaffMemberRequestDto(input));
+  return apiClient.post<StaffMemberDto>(
+    '/api/staff',
+    toCreateStaffMemberRequestDto(input),
+  );
 }
 
 export function updateStaffMember(

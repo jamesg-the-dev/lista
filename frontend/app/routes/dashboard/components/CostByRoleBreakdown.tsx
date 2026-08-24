@@ -47,14 +47,17 @@ export function CostByRoleBreakdown({ breakdown, loading }: CostByRoleBreakdownP
                 {currency2(r.totalCost)}
               </span>
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-              <div className="h-full rounded-full bg-foreground" style={{ width: `${pct}%` }} />
+            <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
+              <div
+                className="bg-foreground h-full rounded-full"
+                style={{ width: `${pct}%` }}
+              />
             </div>
           </div>
         );
       })}
-      <div className="mt-1 flex items-center justify-between border-t border-border pt-2 text-sm">
-        <span className="font-medium text-muted-foreground">Total</span>
+      <div className="border-border mt-1 flex items-center justify-between border-t pt-2 text-sm">
+        <span className="text-muted-foreground font-medium">Total</span>
         <span className="font-sans font-semibold tabular-nums">
           {currency2(breakdown.totalCost)}
         </span>

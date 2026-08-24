@@ -135,11 +135,16 @@ export default function AwardPayTab({ venueId }: { venueId: string }) {
               </Alert>
             )}
 
-            {(rolesQuery.data ?? []).some(r => r.isActive && !r.mappedAwardClassificationId) && (
+            {(rolesQuery.data ?? []).some(
+              r => r.isActive && !r.mappedAwardClassificationId,
+            ) && (
               <Alert variant="destructive">
                 <AlertTitle>
-                  {(rolesQuery.data ?? []).filter(r => r.isActive && !r.mappedAwardClassificationId)
-                    .length}{' '}
+                  {
+                    (rolesQuery.data ?? []).filter(
+                      r => r.isActive && !r.mappedAwardClassificationId,
+                    ).length
+                  }{' '}
                   role(s) are not yet mapped to an award classification.
                 </AlertTitle>
               </Alert>
@@ -153,7 +158,10 @@ export default function AwardPayTab({ venueId }: { venueId: string }) {
 
             <Separator />
 
-            <RoleAwardMappingTable venueId={venueId} awardId={configQuery.data?.awardId} />
+            <RoleAwardMappingTable
+              venueId={venueId}
+              awardId={configQuery.data?.awardId}
+            />
 
             <Separator />
 

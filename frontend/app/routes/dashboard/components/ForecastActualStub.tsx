@@ -31,8 +31,8 @@ export function ForecastActualStub({ summary, loading }: ForecastActualStubProps
 
   return (
     <div className="flex gap-3">
-      <div className="flex flex-1 flex-col justify-between rounded-lg border border-border bg-muted p-4">
-        <p className="font-sans text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+      <div className="border-border bg-muted flex flex-1 flex-col justify-between rounded-lg border p-4">
+        <p className="text-muted-foreground font-sans text-[10px] font-semibold tracking-wide uppercase">
           Forecast
         </p>
         <p className="mt-2 font-sans text-2xl font-semibold tabular-nums">
@@ -41,17 +41,17 @@ export function ForecastActualStub({ summary, loading }: ForecastActualStubProps
       </div>
 
       <div
-        className="flex flex-1 flex-col justify-between rounded-lg border border-dashed border-border p-4"
+        className="border-border flex flex-1 flex-col justify-between rounded-lg border border-dashed p-4"
         style={{
           backgroundImage:
             'repeating-linear-gradient(45deg, var(--muted) 0, var(--muted) 6px, transparent 6px, transparent 12px)',
         }}
       >
-        <p className="flex items-center gap-1.5 font-sans text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+        <p className="text-muted-foreground flex items-center gap-1.5 font-sans text-[10px] font-semibold tracking-wide uppercase">
           <ClockIcon size={12} />
           Actual — not yet available
         </p>
-        <p className="mt-2 text-xs text-muted-foreground">
+        <p className="text-muted-foreground mt-2 text-xs">
           Unlocks once staff clock in/out (GPS-verified time tracking) goes live. Shown
           here so it's obvious this isn't a working comparison yet — not a silently-empty
           number.

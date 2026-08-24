@@ -10,7 +10,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu';
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '~/components/ui/empty';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '~/components/ui/empty';
 import { Skeleton } from '~/components/ui/skeleton';
 import {
   Table,
@@ -90,7 +96,9 @@ export default function StaffTable({ venueId }: { venueId: string }) {
           </TableHeader>
           <TableBody>
             {staff.map(member => {
-              const role = member.primaryRoleId ? rolesById.get(member.primaryRoleId) : undefined;
+              const role = member.primaryRoleId
+                ? rolesById.get(member.primaryRoleId)
+                : undefined;
               return (
                 <TableRow key={member.id}>
                   <TableCell className="font-medium">{member.name}</TableCell>

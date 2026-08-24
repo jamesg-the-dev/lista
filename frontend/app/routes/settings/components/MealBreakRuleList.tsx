@@ -1,7 +1,12 @@
 import { PlusIcon, XIcon } from 'lucide-react';
 
 import { Button } from '~/components/ui/button';
-import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '~/components/ui/input-group';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
+} from '~/components/ui/input-group';
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group';
 
 import type { MealBreakRuleRow } from '../types';
@@ -67,7 +72,10 @@ export default function MealBreakRuleList({ form }: MealBreakRuleListProps) {
                         update(
                           rules.map(r =>
                             r.key === rule.key
-                              ? { ...r, breakDurationMinutes: Number(e.target.value) || 0 }
+                              ? {
+                                  ...r,
+                                  breakDurationMinutes: Number(e.target.value) || 0,
+                                }
                               : r,
                           ),
                         )

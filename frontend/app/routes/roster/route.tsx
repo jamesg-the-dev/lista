@@ -1,5 +1,6 @@
 import { Fragment, useMemo, useState } from 'react';
 import { DateTime } from 'luxon';
+import { Link } from 'react-router';
 import {
   ChevronDownIcon,
   ChevronLeftIcon,
@@ -28,21 +29,25 @@ import {
   useCreateShift,
   useDeleteShift,
   useOverrideComplianceViolation,
-  useRosterStaffMembers,
+  useRolesForVenue,
   useSaveForecastSalesTarget,
   useShifts,
+  useStaffMembers,
   useUpdateShift,
   useVenues,
 } from './hooks';
-import type { ComplianceViolationType, Shift, ShiftDraft } from './types';
+import type { ComplianceViolationType, Role, Shift, ShiftDraft } from './types';
 import {
   DAY_LABELS,
-  ROLE_META,
   currency,
   currency2,
   dateForDay,
   groupShiftsByStaffDay,
   mustFindVenue,
+  resolveStaffRate,
+  roleColor,
+  roleLetter,
+  roleTint,
   shiftKey,
   totalAwardCost,
 } from './types';
@@ -60,7 +65,8 @@ export default function RosterBuilder() {
   usePageTitle(
     `Roster | ${mustFindVenue(venuesQuery.data ?? [], activeVenueId)?.name ?? ''}`,
   );
-  const staffQuery = useRosterStaffMembers(activeVenueId);
+  const staffQuery = useStaffMembers(activeVenueId);
+  const rolesQuery = useRolesForVenue(activeVenueId);
   const shiftsQuery = useShifts(activeVenueId, weekStartIso);
   const budgetSummaryQuery = useBudgetSummary(activeVenueId, weekStartIso);
 
@@ -85,7 +91,15 @@ export default function RosterBuilder() {
   });
 
   const venues = venuesQuery.data ?? [];
-  const staff = useMemo(() => staffQuery.data ?? [], [staffQuery.data]);
+  // Deactivated staff shouldn't be assignable to new shifts.
+  const staff = useMemo(
+    () => (staffQuery.data ?? []).filter(s => s.isActive),
+    [staffQuery.data],
+  );
+  const roles = useMemo(() => rolesQuery.data ?? [], [rolesQuery.data]);
+  const rolesById = useMemo(() => new Map(roles.map(r => [r.id, r])), [roles]);
+  const roleFor = (st: { primaryRoleId: string | null }): Role | undefined =>
+    st.primaryRoleId ? rolesById.get(st.primaryRoleId) : undefined;
   const shifts = useMemo(() => shiftsQuery.data ?? [], [shiftsQuery.data]);
 
   const shiftsByKey = useMemo(() => groupShiftsByStaffDay(shifts), [shifts]);
@@ -137,11 +151,16 @@ export default function RosterBuilder() {
     if (!panel) return;
     const panelStaffMember = staff.find(s => s.id === panel.staffId);
     if (!panelStaffMember) return;
+    const { rate } = resolveStaffRate(panelStaffMember, roleFor(panelStaffMember));
+    // The panel disables Save while the rate is unresolved (see
+    // ShiftEditorPanel's canSave) — this is defense in depth, not the
+    // primary guard.
+    if (rate === null) return;
     const input = {
       venueId: activeVenueId,
       employeeId: panel.staffId,
       shiftDate: dateForDay(weekStart, panel.dayOfWeek).toISODate()!,
-      baseRatePerHour: panelStaffMember.rate,
+      baseRatePerHour: rate,
       ...draft,
     };
     if (panel.shift) {
@@ -175,8 +194,14 @@ export default function RosterBuilder() {
   }
 
   const panelStaff = panel ? (staff.find(s => s.id === panel.staffId) ?? null) : null;
+  const panelRole = panelStaff ? (roleFor(panelStaff) ?? null) : null;
 
-  if (venuesQuery.isLoading || staffQuery.isLoading || shiftsQuery.isLoading) {
+  if (
+    venuesQuery.isLoading ||
+    staffQuery.isLoading ||
+    rolesQuery.isLoading ||
+    shiftsQuery.isLoading
+  ) {
     return (
       <div className="bg-background flex min-h-screen w-full items-center justify-center">
         <Spinner className="size-6" />
@@ -184,14 +209,23 @@ export default function RosterBuilder() {
     );
   }
 
-  if (venuesQuery.isError || staffQuery.isError || shiftsQuery.isError) {
+  if (
+    venuesQuery.isError ||
+    staffQuery.isError ||
+    rolesQuery.isError ||
+    shiftsQuery.isError
+  ) {
     return (
       <div className="bg-background flex min-h-screen w-full items-center justify-center p-6">
         <Empty>
           <EmptyTitle>Couldn't load the roster</EmptyTitle>
           <EmptyDescription>
-            {(venuesQuery.error ?? staffQuery.error ?? shiftsQuery.error)?.message ??
-              'Something went wrong. Try again shortly.'}
+            {(
+              venuesQuery.error ??
+              staffQuery.error ??
+              rolesQuery.error ??
+              shiftsQuery.error
+            )?.message ?? 'Something went wrong. Try again shortly.'}
           </EmptyDescription>
         </Empty>
       </div>
@@ -338,7 +372,7 @@ export default function RosterBuilder() {
             </EmptyDescription>
           </Empty>
         ) : (
-          <div className="min-w-[1000px]">
+          <div className="min-w-250">
             <div className="grid" style={{ gridTemplateColumns: '220px repeat(7, 1fr)' }}>
               <div />
               {DAY_LABELS.map((d, i) => (
@@ -354,20 +388,28 @@ export default function RosterBuilder() {
               ))}
 
               {staff.map(st => {
-                const meta = ROLE_META[st.role];
+                const role = roleFor(st);
+                const color = roleColor(role);
+                const tint = roleTint(role);
+                const letter = roleLetter(role);
                 return (
                   <Fragment key={st.id}>
                     <div className="border-border flex items-center gap-3 border-t py-3 pr-4">
                       <div
                         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-sans text-sm font-bold"
-                        style={{ background: meta.tint, color: meta.color }}
+                        style={{ background: tint, color }}
                       >
                         {initials(st.name)}
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">{st.name}</p>
-                        <p className="truncate text-xs" style={{ color: meta.color }}>
-                          {st.title}
+                        <Link
+                          to={`/staff/${st.id}`}
+                          className="block truncate text-sm font-medium hover:underline"
+                        >
+                          {st.name}
+                        </Link>
+                        <p className="truncate text-xs" style={{ color }}>
+                          {role?.displayName ?? 'No role assigned'}
                         </p>
                       </div>
                     </div>
@@ -391,11 +433,11 @@ export default function RosterBuilder() {
                                 <div
                                   className="flex w-6 shrink-0 items-center justify-center font-sans text-xs font-bold"
                                   style={{
-                                    background: meta.color,
-                                    color: meta.tint,
+                                    background: color,
+                                    color: tint,
                                   }}
                                 >
-                                  {meta.letter}
+                                  {letter}
                                 </div>
                                 <div className="min-w-0 px-2 py-1.5">
                                   <p className="font-sans text-xs leading-tight font-medium tabular-nums">
@@ -434,15 +476,17 @@ export default function RosterBuilder() {
 
       {/* Legend */}
       <div className="flex flex-wrap gap-4 px-6 pb-6">
-        {Object.entries(ROLE_META).map(([key, meta]) => (
-          <div key={key} className="flex items-center gap-1.5">
-            <span
-              className="h-2.5 w-2.5 rounded-full"
-              style={{ background: meta.color }}
-            />
-            <span className="text-muted-foreground text-xs">{meta.label}</span>
-          </div>
-        ))}
+        {roles
+          .filter(r => r.isActive)
+          .map(r => (
+            <div key={r.id} className="flex items-center gap-1.5">
+              <span
+                className="h-2.5 w-2.5 rounded-full"
+                style={{ background: roleColor(r) }}
+              />
+              <span className="text-muted-foreground text-xs">{r.displayName}</span>
+            </div>
+          ))}
         <span className="text-muted-foreground ml-auto text-xs">
           Rates and compliance rules shown are illustrative for demo purposes — not
           authoritative payroll or legal advice.
@@ -455,6 +499,7 @@ export default function RosterBuilder() {
         onOpenChange={setPanelOpen}
         panel={panel}
         staff={panelStaff}
+        role={panelRole}
         weekStart={weekStart}
         draft={draft}
         onDraftChange={setDraft}

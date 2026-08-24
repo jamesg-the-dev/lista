@@ -25,21 +25,24 @@ import { Spinner } from '~/components/ui/spinner';
 import { Textarea } from '~/components/ui/textarea';
 
 import {
-  ROLE_META,
   VIOLATION_TYPE_META,
   currency2,
   dateForDay,
   formatHoursDuration,
   getRateInfo,
+  resolveStaffRate,
+  roleColor,
 } from '../types';
 import type {
   ComplianceViolationType,
   DayOfWeek,
+  Role,
   Shift,
   ShiftDraft,
   StaffMember,
 } from '../types';
 import { DAY_LABELS } from '../types';
+import { Link } from 'react-router';
 
 export interface ShiftEditorPanelState {
   staffId: string;
@@ -53,6 +56,7 @@ interface ShiftEditorPanelProps {
   onOpenChange: (open: boolean) => void;
   panel: ShiftEditorPanelState | null;
   staff: StaffMember | null;
+  role: Role | null;
   weekStart: DateTime;
   draft: ShiftDraft;
   onDraftChange: (draft: ShiftDraft) => void;
@@ -68,6 +72,7 @@ export function ShiftEditorPanel({
   onOpenChange,
   panel,
   staff,
+  role,
   weekStart,
   draft,
   onDraftChange,
@@ -87,6 +92,8 @@ export function ShiftEditorPanel({
     setOverrideReasons({});
   }, [panel?.draftId]);
 
+  const staffRate = resolveStaffRate(staff, role);
+  const { rate: resolvedRate, source: rateSource } = staffRate;
   const rateInfo = panel
     ? getRateInfo(
         weekStart,
@@ -94,10 +101,9 @@ export function ShiftEditorPanel({
         draft.start,
         draft.end,
         draft.unpaidBreakMinutes,
-        staff?.rate ?? 0,
+        staffRate.rate,
       )
     : null;
-  const roleMeta = staff ? ROLE_META[staff.role] : null;
 
   // Compliance violations are server-computed and only exist once a shift
   // has been saved at least once (IRosterComplianceValidator runs inside
@@ -108,7 +114,10 @@ export function ShiftEditorPanel({
   const warningViolations = violations.filter(v => v.severity === 'warning');
 
   const canSave =
-    draft.start.length > 0 && draft.end.length > 0 && draft.end > draft.start;
+    draft.start.length > 0 &&
+    draft.end.length > 0 &&
+    draft.end > draft.start &&
+    staffRate.rate !== null;
 
   function handleStartChange(e: ChangeEvent<HTMLInputElement>) {
     onDraftChange({ ...draft, start: e.target.value });
@@ -122,26 +131,27 @@ export function ShiftEditorPanel({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="flex flex-col border-border bg-card p-0">
-        {panel && staff && roleMeta && rateInfo && (
+      <SheetContent side="right" className="border-border bg-card flex flex-col p-0">
+        {panel && staff && rateInfo && (
           <>
-            <SheetHeader className="gap-0 border-b border-border px-6 py-5">
-              <p className="font-sans text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+            <SheetHeader className="border-border gap-0 border-b px-6 py-5">
+              <p className="text-muted-foreground font-sans text-xs font-semibold tracking-widest uppercase">
                 {panel.shift ? 'Edit shift' : 'Add shift'}
               </p>
               <SheetTitle className="mt-0.5 text-base font-medium">
                 {staff.name}
               </SheetTitle>
-              <SheetDescription style={{ color: roleMeta.color }}>
+              <SheetDescription style={{ color: roleColor(role) }}>
                 {DAY_LABELS[panel.dayOfWeek]}{' '}
-                {dateForDay(weekStart, panel.dayOfWeek).toFormat('d LLL')} · {staff.title}
+                {dateForDay(weekStart, panel.dayOfWeek).toFormat('d LLL')} ·{' '}
+                {role?.displayName ?? 'No role assigned'}
               </SheetDescription>
             </SheetHeader>
 
             <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-6 py-5">
               <div className="grid grid-cols-2 gap-3">
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-xs text-muted-foreground">Start</span>
+                  <span className="text-muted-foreground text-xs">Start</span>
                   <InputGroup className="h-9 rounded-lg">
                     <InputGroupInput
                       type="time"
@@ -156,7 +166,7 @@ export function ShiftEditorPanel({
                   </InputGroup>
                 </label>
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-xs text-muted-foreground">End</span>
+                  <span className="text-muted-foreground text-xs">End</span>
                   <InputGroup className="h-9 rounded-lg">
                     <InputGroupInput
                       type="time"
@@ -172,13 +182,13 @@ export function ShiftEditorPanel({
                 </label>
               </div>
               {!canSave && (
-                <p className="-mt-3 text-xs text-destructive">
+                <p className="text-destructive -mt-3 text-xs">
                   Shift end must be after start.
                 </p>
               )}
 
               <label className="flex flex-col gap-1.5">
-                <span className="text-xs text-muted-foreground">
+                <span className="text-muted-foreground text-xs">
                   Unpaid break (minutes)
                 </span>
                 <Input
@@ -191,37 +201,52 @@ export function ShiftEditorPanel({
                 />
               </label>
 
-              {/* Transparent award breakdown — receipt style. Preview only
-                  (see the getRateInfo import above); once saved, the grid
-                  cell and compliance badges read the server's own
-                  awardBreakdown instead. */}
-              <div className="rounded-lg border border-border bg-background p-4 font-sans text-sm font-medium tabular-nums">
-                <p className="mb-3 font-sans text-[11px] font-semibold tracking-widest text-muted-foreground uppercase">
-                  Award rate breakdown
-                </p>
-                <div className="mb-1.5 flex justify-between">
-                  <span className="text-muted-foreground">Base rate</span>
-                  <span>{currency2(staff.rate)}/hr</span>
+              {resolvedRate === null ? (
+                <Alert variant="destructive">
+                  <AlertTriangleIcon />
+                  <AlertTitle>No award rate</AlertTitle>
+                  <AlertDescription>
+                    {role
+                      ? `"${role.displayName}" isn't mapped to an award classification yet.`
+                      : `${staff.name} has no role assigned.`}{' '}
+                    Set it in &nbsp;
+                    <Link
+                      to="/settings/staff-roles"
+                      className="inline-block hover:underline"
+                    >
+                      Settings → Staff &amp; Roles &nbsp;
+                    </Link>
+                    before this shift can be saved — pay may be incorrect until then.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <div className="border-border bg-background rounded-lg border p-4 font-sans text-sm font-medium tabular-nums">
+                  <p className="text-muted-foreground mb-3 font-sans text-[11px] font-semibold tracking-widest uppercase">
+                    Award rate breakdown
+                  </p>
+                  <div className="mb-1.5 flex justify-between">
+                    <span className="text-muted-foreground">
+                      {rateSource === 'override' ? 'Override rate' : 'Award rate'}
+                    </span>
+                    <span>{currency2(resolvedRate)}/hr</span>
+                  </div>
+                  <div className="mb-1.5 flex justify-between">
+                    <span className="text-muted-foreground">Paid hours</span>
+                    <span>{formatHoursDuration(rateInfo.paidHrs)}</span>
+                  </div>
+                  <div className="border-border mb-3 flex justify-between border-b border-dashed pb-3">
+                    <span className="text-foreground">{rateInfo.label}</span>
+                    <span className="text-foreground">
+                      ×{rateInfo.multiplier.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-base font-semibold">
+                    <span>Shift total</span>
+                    <span>{currency2(rateInfo.cost ?? 0)}</span>
+                  </div>
                 </div>
-                <div className="mb-1.5 flex justify-between">
-                  <span className="text-muted-foreground">Paid hours</span>
-                  <span>{formatHoursDuration(rateInfo.paidHrs)}</span>
-                </div>
-                <div className="mb-3 flex justify-between border-b border-dashed border-border pb-3">
-                  <span className="text-foreground">{rateInfo.label}</span>
-                  <span className="text-foreground">
-                    ×{rateInfo.multiplier.toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-base font-semibold">
-                  <span>Shift total</span>
-                  <span>{currency2(rateInfo.cost)}</span>
-                </div>
-              </div>
+              )}
 
-              {/* Inline compliance warnings from the shift's last save —
-                  itemised per CLAUDE.md's IRosterComplianceValidator
-                  contract, never flattened to a boolean. */}
               {warningViolations.length > 0 && (
                 <div className="flex flex-col gap-2">
                   {warningViolations.map(v => (
@@ -287,13 +312,9 @@ export function ShiftEditorPanel({
               )}
             </div>
 
-            <SheetFooter className="flex-row gap-3 border-t border-border px-6 py-5">
+            <SheetFooter className="border-border flex-row gap-3 border-t px-6 py-5">
               {panel.shift && (
-                <Button
-                  variant="destructive"
-                  onClick={onDelete}
-                  disabled={saving}
-                >
+                <Button variant="destructive" onClick={onDelete} disabled={saving}>
                   Delete
                 </Button>
               )}

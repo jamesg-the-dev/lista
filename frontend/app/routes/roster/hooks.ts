@@ -9,7 +9,7 @@ import { currentAccountQueryOptions } from '~/lib/account/hooks';
 
 import * as api from './api';
 import type { ComplianceViolationType, ShiftInput } from './types';
-import { mapShift, mapStaffMember, unmapViolationType } from './types';
+import { mapShift, unmapViolationType } from './types';
 
 // No controller lists venues (see types.ts's file header) — reuses the
 // account query's cache entry via `select` rather than issuing a second
@@ -21,13 +21,12 @@ export function useVenues() {
   });
 }
 
-export function useRosterStaffMembers(venueId: string) {
-  return useQuery({
-    queryKey: ['roster', 'staff', venueId],
-    queryFn: async () => (await api.fetchStaffMembers(venueId)).map(mapStaffMember),
-    enabled: !!venueId,
-  });
-}
+// Real staff/roles for the grid — useStaffMembers (owned by the `staff`
+// route) and useRolesForVenue (owned by `settings`) are re-exported here so
+// route.tsx has one place to import this route's hooks from, same as every
+// other query above; both are already venue-scoped server-side.
+export { useStaffMembers } from '~/routes/staff/hooks';
+export { useRolesForVenue } from '~/routes/settings/hooks';
 
 export function useShifts(venueId: string, weekStartIso: string) {
   return useQuery({

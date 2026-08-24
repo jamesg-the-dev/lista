@@ -10,7 +10,11 @@ import {
 } from '~/components/ui/select';
 import { Skeleton } from '~/components/ui/skeleton';
 
-import { useAwardClassifications, useRolesForVenue, useSetRoleAwardMapping } from '../hooks';
+import {
+  useAwardClassifications,
+  useRolesForVenue,
+  useSetRoleAwardMapping,
+} from '../hooks';
 import { SectionHeader } from './form-ui';
 
 // Same underlying data as RoleList's mapping status pill (Staff & Roles
@@ -63,7 +67,10 @@ export default function RoleAwardMappingTable({
                 value={role.mappedAwardClassificationId}
                 onValueChange={value =>
                   value !== null &&
-                  setMappingMutation.mutate({ roleId: role.id, awardClassificationId: value })
+                  setMappingMutation.mutate({
+                    roleId: role.id,
+                    awardClassificationId: value,
+                  })
                 }
               >
                 <SelectTrigger className="w-56">

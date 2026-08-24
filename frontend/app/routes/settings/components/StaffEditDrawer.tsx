@@ -36,9 +36,9 @@ import type { PermissionLevel } from '~/routes/staff/types';
 
 import { useRolesForVenue } from '../hooks';
 
-const PERMISSION_LEVEL_ITEMS = (Object.keys(PERMISSION_LEVEL_META) as PermissionLevel[]).map(
-  value => ({ value, label: PERMISSION_LEVEL_META[value].label }),
-);
+const PERMISSION_LEVEL_ITEMS = (
+  Object.keys(PERMISSION_LEVEL_META) as PermissionLevel[]
+).map(value => ({ value, label: PERMISSION_LEVEL_META[value].label }));
 
 interface StaffEditDrawerProps {
   staffId: string;
@@ -91,7 +91,9 @@ export default function StaffEditDrawer({
       <SheetContent>
         <SheetHeader>
           <SheetTitle>{staff?.name ?? 'Staff member'}</SheetTitle>
-          <SheetDescription>Permission level, pay rate override and primary role.</SheetDescription>
+          <SheetDescription>
+            Permission level, pay rate override and primary role.
+          </SheetDescription>
         </SheetHeader>
 
         <div className="flex flex-col gap-6 overflow-y-auto px-4">
@@ -116,7 +118,9 @@ export default function StaffEditDrawer({
           {staff && (
             <>
               <Field>
-                <FieldLabel htmlFor="drawer-permission-level">Permission level</FieldLabel>
+                <FieldLabel htmlFor="drawer-permission-level">
+                  Permission level
+                </FieldLabel>
                 <Select
                   items={PERMISSION_LEVEL_ITEMS}
                   value={staff.permissionLevel}
@@ -201,7 +205,8 @@ export default function StaffEditDrawer({
                   <div className="border-border flex flex-col gap-2 rounded-lg border p-3">
                     <div className="flex items-center justify-between">
                       <Badge className="bg-success-tint text-success">
-                        +${staff.payRateOverride.overrideHourlyRate.toFixed(2)}/hr above award
+                        +${staff.payRateOverride.overrideHourlyRate.toFixed(2)}/hr above
+                        award
                       </Badge>
                       <Button
                         variant="ghost"

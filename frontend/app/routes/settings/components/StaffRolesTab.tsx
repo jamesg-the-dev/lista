@@ -1,14 +1,16 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '~/components/ui/card';
 import { Separator } from '~/components/ui/separator';
 
 import AvailabilitySettingsCard from './AvailabilitySettingsCard';
 import RoleList from './RoleList';
 import StaffTable from './StaffTable';
 
-// Settings → Staff & Roles (docs/features/FEATURE_SETTINGS_STAFF_ROLES.md).
-// The busiest of the four settings tabs, per §7 — split into three clearly
-// separated sub-sections within one tab (roles, staff, availability) rather
-// than further nested tabs.
 export default function StaffRolesTab({ venueId }: { venueId: string }) {
   return (
     <Card>

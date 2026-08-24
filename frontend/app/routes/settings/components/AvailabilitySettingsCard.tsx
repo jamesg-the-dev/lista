@@ -25,14 +25,20 @@ export default function AvailabilitySettingsCard({ venueId }: { venueId: string 
 
   const commitMode = (mode: SelfServiceMode) => {
     if (!settings) return;
-    updateMutation.mutate({ selfServiceMode: mode, advanceNoticeDays: settings.advanceNoticeDays });
+    updateMutation.mutate({
+      selfServiceMode: mode,
+      advanceNoticeDays: settings.advanceNoticeDays,
+    });
   };
 
   const commitNoticeDays = () => {
     if (!settings) return;
     const parsed = Number(draftNoticeDays);
     if (draftNoticeDays === null || Number.isNaN(parsed)) return;
-    updateMutation.mutate({ selfServiceMode: settings.selfServiceMode, advanceNoticeDays: parsed });
+    updateMutation.mutate({
+      selfServiceMode: settings.selfServiceMode,
+      advanceNoticeDays: parsed,
+    });
     setDraftNoticeDays(null);
   };
 
@@ -65,7 +71,10 @@ export default function AvailabilitySettingsCard({ venueId }: { venueId: string 
               ))}
             </ToggleGroup>
             <FieldDescription>
-              {SELF_SERVICE_MODE_ITEMS.find(i => i.value === settings.selfServiceMode)?.description}
+              {
+                SELF_SERVICE_MODE_ITEMS.find(i => i.value === settings.selfServiceMode)
+                  ?.description
+              }
             </FieldDescription>
           </Field>
 

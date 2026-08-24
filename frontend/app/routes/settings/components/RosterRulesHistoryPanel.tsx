@@ -66,7 +66,9 @@ export default function RosterRulesHistoryPanel({ venueId }: { venueId: string }
                     {formatDate(config.effectiveFromUtc)}
                   </TableCell>
                   <TableCell className="tabular-nums">
-                    {config.effectiveToUtc ? formatDate(config.effectiveToUtc) : 'Present'}
+                    {config.effectiveToUtc
+                      ? formatDate(config.effectiveToUtc)
+                      : 'Present'}
                   </TableCell>
                   <TableCell className="tabular-nums">
                     {(config.minShiftLengthMinutes / 60).toFixed(1)}–

@@ -50,7 +50,9 @@ export default function RosterRulesForm({ form }: RosterRulesFormProps) {
         <form.Subscribe selector={state => state.values}>
           {values => (
             <div className="grid grid-cols-2 gap-3">
-              <Field data-invalid={values.maxShiftLengthHours < values.minShiftLengthHours}>
+              <Field
+                data-invalid={values.maxShiftLengthHours < values.minShiftLengthHours}
+              >
                 <FieldLabel htmlFor="min-shift-length">Minimum shift length</FieldLabel>
                 <InputGroup>
                   <InputGroupInput
@@ -60,7 +62,10 @@ export default function RosterRulesForm({ form }: RosterRulesFormProps) {
                     step="0.5"
                     value={values.minShiftLengthHours}
                     onChange={e =>
-                      form.setFieldValue('minShiftLengthHours', Number(e.target.value) || 0)
+                      form.setFieldValue(
+                        'minShiftLengthHours',
+                        Number(e.target.value) || 0,
+                      )
                     }
                   />
                   <InputGroupAddon align="inline-end">
@@ -69,7 +74,9 @@ export default function RosterRulesForm({ form }: RosterRulesFormProps) {
                 </InputGroup>
               </Field>
 
-              <Field data-invalid={values.maxShiftLengthHours < values.minShiftLengthHours}>
+              <Field
+                data-invalid={values.maxShiftLengthHours < values.minShiftLengthHours}
+              >
                 <FieldLabel htmlFor="max-shift-length">Maximum shift length</FieldLabel>
                 <InputGroup>
                   <InputGroupInput
@@ -80,7 +87,10 @@ export default function RosterRulesForm({ form }: RosterRulesFormProps) {
                     aria-invalid={values.maxShiftLengthHours < values.minShiftLengthHours}
                     value={values.maxShiftLengthHours}
                     onChange={e =>
-                      form.setFieldValue('maxShiftLengthHours', Number(e.target.value) || 0)
+                      form.setFieldValue(
+                        'maxShiftLengthHours',
+                        Number(e.target.value) || 0,
+                      )
                     }
                   />
                   <InputGroupAddon align="inline-end">
@@ -139,7 +149,9 @@ export default function RosterRulesForm({ form }: RosterRulesFormProps) {
         <form.Field name="weeklyOvertimeThresholdHours">
           {field => (
             <Field>
-              <FieldLabel htmlFor="overtime-threshold">Weekly overtime threshold</FieldLabel>
+              <FieldLabel htmlFor="overtime-threshold">
+                Weekly overtime threshold
+              </FieldLabel>
               <InputGroup className="max-w-48">
                 <InputGroupInput
                   id="overtime-threshold"

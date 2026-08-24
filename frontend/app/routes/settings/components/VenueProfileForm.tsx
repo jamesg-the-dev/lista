@@ -7,7 +7,11 @@ import { CheckIcon, XIcon } from 'lucide-react';
 
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '~/components/ui/field';
 import { Input } from '~/components/ui/input';
-import { InputGroup, InputGroupAddon, InputGroupInput } from '~/components/ui/input-group';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from '~/components/ui/input-group';
 import {
   Select,
   SelectContent,
@@ -125,7 +129,9 @@ export default function VenueProfileForm({ form }: VenueProfileFormProps) {
           <form.Field name="addressLine2">
             {field => (
               <Field className="col-span-2">
-                <FieldLabel htmlFor="venue-address-line2">Address line 2 (optional)</FieldLabel>
+                <FieldLabel htmlFor="venue-address-line2">
+                  Address line 2 (optional)
+                </FieldLabel>
                 <Input
                   id="venue-address-line2"
                   value={field.state.value}
@@ -190,7 +196,9 @@ export default function VenueProfileForm({ form }: VenueProfileFormProps) {
                   id="venue-postcode"
                   value={field.state.value}
                   onBlur={field.handleBlur}
-                  onChange={e => field.handleChange(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                  onChange={e =>
+                    field.handleChange(e.target.value.replace(/\D/g, '').slice(0, 4))
+                  }
                   inputMode="numeric"
                   placeholder="3181"
                 />

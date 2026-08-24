@@ -19,9 +19,14 @@ public sealed record RoleDto(
     Guid CreatedByStaffMemberId,
     DateTime CreatedAtUtc,
     Guid? MappedAwardClassificationId,
-    string? MappedAwardClassificationName)
+    string? MappedAwardClassificationName,
+    decimal? MappedAwardClassificationBaseHourlyRate)
 {
-    public static RoleDto FromDomain(Role role, Guid? mappedAwardClassificationId, string? mappedAwardClassificationName) =>
+    public static RoleDto FromDomain(
+        Role role,
+        Guid? mappedAwardClassificationId,
+        string? mappedAwardClassificationName,
+        decimal? mappedAwardClassificationBaseHourlyRate) =>
         new(
             role.Id,
             role.VenueId,
@@ -31,5 +36,6 @@ public sealed record RoleDto(
             role.CreatedByStaffMemberId,
             role.CreatedAtUtc,
             mappedAwardClassificationId,
-            mappedAwardClassificationName);
+            mappedAwardClassificationName,
+            mappedAwardClassificationBaseHourlyRate);
 }

@@ -12,28 +12,21 @@
 // "HH:mm:ss" (System.Text.Json's default TimeOnly converter); the view
 // model strips the seconds since the UI only edits to the minute.
 //
-// StaffMemberDto below is NOT part of RosterController's contract — no
-// controller backs "list staff for the roster grid" with role/title/rate
-// fields (StaffController's StaffMemberDto has a different shape entirely —
-// employment type/classification, not role/rate), so it stays backed by
-// mock-data.ts. Venue previously stayed mocked too, but no controller lists
-// venues at all, and the mock venue ids didn't satisfy RosterController's
-// `{venueId:guid}` route constraint — it's now sourced from
-// useCurrentAccount()'s venues instead (see hooks.ts's useVenues).
+// Staff and Role are real, cross-route data: StaffMember is owned by the
+// `staff` route, Role by the `settings` route (both per CLAUDE.md's
+// route-ownership convention) — this route imports those types/hooks
+// directly rather than duplicating the DTO shapes, same pattern
+// settings/components/StaffTable.tsx already establishes. Venue has no
+// controller of its own, so it's sourced from useCurrentAccount()'s venues
+// instead (see hooks.ts's useVenues).
 
 import { DateTime, Duration, Interval } from 'luxon';
 
-function mustMapEnum<T extends string>(
-  value: number,
-  table: readonly T[],
-  enumName: string,
-): T {
-  const mapped = table[value];
-  if (mapped === undefined) {
-    throw new Error(`Unknown ${enumName} value: ${value}`);
-  }
-  return mapped;
-}
+import type { Role } from '~/routes/settings/types';
+import type { StaffMember } from '~/routes/staff/types';
+
+export type { Role } from '~/routes/settings/types';
+export type { StaffMember } from '~/routes/staff/types';
 
 function mustMapWireEnum<T extends string>(
   wire: string,
@@ -64,72 +57,64 @@ export function mustFindVenue(venues: Venue[], venueId: string): Venue {
 }
 
 // ---------------------------------------------------------------------------
-// Role — mock-backed (see file header); unrelated to RosterController.
+// Role badge color — arbitrary per-venue Role.colorTag (a hex string, e.g.
+// "#4C9A8E"; see settings/types.ts's ROLE_COLOR_SWATCHES/RoleList.tsx,
+// which already renders this same field). Role colors are functional (role
+// identity), not decorative — the one deliberate exception to "no inline
+// var(--token) styles" in docs/design-system.md — so using the raw hex
+// value directly via inline style here is consistent with that carve-out,
+// not a violation of it. A neutral gray stands in for staff with no
+// resolvable role (no primaryRoleId, or the role was deactivated).
 // ---------------------------------------------------------------------------
 
-const ROLE_TABLE = ['kitchen', 'floor', 'bar', 'manager'] as const;
-export type Role = (typeof ROLE_TABLE)[number];
+const NEUTRAL_ROLE_COLOR = 'var(--muted-foreground)';
 
-export function mapRole(value: number): Role {
-  return mustMapEnum(value, ROLE_TABLE, 'Role');
-}
-export function unmapRole(value: Role): number {
-  return ROLE_TABLE.indexOf(value);
+export function roleColor(role: Role | null | undefined): string {
+  return role?.colorTag ?? NEUTRAL_ROLE_COLOR;
 }
 
-export interface RoleMeta {
-  label: string;
-  color: string;
-  tint: string;
-  letter: string;
+// Dim background tint, derived from the one real color the data gives us
+// (unlike the old fixed 4-role palette, which hardcoded a matching tint per
+// role) via color-mix rather than a second stored value.
+export function roleTint(role: Role | null | undefined): string {
+  return `color-mix(in srgb, ${roleColor(role)} 20%, var(--background))`;
 }
 
-// Role colors are our only custom-hue tokens — functional (role identity),
-// not decorative. See docs/design-system.md § Role colors.
-export const ROLE_META: Record<Role, RoleMeta> = {
-  kitchen: { label: 'Kitchen', color: '#B85C2E', tint: '#3A2519', letter: 'K' },
-  floor: { label: 'Floor', color: '#4C9A8E', tint: '#173029', letter: 'F' },
-  bar: { label: 'Bar', color: '#C9A227', tint: '#332B0E', letter: 'B' },
-  manager: { label: 'Manager', color: '#7D8CC4', tint: '#232A42', letter: 'M' },
-};
+export function roleLetter(role: Role | null | undefined): string {
+  return role?.displayName.charAt(0).toUpperCase() ?? '–';
+}
 
 // ---------------------------------------------------------------------------
-// Staff member (roster-scoped subset) — mock-backed (see file header).
+// Staff rate resolution — a shift's base hourly rate is award-derived, per
+// docs/features/FEATURE_SETTINGS_STAFF_ROLES.md: staff.primaryRoleId's
+// mapped award classification's currently-active AwardRate.BaseHourlyRate
+// (Role.mappedAwardClassificationBaseHourlyRate, sourced by
+// GetRolesForVenueQuery — see backend RoleLookup.cs), with the staff
+// member's optional payRateOverride applied on top when set. 'unresolved'
+// (no role, or the role isn't award-mapped) is a real, expected state — the
+// roster builder warns rather than guessing a number (see
+// ShiftEditorPanel.tsx), matching CLAUDE.md's transparency principle: never
+// silently invent pay-affecting figures.
 // ---------------------------------------------------------------------------
 
-export interface StaffMemberDto {
-  id: string;
-  name: string;
-  role: number;
-  title: string;
-  rate: number;
-  venueIds: string[];
+export type StaffRateSource = 'override' | 'award' | 'unresolved';
+
+export interface StaffRate {
+  rate: number | null;
+  source: StaffRateSource;
 }
 
-export interface StaffMember {
-  id: string;
-  name: string;
-  role: Role;
-  title: string;
-  rate: number;
-  venueIds: string[];
-}
-
-export function mapStaffMember(dto: StaffMemberDto): StaffMember {
-  return {
-    id: dto.id,
-    name: dto.name,
-    role: mapRole(dto.role),
-    title: dto.title,
-    rate: dto.rate,
-    venueIds: dto.venueIds,
-  };
-}
-
-export function mustFindStaff(staff: StaffMember[], staffId: string): StaffMember {
-  const member = staff.find(s => s.id === staffId);
-  if (!member) throw new Error(`Unknown staff id: ${staffId}`);
-  return member;
+export function resolveStaffRate(
+  staff: StaffMember | null | undefined,
+  role: Role | null | undefined,
+): StaffRate {
+  if (staff?.payRateOverride) {
+    return { rate: staff.payRateOverride.overrideHourlyRate, source: 'override' };
+  }
+  if (role?.mappedAwardClassificationBaseHourlyRate != null) {
+    return { rate: role.mappedAwardClassificationBaseHourlyRate, source: 'award' };
+  }
+  return { rate: null, source: 'unresolved' };
 }
 
 // ---------------------------------------------------------------------------
@@ -186,7 +171,7 @@ export interface RateInfo {
   paidHrs: number;
   multiplier: number;
   label: string;
-  cost: number;
+  cost: number | null; // null when the staff member's rate is unresolved (see resolveStaffRate)
 }
 
 export function getRateInfo(
@@ -195,7 +180,7 @@ export function getRateInfo(
   start: string,
   end: string,
   unpaidBreakMinutes: number,
-  baseRate: number,
+  baseRate: number | null,
 ): RateInfo {
   const date = dateForDay(weekStart, dayOfWeek);
   const startDT = DateTime.fromISO(`${date.toISODate()}T${start}`);
@@ -222,7 +207,7 @@ export function getRateInfo(
     label = 'Weekday evening loading +10%';
   }
 
-  const cost = paidHrs * baseRate * multiplier;
+  const cost = baseRate === null ? null : paidHrs * baseRate * multiplier;
   return { grossHrs, paidHrs, multiplier, label, cost };
 }
 

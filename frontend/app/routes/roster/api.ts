@@ -2,38 +2,18 @@ import { DateTime } from 'luxon';
 
 import { apiClient } from '~/lib/api-client';
 
-import { MOCK_STAFF } from './mock-data';
-import type { BudgetSummaryDto, ShiftDto, ShiftInput, StaffMemberDto } from './types';
+import type { BudgetSummaryDto, ShiftDto, ShiftInput } from './types';
 import { toShiftRequestDto } from './types';
 
-// Roster-grid staff (role/title/rate) isn't backed by any of the 8
-// controllers covered in this pass — no controller returns that shape (see
-// mock-data.ts) — so it stays mock-backed. Venues now come from
-// useCurrentAccount() (see hooks.ts's useVenues), not from here. Everything
-// else below calls the real RosterController endpoints.
-
-const staffStore: StaffMemberDto[] = MOCK_STAFF.map(s => ({ ...s }));
-
-function delay<T>(value: T, ms = 100 + Math.random() * 150): Promise<T> {
-  return new Promise(resolve => setTimeout(() => resolve(value), ms));
-}
+// Roster-grid staff/roles now come from the real staff/settings routes'
+// hooks (useStaffMembers, useRolesForVenue — see hooks.ts), not from here.
+// Venues come from useCurrentAccount() (see hooks.ts's useVenues). Every
+// function below calls the real RosterController endpoints.
 
 function previousWeekIso(weekStartIso: string): string {
   const prev = DateTime.fromISO(weekStartIso).minus({ weeks: 1 }).toISODate();
   if (!prev) throw new Error(`Invalid weekStartIso: ${weekStartIso}`);
   return prev;
-}
-
-// ---------------------------------------------------------------------------
-// Roster-grid staff (mock — see file header)
-// ---------------------------------------------------------------------------
-
-// Not filtered by venueId: the mock dataset's venueIds are illustrative
-// labels ("v1"/"v2"), not real venue GUIDs, since venues are now real
-// account data — every mock staff member shows up for every real venue.
-export async function fetchStaffMembers(venueId: string): Promise<StaffMemberDto[]> {
-  void venueId;
-  return delay(staffStore.map(s => ({ ...s })));
 }
 
 // ---------------------------------------------------------------------------
