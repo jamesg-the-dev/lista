@@ -20,7 +20,7 @@ import { supabase } from '~/lib/supabase-client';
 
 import { useSignUp } from './hooks';
 import { GoogleButton } from '~/components/sso-buttons/google-button';
-import { appName } from '~/lib/constants';
+import { appName, authEmailPlaceholder, authPasswordPlaceholder } from '~/lib/constants';
 
 type SsoProvider = 'google' | 'azure';
 
@@ -28,7 +28,6 @@ interface SignUpFormValue {
   fullName: string;
   email: string;
   password: string;
-  venueName: string;
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -87,11 +86,16 @@ export default function SignUp() {
     }
   }, [accountQuery.data, navigate]);
 
+  // Step 2 (docs/features/signup-feature.md) — a blocking gate: the caller
+  // only reaches the app once this succeeds, so it's the sole place
+  // SignUpCommand (which creates the Organisation + Owner + bootstrap
+  // Venue together) is ever called from.
   async function completeSignUp(fullName: string, venueName: string) {
     setBootstrapError(null);
     try {
       await signUpMutation.mutateAsync({ fullName, venueName });
-      navigate('/', { replace: true });
+      // Step 3 — optional/skippable Venue Details, not part of the gate.
+      navigate('/settings/venue-profile?firstTime=1', { replace: true });
     } catch (err) {
       setBootstrapError(err instanceof Error ? err.message : 'Something went wrong.');
     }
@@ -102,7 +106,6 @@ export default function SignUp() {
       fullName: '',
       email: '',
       password: '',
-      venueName: '',
     } as SignUpFormValue,
     onSubmit: async ({ value }) => {
       setBootstrapError(null);
@@ -119,7 +122,11 @@ export default function SignUp() {
         setAwaitingEmailConfirmation(value.email);
         return;
       }
-      await completeSignUp(value.fullName, value.venueName);
+      // Session created immediately (email confirmation off) — hand off to
+      // the sessionUser-gated branch below, which renders Step 2 (venue
+      // name only). Same branch the SSO path and the "confirmed email,
+      // came back later" case already use.
+      setSessionUser({ fullName: value.fullName, email: value.email });
     },
   });
 
@@ -173,12 +180,10 @@ export default function SignUp() {
 
         <CardContent>
           {awaitingEmailConfirmation ? (
-            <Alert>
-              <AlertDescription>
-                Check {awaitingEmailConfirmation} for a confirmation link, then come back
-                here to finish setting up your venue.
-              </AlertDescription>
-            </Alert>
+            <p className="text-muted-foreground text-sm">
+              Check {awaitingEmailConfirmation} for a confirmation link, then come back
+              here to finish setting up your venue.
+            </p>
           ) : sessionUser ? (
             <form
               onSubmit={e => {
@@ -298,7 +303,7 @@ export default function SignUp() {
                         onBlur={field.handleBlur}
                         autoComplete="email"
                         onChange={e => field.handleChange(e.target.value)}
-                        placeholder="you@example.com"
+                        placeholder={authEmailPlaceholder}
                       />
                       {fieldError(field.state.meta.errors) && (
                         <p className="text-destructive text-sm">
@@ -329,7 +334,7 @@ export default function SignUp() {
                         value={field.state.value}
                         onBlur={field.handleBlur}
                         onChange={e => field.handleChange(e.target.value)}
-                        placeholder="••••••••"
+                        placeholder={authPasswordPlaceholder}
                       />
                       {field.state.value && (
                         <FieldDescription>
@@ -345,22 +350,6 @@ export default function SignUp() {
                   )}
                 </form.Field>
 
-                <form.Field name="venueName">
-                  {field => (
-                    <Field>
-                      <FieldLabel htmlFor="venue-name">Venue name</FieldLabel>
-                      <Input
-                        id="venue-name"
-                        required
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={e => field.handleChange(e.target.value)}
-                        placeholder="e.g. Corner Cafe"
-                      />
-                    </Field>
-                  )}
-                </form.Field>
-
                 {bootstrapError && (
                   <Alert variant="destructive">
                     <AlertDescription>{bootstrapError}</AlertDescription>
@@ -371,9 +360,9 @@ export default function SignUp() {
                   <Button
                     type="submit"
                     className="w-full font-semibold"
-                    disabled={form.state.isSubmitting || signUpMutation.isPending}
+                    disabled={form.state.isSubmitting}
                   >
-                    {form.state.isSubmitting || signUpMutation.isPending
+                    {form.state.isSubmitting
                       ? 'Setting up…'
                       : 'Start your free 2-month trial'}
                   </Button>

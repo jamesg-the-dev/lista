@@ -5,7 +5,7 @@ import {
   SettingsIcon,
   UsersIcon,
 } from 'lucide-react';
-import { NavLink, useLocation } from 'react-router';
+import { NavLink, useLocation, useNavigate } from 'react-router';
 
 import {
   Sidebar,
@@ -24,6 +24,7 @@ import { NavUser } from './NavUser';
 import { useCurrentAccount } from '~/lib/account/hooks';
 import { Button } from '../ui/button';
 import { cn } from '~/lib/utils';
+import { supabase } from '~/lib/supabase-client';
 
 const navItems = [
   { title: 'Roster', url: '/roster', icon: CalendarDaysIcon },
@@ -35,10 +36,17 @@ const navItems = [
 export function AppSidebar() {
   const { pathname } = useLocation();
   const { state, toggleSidebar } = useSidebar();
+  const navigate = useNavigate();
   const user = {
     ...useCurrentAccount().data!,
     avatar: '',
   };
+
+  function logOut() {
+    supabase.auth.signOut().then(() => {
+      navigate('/login');
+    });
+  }
 
   return (
     <Sidebar variant="floating" collapsible="icon">
@@ -71,7 +79,10 @@ export function AppSidebar() {
                   pathname === item.url || pathname.startsWith(`${item.url}/`);
                 return (
                   <SidebarMenuItem key={item.url}>
-                    <SidebarMenuButton render={<NavLink to={item.url} />} isActive={isActive}>
+                    <SidebarMenuButton
+                      render={<NavLink to={item.url} />}
+                      isActive={isActive}
+                    >
                       <item.icon />
                       <span>{item.title}</span>
                     </SidebarMenuButton>
@@ -83,7 +94,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={user} />
+        <NavUser user={user} onLogout={() => logOut()} />
       </SidebarFooter>
     </Sidebar>
   );

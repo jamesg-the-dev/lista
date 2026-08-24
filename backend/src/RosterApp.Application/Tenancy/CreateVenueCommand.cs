@@ -9,14 +9,15 @@ namespace RosterApp.Application.Tenancy;
 /// <summary>
 /// Org-scoped, not venue-scoped — the venue doesn't exist yet, so there's
 /// nothing for IVenueScopedRequest to check against. See
-/// FEATURE_SETTINGS_VENUE_PROFILE.md — profile fields are required at
+/// FEATURE_SETTINGS_VENUE_PROFILE.md — address/timezone are required at
 /// creation (not filled in later), since the actual Venue aggregate has no
-/// two-phase "bare venue, then profile" creation path.
+/// two-phase "bare venue, then profile" creation path. ABN is optional,
+/// same as UpdateVenueProfileCommand — see Venue.Abn's doc comment.
 /// </summary>
 public sealed record CreateVenueCommand(
     Guid OrganisationId,
     string Name,
-    string Abn,
+    string? Abn,
     string AddressLine1,
     string? AddressLine2,
     string Suburb,
@@ -35,7 +36,9 @@ public sealed class CreateVenueCommandValidator : AbstractValidator<CreateVenueC
     {
         RuleFor(c => c.OrganisationId).NotEmpty();
         RuleFor(c => c.Name).NotEmpty().MaximumLength(200);
-        RuleFor(c => c.Abn).Must(abn => Abn.TryCreate(abn, out _, out _)).WithMessage("ABN is not valid.");
+        RuleFor(c => c.Abn)
+            .Must(abn => string.IsNullOrWhiteSpace(abn) || Abn.TryCreate(abn, out _, out _))
+            .WithMessage("ABN is not valid.");
         RuleFor(c => c.AddressLine1).NotEmpty().MaximumLength(200);
         RuleFor(c => c.AddressLine2).MaximumLength(200);
         RuleFor(c => c.Suburb).NotEmpty().MaximumLength(100);
@@ -59,7 +62,7 @@ public sealed class CreateVenueCommandHandler(
             throw new ForbiddenAccessException("No authenticated tenant context.");
         }
 
-        var abn = Abn.Create(request.Abn);
+        var abn = string.IsNullOrWhiteSpace(request.Abn) ? null : Abn.Create(request.Abn);
         var address = new Address(
             request.AddressLine1,
             request.AddressLine2,

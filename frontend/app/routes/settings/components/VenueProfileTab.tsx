@@ -34,7 +34,22 @@ function blankFormValue(): VenueProfileTabValue {
   };
 }
 
-export default function VenueProfileTab({ venueId }: { venueId: string }) {
+export default function VenueProfileTab({
+  venueId,
+  onSaved,
+  onSkip,
+}: {
+  venueId: string;
+  /** Fired after a successful save. */
+  onSaved?: () => void;
+  /**
+   * When provided, renders a "Skip for now" button next to Save — used by
+   * the post-signup Venue Details step (docs/features/signup-feature.md
+   * Step 3), which is optional/skippable, unlike the rest of this settings
+   * tab's normal save flow.
+   */
+  onSkip?: () => void;
+}) {
   const profileQuery = useVenueProfile(venueId);
   const updateProfileMutation = useUpdateVenueProfile(venueId);
   const updateTradingHoursMutation = useUpdateVenueTradingHours(venueId);
@@ -53,6 +68,7 @@ export default function VenueProfileTab({ venueId }: { venueId: string }) {
         updateProfileMutation.mutateAsync(value),
         updateTradingHoursMutation.mutateAsync(value.tradingHours),
       ]);
+      onSaved?.();
     },
   });
 
@@ -122,6 +138,11 @@ export default function VenueProfileTab({ venueId }: { venueId: string }) {
 
       {isReady && (
         <CardFooter className="justify-end gap-2 border-t">
+          {onSkip && (
+            <Button type="button" variant="ghost" disabled={isSaving} onClick={onSkip}>
+              Skip for now
+            </Button>
+          )}
           <Button
             type="button"
             variant="outline"

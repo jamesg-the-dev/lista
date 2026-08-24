@@ -2,7 +2,8 @@
 --
 -- Creates one Organisation, one Owner-tier StaffMember linked to your
 -- Supabase Auth user (so /api/account/me resolves), one Venue with a
--- complete profile (Venue requires Abn/Address/Timezone at creation — see
+-- complete profile (Address/Timezone are required at creation, Abn is
+-- optional but seeded here for realism — see
 -- backend/src/RosterApp.Domain/Tenancy/Venue.cs), and the
 -- StaffMemberVenueAssignments row that grants that owner access to that
 -- venue. There is no separate Manager identity — every authenticated actor

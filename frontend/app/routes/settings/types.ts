@@ -364,7 +364,7 @@ export function toVenueProfileTabValue(profile: VenueProfile): VenueProfileTabVa
 export function toUpdateVenueProfileRequestDto(value: VenueProfileTabValue) {
   return {
     name: value.name,
-    abn: value.abn,
+    abn: value.abn.trim() || null,
     addressLine1: value.addressLine1,
     addressLine2: value.addressLine2.trim() || null,
     suburb: value.suburb,

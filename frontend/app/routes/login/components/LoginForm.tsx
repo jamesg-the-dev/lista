@@ -17,6 +17,7 @@ import {
 } from '~/components/ui/field';
 import { Input } from '~/components/ui/input';
 import { GoogleButton } from '~/components/sso-buttons/google-button';
+import { authEmailPlaceholder, authPasswordPlaceholder } from '~/lib/constants';
 
 interface LoginFormProps extends Omit<React.ComponentProps<'div'>, 'onSubmit'> {
   onSubmit: (e: React.FormEvent) => void;
@@ -53,7 +54,7 @@ export function LoginForm({
                   id="email"
                   type="email"
                   autoComplete="email"
-                  placeholder="m@example.com"
+                  placeholder={authEmailPlaceholder}
                   required
                 />
               </Field>
@@ -72,6 +73,7 @@ export function LoginForm({
                   type="password"
                   autoComplete="current-password"
                   required
+                  placeholder={authPasswordPlaceholder}
                 />
               </Field>
               {error && (

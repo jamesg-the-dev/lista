@@ -81,7 +81,7 @@ export default function VenueProfileForm({ form }: VenueProfileFormProps) {
               const valid = isValidAbn(field.state.value);
               return (
                 <Field className="col-span-2">
-                  <FieldLabel htmlFor="venue-abn">ABN</FieldLabel>
+                  <FieldLabel htmlFor="venue-abn">ABN (optional)</FieldLabel>
                   <InputGroup>
                     <InputGroupInput
                       id="venue-abn"

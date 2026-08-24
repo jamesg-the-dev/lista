@@ -18,14 +18,15 @@ public sealed class Venue : AggregateRoot
     public string Name { get; private set; } = null!;
 
     /// <summary>
-    /// Null until the owner fills in the Venue Profile settings form — see
-    /// Venue.CreateBootstrap. A venue created via the full CreateVenueCommand
-    /// always has both set from creation; only the sign-up bootstrap path
-    /// leaves them unset.
+    /// Optional — not every owner has an ABN to hand at signup, and nothing
+    /// in the award-rate/compliance calculations or the payroll CSV export
+    /// consumes it, so it's never required to complete the Venue Profile.
+    /// Null until the owner chooses to fill it in via the Venue Profile
+    /// settings form or CreateVenueCommand.
     /// </summary>
     public Abn? Abn { get; private set; }
 
-    /// <summary>Null under the same "not yet completed venue profile" condition as Abn — see its doc comment.</summary>
+    /// <summary>Null until the owner fills in the Venue Profile settings form — see Venue.CreateBootstrap.</summary>
     public Address? Address { get; private set; }
     public string Timezone { get; private set; } = "Australia/Melbourne";
     public bool IsActive { get; private set; } = true;
@@ -91,7 +92,7 @@ public sealed class Venue : AggregateRoot
     public static Venue CreateBootstrap(Guid organisationId, string name, Guid createdByStaffMemberId) =>
         Create(organisationId, name, abn: null, address: null, timezone: "Australia/Melbourne", createdByStaffMemberId);
 
-    public void UpdateProfile(string name, Abn abn, Address address, string timezone)
+    public void UpdateProfile(string name, Abn? abn, Address address, string timezone)
     {
         Name = name.Trim();
         Abn = abn;

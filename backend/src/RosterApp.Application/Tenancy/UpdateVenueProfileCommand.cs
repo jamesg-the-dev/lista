@@ -8,7 +8,7 @@ namespace RosterApp.Application.Tenancy;
 public sealed record UpdateVenueProfileCommand(
     Guid VenueId,
     string Name,
-    string Abn,
+    string? Abn,
     string AddressLine1,
     string? AddressLine2,
     string Suburb,
@@ -27,7 +27,9 @@ public sealed class UpdateVenueProfileCommandValidator : AbstractValidator<Updat
     {
         RuleFor(c => c.VenueId).NotEmpty();
         RuleFor(c => c.Name).NotEmpty().MaximumLength(200);
-        RuleFor(c => c.Abn).Must(abn => Abn.TryCreate(abn, out _, out _)).WithMessage("ABN is not valid.");
+        RuleFor(c => c.Abn)
+            .Must(abn => string.IsNullOrWhiteSpace(abn) || Abn.TryCreate(abn, out _, out _))
+            .WithMessage("ABN is not valid.");
         RuleFor(c => c.AddressLine1).NotEmpty().MaximumLength(200);
         RuleFor(c => c.AddressLine2).MaximumLength(200);
         RuleFor(c => c.Suburb).NotEmpty().MaximumLength(100);
@@ -51,7 +53,7 @@ public sealed class UpdateVenueProfileCommandHandler(
             throw new NotFoundException($"Venue '{request.VenueId}' was not found.");
         }
 
-        var abn = Abn.Create(request.Abn);
+        var abn = string.IsNullOrWhiteSpace(request.Abn) ? null : Abn.Create(request.Abn);
         var address = new Address(
             request.AddressLine1,
             request.AddressLine2,

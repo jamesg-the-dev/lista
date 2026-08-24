@@ -130,7 +130,7 @@ public sealed class VenueController(ISender mediator) : ApiControllerBase(mediat
 
 public sealed record CreateVenueRequest(
     string Name,
-    string Abn,
+    string? Abn,
     string AddressLine1,
     string? AddressLine2,
     string Suburb,
@@ -142,7 +142,7 @@ public sealed record CreateVenueRequest(
 
 public sealed record UpdateVenueProfileRequest(
     string Name,
-    string Abn,
+    string? Abn,
     string AddressLine1,
     string? AddressLine2,
     string Suburb,

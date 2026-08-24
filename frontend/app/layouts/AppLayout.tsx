@@ -3,6 +3,7 @@ import { Outlet, redirect } from 'react-router';
 import { AppSidebar } from '~/components/shared/AppSidebar';
 import { SidebarInset, SidebarProvider } from '~/components/ui/sidebar';
 import { currentAccountQueryOptions } from '~/lib/account/hooks';
+import { ApiClientError } from '~/lib/api-client';
 import { queryClient } from '~/lib/query-client';
 import { supabase } from '~/lib/supabase-client';
 import { useVenueContextStore } from '~/lib/venue-context';
@@ -21,7 +22,18 @@ export async function clientLoader() {
   let account;
   try {
     account = await queryClient.ensureQueryData(currentAccountQueryOptions);
-  } catch {
+  } catch (err) {
+    // 403 here specifically means "authenticated, but no StaffMember record
+    // yet" (GetCurrentAccountQuery's only failure mode — see its doc
+    // comment) — i.e. the user signed up but hasn't completed the venue
+    // creation gate (docs/features/signup-feature.md Step 2). Send them
+    // back there instead of /login so the gate survives a refresh or a
+    // direct URL nav to any in-app route, rather than bouncing them to
+    // /login and back in a loop (login redirects straight to '/' whenever
+    // a session already exists).
+    if (err instanceof ApiClientError && err.status === 403) {
+      throw redirect('/signup');
+    }
     throw redirect('/login');
   }
 

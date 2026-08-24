@@ -18,6 +18,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '~/components/ui/sidebar';
+import { supabase } from '~/lib/supabase-client';
 import { initials } from '~/lib/utils';
 
 export type INavUser = {
@@ -26,7 +27,7 @@ export type INavUser = {
   avatar: string;
 };
 
-export function NavUser({ user }: { user: INavUser }) {
+export function NavUser({ user, onLogout }: { user: INavUser; onLogout: () => void }) {
   const { isMobile, open } = useSidebar();
 
   return (
@@ -81,7 +82,7 @@ export function NavUser({ user }: { user: INavUser }) {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={onLogout}>
               <LogOut />
               Log out
             </DropdownMenuItem>

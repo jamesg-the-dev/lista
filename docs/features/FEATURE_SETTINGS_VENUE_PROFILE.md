@@ -32,8 +32,10 @@ later means a painful migration of every FK that currently points at "the org" i
 
 ### Acceptance Criteria
 
-1. Venue profile requires: Venue name, ABN (validated, 11-digit with checksum), address
-   (structured, not free text), timezone (IANA identifier, defaulted from address state).
+1. Venue profile requires: Venue name, address (structured, not free text), timezone (IANA
+   identifier, defaulted from address state). ABN is optional (validated, 11-digit with
+   checksum, when provided) — nothing in the award-rate, compliance, or payroll-export logic
+   consumes it, so it's not gated behind profile completeness.
 2. Owner accounts can have 1..N venues. Org-level settings (billing, owner user list) live
    above the venue; operational settings (award, roster rules, staff) live at venue level
    with an explicit "copy from another venue" action rather than silent inheritance.
