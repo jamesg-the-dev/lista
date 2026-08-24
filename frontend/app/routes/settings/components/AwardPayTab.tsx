@@ -43,14 +43,7 @@ import RoleAwardMappingTable from './RoleAwardMappingTable';
 // — see statutoryMinimumSuperPercent below.
 const FALLBACK_STATUTORY_MINIMUM_SUPER_PERCENT = 12.0;
 
-export default function AwardPayTab({
-  venueId,
-  onSaved,
-}: {
-  venueId: string;
-  /** Fired after a successful save — used by the onboarding checklist (Card 2) to mark its step complete. */
-  onSaved?: () => void;
-}) {
+export default function AwardPayTab({ venueId }: { venueId: string }) {
   const awardsQuery = useAvailableAwards();
   const configQuery = useActiveAwardConfiguration(venueId);
   const updateMutation = useUpdateAwardConfiguration(venueId);
@@ -60,7 +53,6 @@ export default function AwardPayTab({
     defaultValues: blankAwardPayTabValue(),
     onSubmit: async ({ value }) => {
       await updateMutation.mutateAsync(value);
-      onSaved?.();
     },
   });
 

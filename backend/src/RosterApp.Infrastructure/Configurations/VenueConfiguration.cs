@@ -89,57 +89,6 @@ public sealed class VenueConfiguration : IEntityTypeConfiguration<Venue>
 
         builder.Navigation(v => v.AvailabilitySettings).IsRequired();
 
-        builder.OwnsOne(
-            v => v.OnboardingStatus,
-            status =>
-            {
-                status
-                    .Property(s => s.VenueProfile)
-                    .HasColumnName("OnboardingVenueProfileStatus")
-                    .HasConversion<string>()
-                    .HasMaxLength(20)
-                    .IsRequired()
-                    .HasDefaultValue(OnboardingStepState.Pending)
-                    .ValueGeneratedNever();
-
-                status
-                    .Property(s => s.AwardPaySetup)
-                    .HasColumnName("OnboardingAwardPaySetupStatus")
-                    .HasConversion<string>()
-                    .HasMaxLength(20)
-                    .IsRequired()
-                    .HasDefaultValue(OnboardingStepState.Pending)
-                    .ValueGeneratedNever();
-
-                status
-                    .Property(s => s.AddStaff)
-                    .HasColumnName("OnboardingAddStaffStatus")
-                    .HasConversion<string>()
-                    .HasMaxLength(20)
-                    .IsRequired()
-                    .HasDefaultValue(OnboardingStepState.Pending)
-                    .ValueGeneratedNever();
-
-                status
-                    .Property(s => s.BuildFirstRoster)
-                    .HasColumnName("OnboardingBuildFirstRosterStatus")
-                    .HasConversion<string>()
-                    .HasMaxLength(20)
-                    .IsRequired()
-                    .HasDefaultValue(OnboardingStepState.Pending)
-                    .ValueGeneratedNever();
-
-                status
-                    .Property(s => s.ChecklistDismissed)
-                    .HasColumnName("OnboardingChecklistDismissed")
-                    .IsRequired()
-                    .HasDefaultValue(false)
-                    .ValueGeneratedNever();
-            }
-        );
-
-        builder.Navigation(v => v.OnboardingStatus).IsRequired();
-
         // Real relational table, not jsonb — same rationale as Shift's
         // owned collections (see ShiftConfiguration): a manager's trading
         // hours are read on every roster-builder load, not just settings.

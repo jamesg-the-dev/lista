@@ -1211,52 +1211,6 @@ namespace RosterApp.Infrastructure.Migrations
                                 .HasForeignKey("VenueId");
                         });
 
-                    b.OwnsOne("RosterApp.Domain.Tenancy.VenueOnboardingStatus", "OnboardingStatus", b1 =>
-                        {
-                            b1.Property<Guid>("VenueId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<string>("AddStaff")
-                                .IsRequired()
-                                .HasMaxLength(20)
-                                .HasColumnType("character varying(20)")
-                                .HasDefaultValue("Pending")
-                                .HasColumnName("OnboardingAddStaffStatus");
-
-                            b1.Property<string>("AwardPaySetup")
-                                .IsRequired()
-                                .HasMaxLength(20)
-                                .HasColumnType("character varying(20)")
-                                .HasDefaultValue("Pending")
-                                .HasColumnName("OnboardingAwardPaySetupStatus");
-
-                            b1.Property<string>("BuildFirstRoster")
-                                .IsRequired()
-                                .HasMaxLength(20)
-                                .HasColumnType("character varying(20)")
-                                .HasDefaultValue("Pending")
-                                .HasColumnName("OnboardingBuildFirstRosterStatus");
-
-                            b1.Property<bool>("ChecklistDismissed")
-                                .HasColumnType("boolean")
-                                .HasDefaultValue(false)
-                                .HasColumnName("OnboardingChecklistDismissed");
-
-                            b1.Property<string>("VenueProfile")
-                                .IsRequired()
-                                .HasMaxLength(20)
-                                .HasColumnType("character varying(20)")
-                                .HasDefaultValue("Pending")
-                                .HasColumnName("OnboardingVenueProfileStatus");
-
-                            b1.HasKey("VenueId");
-
-                            b1.ToTable("Venues");
-
-                            b1.WithOwner()
-                                .HasForeignKey("VenueId");
-                        });
-
                     b.OwnsOne("RosterApp.Domain.ValueObjects.Address", "Address", b1 =>
                         {
                             b1.Property<Guid>("VenueId")
@@ -1308,9 +1262,6 @@ namespace RosterApp.Infrastructure.Migrations
                     b.Navigation("Address");
 
                     b.Navigation("AvailabilitySettings")
-                        .IsRequired();
-
-                    b.Navigation("OnboardingStatus")
                         .IsRequired();
 
                     b.Navigation("TradingHours");

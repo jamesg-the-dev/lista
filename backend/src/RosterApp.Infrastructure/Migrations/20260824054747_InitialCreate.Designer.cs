@@ -12,7 +12,7 @@ using RosterApp.Infrastructure;
 namespace RosterApp.Infrastructure.Migrations
 {
     [DbContext(typeof(RosterDbContext))]
-    [Migration("20260822083507_InitialCreate")]
+    [Migration("20260824054747_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -643,7 +643,6 @@ namespace RosterApp.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("Abn")
-                        .IsRequired()
                         .HasMaxLength(11)
                         .HasColumnType("character varying(11)");
 
@@ -1263,8 +1262,7 @@ namespace RosterApp.Infrastructure.Migrations
                                 .HasForeignKey("VenueId");
                         });
 
-                    b.Navigation("Address")
-                        .IsRequired();
+                    b.Navigation("Address");
 
                     b.Navigation("AvailabilitySettings")
                         .IsRequired();

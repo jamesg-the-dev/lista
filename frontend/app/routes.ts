@@ -4,7 +4,7 @@ export default [
   route('login', 'routes/login/route.tsx'),
   route('signup', 'routes/signup/route.tsx'),
   layout('layouts/AppLayout.tsx', [
-    index('./routes/home/route.tsx'),
+    index('./routes/home.tsx'),
     route('roster', 'routes/roster/route.tsx'),
     route('dashboard', 'routes/dashboard/route.tsx'),
     route('staff', 'routes/staff/route.tsx'),

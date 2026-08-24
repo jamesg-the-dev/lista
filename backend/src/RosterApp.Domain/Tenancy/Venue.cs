@@ -18,10 +18,10 @@ public sealed class Venue : AggregateRoot
     public string Name { get; private set; } = null!;
 
     /// <summary>
-    /// Null until the owner completes the Venue Profile onboarding step (or
-    /// the equivalent settings form) — see Venue.CreateBootstrap. A venue
-    /// created via the full CreateVenueCommand always has both set from
-    /// creation; only the onboarding bootstrap path leaves them unset.
+    /// Null until the owner fills in the Venue Profile settings form — see
+    /// Venue.CreateBootstrap. A venue created via the full CreateVenueCommand
+    /// always has both set from creation; only the sign-up bootstrap path
+    /// leaves them unset.
     /// </summary>
     public Abn? Abn { get; private set; }
 
@@ -49,12 +49,6 @@ public sealed class Venue : AggregateRoot
     /// </summary>
     public VenueAvailabilitySettings AvailabilitySettings { get; private set; } = null!;
 
-    /// <summary>
-    /// Never null — defaulted at creation same as AvailabilitySettings.
-    /// See FEATURE_ONBOARDING_FLOW.md.
-    /// </summary>
-    public VenueOnboardingStatus OnboardingStatus { get; private set; } = null!;
-
     private readonly List<TradingHourSession> _tradingHours = [];
     public IReadOnlyList<TradingHourSession> TradingHours => _tradingHours.AsReadOnly();
 
@@ -81,7 +75,6 @@ public sealed class Venue : AggregateRoot
             CreatedAtUtc = DateTime.UtcNow,
             CreatedByStaffMemberId = createdByStaffMemberId,
             AvailabilitySettings = VenueAvailabilitySettings.CreateDefault(),
-            OnboardingStatus = VenueOnboardingStatus.CreateDefault(),
         };
 
         venue.AddDomainEvent(new VenueCreated(venue.Id, venue.OrganisationId, DateTime.UtcNow));
@@ -90,9 +83,8 @@ public sealed class Venue : AggregateRoot
     }
 
     /// <summary>
-    /// Onboarding sign-up (FEATURE_ONBOARDING_FLOW.md Phase 1) only collects
-    /// a venue name — no ABN, no address, no timezone. Those are filled in
-    /// later via the Venue Profile onboarding card/settings form
+    /// Sign-up only collects a venue name — no ABN, no address, no timezone.
+    /// Those are filled in later via the Venue Profile settings form
     /// (UpdateVenueProfileCommand), which requires them in full. Timezone
     /// keeps the field's own default until then.
     /// </summary>
@@ -127,18 +119,6 @@ public sealed class Venue : AggregateRoot
     {
         AvailabilitySettings = new VenueAvailabilitySettings(selfServiceMode, advanceNoticeDays);
         AddDomainEvent(new VenueAvailabilitySettingsUpdated(Id, OrganisationId, DateTime.UtcNow));
-    }
-
-    public void SetOnboardingStepStatus(OnboardingStep step, OnboardingStepState state)
-    {
-        OnboardingStatus = OnboardingStatus.WithStepState(step, state);
-        AddDomainEvent(new VenueOnboardingStepStatusChanged(Id, OrganisationId, step, state, DateTime.UtcNow));
-    }
-
-    public void DismissOnboardingChecklist()
-    {
-        OnboardingStatus = OnboardingStatus.Dismiss();
-        AddDomainEvent(new VenueOnboardingChecklistDismissed(Id, OrganisationId, DateTime.UtcNow));
     }
 
     public void Deactivate()

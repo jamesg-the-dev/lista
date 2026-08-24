@@ -33,22 +33,6 @@ public sealed record VenueAvailabilitySettingsDto(string SelfServiceMode, int Ad
         new(settings.SelfServiceMode.ToString(), settings.AdvanceNoticeDays);
 }
 
-public sealed record VenueOnboardingStatusDto(
-    string VenueProfile,
-    string AwardPaySetup,
-    string AddStaff,
-    string BuildFirstRoster,
-    bool ChecklistDismissed)
-{
-    public static VenueOnboardingStatusDto FromDomain(VenueOnboardingStatus status) =>
-        new(
-            status.VenueProfile.ToString(),
-            status.AwardPaySetup.ToString(),
-            status.AddStaff.ToString(),
-            status.BuildFirstRoster.ToString(),
-            status.ChecklistDismissed);
-}
-
 public sealed record VenueDto(
     Guid Id,
     Guid OrganisationId,
@@ -59,8 +43,7 @@ public sealed record VenueDto(
     bool IsActive,
     decimal? ForecastSalesTarget,
     IReadOnlyList<TradingHourSessionDto> TradingHours,
-    VenueAvailabilitySettingsDto AvailabilitySettings,
-    VenueOnboardingStatusDto OnboardingStatus)
+    VenueAvailabilitySettingsDto AvailabilitySettings)
 {
     public static VenueDto FromDomain(Venue venue) =>
         new(
@@ -73,6 +56,5 @@ public sealed record VenueDto(
             venue.IsActive,
             venue.ForecastSalesTarget,
             venue.TradingHours.Select(TradingHourSessionDto.FromDomain).ToList(),
-            VenueAvailabilitySettingsDto.FromDomain(venue.AvailabilitySettings),
-            VenueOnboardingStatusDto.FromDomain(venue.OnboardingStatus));
+            VenueAvailabilitySettingsDto.FromDomain(venue.AvailabilitySettings));
 }

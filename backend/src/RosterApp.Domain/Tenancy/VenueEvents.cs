@@ -11,12 +11,3 @@ public sealed record VenueTradingHoursUpdated(Guid VenueId, Guid OrganisationId,
 public sealed record VenueDeactivated(Guid VenueId, Guid OrganisationId, DateTime OccurredAtUtc) : IDomainEvent;
 
 public sealed record VenueAvailabilitySettingsUpdated(Guid VenueId, Guid OrganisationId, DateTime OccurredAtUtc) : IDomainEvent;
-
-public sealed record VenueOnboardingStepStatusChanged(
-    Guid VenueId,
-    Guid OrganisationId,
-    OnboardingStep Step,
-    OnboardingStepState State,
-    DateTime OccurredAtUtc) : IDomainEvent;
-
-public sealed record VenueOnboardingChecklistDismissed(Guid VenueId, Guid OrganisationId, DateTime OccurredAtUtc) : IDomainEvent;

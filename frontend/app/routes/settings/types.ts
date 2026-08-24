@@ -277,19 +277,6 @@ export function toUpdateVenueAvailabilitySettingsRequestDto(
   };
 }
 
-// Onboarding step wire member names — see backend RosterApp.Domain.Tenancy.
-// OnboardingStep/OnboardingStepState. Lives here (not under routes/onboarding)
-// because it's part of VenueProfileDto's wire shape, matching CLAUDE.md's
-// "DTOs match the backend query response exactly" rule; the onboarding route
-// reads this field directly off the DTO rather than duplicating the fetch.
-export interface VenueOnboardingStatusDto {
-  venueProfile: string;
-  awardPaySetup: string;
-  addStaff: string;
-  buildFirstRoster: string;
-  checklistDismissed: boolean;
-}
-
 export interface VenueProfileDto {
   id: string;
   organisationId: string;
@@ -301,7 +288,6 @@ export interface VenueProfileDto {
   forecastSalesTarget: number | null;
   tradingHours: TradingHourSessionDto[];
   availabilitySettings: VenueAvailabilitySettingsDto;
-  onboardingStatus: VenueOnboardingStatusDto;
 }
 
 export interface VenueProfile {
@@ -317,7 +303,7 @@ export interface VenueProfile {
 }
 
 // TODO: 'VIC' here is a silent placeholder, not a real default — a venue
-// that skipped the onboarding Venue Profile step has no state on record,
+// that hasn't filled in its Venue Profile yet has no state on record,
 // but RosterRulesTab reads this fallback and queries/displays VIC public
 // holidays with nothing telling the manager it's wrong. Should surface an
 // explicit "set your venue's state" prompt instead once there's time to
@@ -326,7 +312,7 @@ function blankAddress(): Address {
   return { line1: '', line2: '', suburb: '', state: 'VIC', postcode: '', country: 'AU' };
 }
 
-// A venue bootstrapped through onboarding sign-up has no ABN/address yet
+// A venue bootstrapped through sign-up has no ABN/address yet
 // (see backend Venue.CreateBootstrap) — represented here as the same blank
 // strings the Venue Profile form already treats as "not filled in yet",
 // so VenueProfileForm/TradingHoursEditor need no null-handling of their own.
