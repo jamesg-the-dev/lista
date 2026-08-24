@@ -51,21 +51,32 @@ interface OnboardingStepItem {
   renderBody?: () => React.ReactNode;
 }
 
+function StaticOnboardingItem({ item }: { item: OnboardingStepItem }) {
+  const isResolved = item.status === 'completed';
+
+  return (
+    <div className="border-border flex items-center gap-2 rounded-md border px-5 py-4">
+      {isResolved ? (
+        <CheckCircle2 color="green" className="text-primary size-4 shrink-0" />
+      ) : (
+        <CircleDashed className="text-muted-foreground size-4 shrink-0" />
+      )}
+      <span>{item.title}</span>
+      {item.status === 'skipped' && (
+        <span className="text-muted-foreground text-xs font-normal">(Skipped)</span>
+      )}
+    </div>
+  );
+}
+
 function OnboardingAccordionItem({ item }: { item: OnboardingStepItem }) {
   const isResolved = item.status !== 'pending';
 
   return (
-    <AccordionItem
-      value={item.key}
-      className="border-border rounded-md border not-last:border-b-0"
-    >
+    <AccordionItem value={item.key} className="border-border rounded-md border">
       <AccordionTrigger className="items-center px-5 py-4 hover:no-underline">
         <span className="flex items-center gap-2">
-          {isResolved ? (
-            <CheckCircle2 color="green" className="text-primary size-4 shrink-0" />
-          ) : (
-            <CircleDashed className="text-muted-foreground size-4 shrink-0" />
-          )}
+          <CircleDashed className="text-muted-foreground size-4 shrink-0" />
           <span>{item.title}</span>
           {item.status === 'skipped' && (
             <span className="text-muted-foreground text-xs font-normal">(Skipped)</span>
@@ -274,9 +285,13 @@ export default function OnboardingChecklist({ venueId }: { venueId: string }) {
               }
               className="space-y-3"
             >
-              {steps.map(step => (
-                <OnboardingAccordionItem key={step.key} item={step} />
-              ))}
+              {steps.map(step => {
+                return step.status === 'pending' ? (
+                  <OnboardingAccordionItem key={step.key} item={step} />
+                ) : (
+                  <StaticOnboardingItem key={step.key} item={step} />
+                );
+              })}
             </Accordion>
 
             {resolved && (

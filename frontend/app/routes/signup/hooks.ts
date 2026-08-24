@@ -5,7 +5,12 @@ import { mapSignUpResult } from './types';
 
 export function useSignUp() {
   return useMutation({
-    mutationFn: async ({ fullName, venueName }: { fullName: string; venueName: string }) =>
-      mapSignUpResult(await api.signUp(fullName, venueName)),
+    mutationFn: async ({
+      fullName,
+      venueName,
+    }: {
+      fullName: string;
+      venueName: string;
+    }) => mapSignUpResult(await api.signUp(fullName, venueName)),
   });
 }

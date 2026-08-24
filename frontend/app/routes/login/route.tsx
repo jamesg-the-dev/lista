@@ -1,20 +1,15 @@
+import { GalleryVerticalEndIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { Button } from '~/components/ui/button';
-import { Field, FieldGroup, FieldLabel } from '~/components/ui/field';
-import { Input } from '~/components/ui/input';
 import { supabase } from '~/lib/supabase-client';
 
-// Minimal manager login — establishes a Supabase session so api-client.ts
-// has a token to attach. Not one of the CLAUDE.md build-order screens; it
-// exists only so the real contract layer (account, roster, staff, ...) can
-// be exercised end-to-end against the backend instead of only typechecked.
+import { LoginForm } from './components/LoginForm';
+
 export default function Login() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email] = useState('');
+  const [password] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -41,51 +36,16 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-background p-6 text-foreground">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-lg border border-border bg-card p-6"
-      >
-        <h1 className="mb-6 font-sans text-sm font-semibold tracking-wide uppercase">
-          Sign in
-        </h1>
-
-        <FieldGroup>
-          <Field>
-            <FieldLabel htmlFor="email">Email</FieldLabel>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-            />
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor="password">Password</FieldLabel>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-            />
-          </Field>
-
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          <Button type="submit" disabled={submitting} className="w-full">
-            {submitting ? 'Signing in...' : 'Sign in'}
-          </Button>
-        </FieldGroup>
-      </form>
+    <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
+      <div className="flex w-full max-w-sm flex-col gap-6">
+        <a href="#" className="flex items-center gap-2 self-center font-medium">
+          <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
+            <GalleryVerticalEndIcon className="size-4" />
+          </div>
+          Acme Inc.
+        </a>
+        <LoginForm onSubmit={handleSubmit} error={error} submitting={submitting} />
+      </div>
     </div>
   );
 }

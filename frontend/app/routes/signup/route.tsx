@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useForm } from '@tanstack/react-form';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 
 import { Alert, AlertDescription } from '~/components/ui/alert';
@@ -14,15 +15,12 @@ import {
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '~/components/ui/field';
 import { Input } from '~/components/ui/input';
 import { Separator } from '~/components/ui/separator';
+import { currentAccountQueryOptions } from '~/lib/account/hooks';
 import { supabase } from '~/lib/supabase-client';
 
 import { useSignUp } from './hooks';
-
-// Phase 1 of FEATURE_ONBOARDING_FLOW.md — minimal-friction sign-up, one
-// screen, no billing/ABN fields. Supabase Auth owns the login itself
-// (password or SSO); this route only calls the backend (useSignUp) once a
-// Supabase session exists, to bootstrap the Organisation/Venue/owner
-// StaffMember record — see SignUpCommand's doc comment on the backend.
+import { GoogleButton } from '~/components/sso-buttons/google-button';
+import { appName } from '~/lib/constants';
 
 type SsoProvider = 'google' | 'azure';
 
@@ -53,11 +51,6 @@ export default function SignUp() {
   const navigate = useNavigate();
   const signUpMutation = useSignUp();
 
-  // Set once a Supabase session already exists on mount (returning from an
-  // SSO provider redirect, or a page refresh mid-flow) — the account/
-  // password step is already done, so only the venue name remains. Full
-  // name/email are inferred from the provider per FEATURE_ONBOARDING_FLOW.md
-  // ("skip this field if signing up via SSO — infer from provider").
   const [sessionUser, setSessionUser] = useState<
     { fullName: string; email: string } | null | undefined
   >(undefined);
@@ -81,6 +74,18 @@ export default function SignUp() {
       });
     });
   }, []);
+
+  const accountQuery = useQuery({
+    ...currentAccountQueryOptions,
+    enabled: !!sessionUser,
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (accountQuery.data) {
+      navigate('/', { replace: true });
+    }
+  }, [accountQuery.data, navigate]);
 
   async function completeSignUp(fullName: string, venueName: string) {
     setBootstrapError(null);
@@ -111,9 +116,6 @@ export default function SignUp() {
         return;
       }
       if (!data.session) {
-        // Email confirmation is required by this Supabase project's
-        // settings — there's no session yet to call the bootstrap endpoint
-        // with.
         setAwaitingEmailConfirmation(value.email);
         return;
       }
@@ -140,12 +142,21 @@ export default function SignUp() {
       setSsoError(error.message);
       setSsoSubmitting(null);
     }
-    // On success the browser navigates away to the provider — nothing
-    // further to do here until it redirects back.
   }
 
   if (sessionUser === undefined) {
     return null;
+  }
+
+  if (sessionUser && (accountQuery.isPending || accountQuery.isSuccess)) {
+    return null;
+  }
+
+  function appNameTransform(name: string): string {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   }
 
   return (
@@ -156,7 +167,7 @@ export default function SignUp() {
             Create your account
           </CardTitle>
           <CardDescription>
-            Set up Hospo Roster for your venue in a couple of minutes.
+            Set up {appNameTransform(appName)} for your venue in a couple of minutes.
           </CardDescription>
         </CardHeader>
 
@@ -227,26 +238,15 @@ export default function SignUp() {
             >
               <FieldGroup>
                 <div className="flex flex-col gap-2">
-                  <Button
+                  <GoogleButton
                     type="button"
-                    variant="outline"
                     className="w-full"
                     disabled={ssoSubmitting !== null}
+                    signup
                     onClick={() => handleSso('google')}
                   >
-                    {ssoSubmitting === 'google' ? 'Redirecting…' : 'Continue with Google'}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    disabled={ssoSubmitting !== null}
-                    onClick={() => handleSso('azure')}
-                  >
-                    {ssoSubmitting === 'azure'
-                      ? 'Redirecting…'
-                      : 'Continue with Microsoft'}
-                  </Button>
+                    Signup with Google
+                  </GoogleButton>
                 </div>
 
                 {ssoError && (
@@ -289,15 +289,16 @@ export default function SignUp() {
                 >
                   {field => (
                     <Field data-invalid={field.state.meta.errors.length > 0}>
-                      <FieldLabel htmlFor="work-email">Work email</FieldLabel>
+                      <FieldLabel htmlFor="work-email">Email</FieldLabel>
                       <Input
                         id="work-email"
                         type="email"
                         required
                         value={field.state.value}
                         onBlur={field.handleBlur}
+                        autoComplete="email"
                         onChange={e => field.handleChange(e.target.value)}
-                        placeholder="you@yourvenue.com.au"
+                        placeholder="you@example.com"
                       />
                       {fieldError(field.state.meta.errors) && (
                         <p className="text-destructive text-sm">
@@ -328,6 +329,7 @@ export default function SignUp() {
                         value={field.state.value}
                         onBlur={field.handleBlur}
                         onChange={e => field.handleChange(e.target.value)}
+                        placeholder="••••••••"
                       />
                       {field.state.value && (
                         <FieldDescription>
