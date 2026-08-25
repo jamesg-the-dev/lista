@@ -48,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<RestaurantIndustryAwardRateCalculator>();
         services.AddScoped<IAwardRateCalculatorFactory, AwardRateCalculatorFactory>();
         services.AddScoped<IAwardCalculationRateLookup, AwardCalculationRateLookup>();
+        services.AddScoped<IPublicHolidayCalculationLookup, PublicHolidayCalculationLookup>();
         services.AddScoped<IRosterComplianceValidator, HospitalityGeneralAwardComplianceValidator>();
         services.AddScoped<IVenueRepository, VenueRepository>();
         services.AddScoped<IVenueLookup, VenueLookup>();

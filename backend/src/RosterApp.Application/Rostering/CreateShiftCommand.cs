@@ -51,6 +51,7 @@ public sealed class CreateShiftCommandValidator : AbstractValidator<CreateShiftC
 public sealed class CreateShiftCommandHandler(
     IAwardRateCalculatorFactory awardRateCalculatorFactory,
     IAwardCalculationRateLookup awardCalculationRateLookup,
+    IPublicHolidayCalculationLookup publicHolidayCalculationLookup,
     IAwardConfigurationLookup awardConfigurationLookup,
     IRosterComplianceValidator complianceValidator,
     IRosterComplianceThresholdsLookup complianceThresholdsLookup,
@@ -81,9 +82,11 @@ public sealed class CreateShiftCommandHandler(
         var awardId = awardConfig?.AwardId ?? WellKnownAwards.HospitalityGeneralAwardId;
         var awardRateCalculator = awardRateCalculatorFactory.GetCalculator(awardId);
         var rates = await awardCalculationRateLookup.GetEffectiveRatesAsync(awardId, request.ShiftDate, cancellationToken);
+        var isPublicHoliday = await publicHolidayCalculationLookup.IsPublicHolidayAsync(request.VenueId, request.ShiftDate, cancellationToken);
 
         var awardBreakdown = awardRateCalculator.Calculate(
             request.ShiftDate.DayOfWeek,
+            isPublicHoliday,
             request.Start,
             request.End,
             request.UnpaidBreakMinutes,

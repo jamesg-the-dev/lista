@@ -24,6 +24,13 @@ namespace RosterApp.Infrastructure.AwardCalculator;
 ///     CasualLoadingStackingMode.AdditivePercentagePoints (already
 ///     recorded in that enum's doc comment from the prior casual-loading
 ///     audit).
+///   - Public holiday: reconfirmed against the FWO's official Pay Guide
+///     for MA000003 (Award Code: MA000003, Effective 01/07/2026, Published
+///     24/06/2026, portal.fairwork.gov.au) — Level 1: ordinary $27.81/hr,
+///     public holiday $62.57/hr (225%, permanent); casual ordinary
+///     $34.76/hr, casual public holiday $69.53/hr (200% of the casual
+///     rate = 250% of the permanent base, +25 points). Matches Table 6's
+///     225%/250% figures already cited above.
 ///
 /// KNOWN APPROXIMATION — Sunday: Table 6 splits Sunday into "Level 1 (any
 /// time)" 125% -&gt; 150% and "Level 2-3 (any time)" 150% -&gt; 175%.
@@ -38,11 +45,6 @@ namespace RosterApp.Infrastructure.AwardCalculator;
 /// larger change than this fix's scope (see
 /// docs/award-calculator-routing-fix.md).
 ///
-/// NOT implemented: public holiday penalty. Calculate has no "is this shift
-/// on a public holiday" input at all (same pre-existing interface gap
-/// HospitalityGeneralAwardRateCalculator has) — Table 6's 225%/250%
-/// public-holiday figures are cited above for when that input exists, not
-/// applied here.
 /// </summary>
 public sealed class FastFoodIndustryAwardRateCalculator : IAwardRateCalculator
 {
@@ -52,6 +54,7 @@ public sealed class FastFoodIndustryAwardRateCalculator : IAwardRateCalculator
 
     public IReadOnlyList<AwardBreakdownLine> Calculate(
         DayOfWeek dayOfWeek,
+        bool isPublicHoliday,
         TimeOnly start,
         TimeOnly end,
         int unpaidBreakMinutes,
@@ -69,6 +72,14 @@ public sealed class FastFoodIndustryAwardRateCalculator : IAwardRateCalculator
 
         var isCasual = employmentType == EmploymentType.Casual;
         var casualLoadingFraction = rates.CasualLoadingPercent / 100m;
+
+        if (isPublicHoliday)
+        {
+            // Public holiday pricing applies to the whole shift regardless
+            // of day of week — its own column in Table 6, not a variant of
+            // the Saturday/Sunday/night rate.
+            return [BuildLine("Public holiday", rates.GetMultiplier(PenaltyType.PublicHoliday), isCasual, totalMinutes, baseRatePerHour, casualLoadingFraction)];
+        }
 
         if (dayOfWeek == DayOfWeek.Sunday)
         {

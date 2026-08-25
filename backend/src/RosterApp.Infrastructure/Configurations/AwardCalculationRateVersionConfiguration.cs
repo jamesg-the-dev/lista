@@ -41,5 +41,20 @@ public sealed class AwardCalculationRateVersionConfiguration : IEntityTypeConfig
             multiplier.Property(m => m.PenaltyType).HasConversion<string>().HasMaxLength(30);
             multiplier.Property(m => m.Multiplier).HasPrecision(5, 2);
         });
+
+        // Same real-table treatment as PenaltyMultipliers above, kept in its
+        // own table (not folded into the multipliers table) so the two
+        // figure types — percentage vs flat dollar — stay structurally
+        // separate all the way down to the schema.
+        builder.OwnsMany(v => v.FlatDollarLoadings, loading =>
+        {
+            loading.ToTable("AwardCalculationRateFlatDollarLoadings");
+            loading.WithOwner().HasForeignKey("AwardCalculationRateVersionId");
+            loading.Property<int>("Id");
+            loading.HasKey("AwardCalculationRateVersionId", "Id");
+
+            loading.Property(f => f.PenaltyType).HasConversion<string>().HasMaxLength(30);
+            loading.Property(f => f.DollarPerHour).HasPrecision(6, 2);
+        });
     }
 }

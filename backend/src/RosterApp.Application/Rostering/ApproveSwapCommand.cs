@@ -31,6 +31,7 @@ public sealed class ApproveSwapCommandHandler(
     IRosterLookup rosterLookup,
     IAwardRateCalculatorFactory awardRateCalculatorFactory,
     IAwardCalculationRateLookup awardCalculationRateLookup,
+    IPublicHolidayCalculationLookup publicHolidayCalculationLookup,
     IAwardConfigurationLookup awardConfigurationLookup,
     IRosterComplianceValidator complianceValidator,
     IRosterComplianceThresholdsLookup complianceThresholdsLookup,
@@ -79,9 +80,11 @@ public sealed class ApproveSwapCommandHandler(
         var awardId = awardConfig?.AwardId ?? WellKnownAwards.HospitalityGeneralAwardId;
         var awardRateCalculator = awardRateCalculatorFactory.GetCalculator(awardId);
         var rates = await awardCalculationRateLookup.GetEffectiveRatesAsync(awardId, shift.ShiftDate, cancellationToken);
+        var isPublicHoliday = await publicHolidayCalculationLookup.IsPublicHolidayAsync(shift.VenueId, shift.ShiftDate, cancellationToken);
 
         var awardBreakdown = awardRateCalculator.Calculate(
             shift.ShiftDate.DayOfWeek,
+            isPublicHoliday,
             shift.Start,
             shift.End,
             shift.UnpaidBreakMinutes,

@@ -27,6 +27,9 @@ public sealed class AwardCalculationRateVersion
     private readonly List<PenaltyMultiplier> _penaltyMultipliers = [];
     public IReadOnlyList<PenaltyMultiplier> PenaltyMultipliers => _penaltyMultipliers.AsReadOnly();
 
+    private readonly List<FlatDollarLoading> _flatDollarLoadings = [];
+    public IReadOnlyList<FlatDollarLoading> FlatDollarLoadings => _flatDollarLoadings.AsReadOnly();
+
     private AwardCalculationRateVersion() { } // EF Core
 
     public static AwardCalculationRateVersion Create(
@@ -34,7 +37,8 @@ public sealed class AwardCalculationRateVersion
         Guid awardId,
         DateTime effectiveFromUtc,
         decimal casualLoadingPercent,
-        IEnumerable<PenaltyMultiplier> penaltyMultipliers)
+        IEnumerable<PenaltyMultiplier> penaltyMultipliers,
+        IEnumerable<FlatDollarLoading>? flatDollarLoadings = null)
     {
         var version = new AwardCalculationRateVersion
         {
@@ -45,11 +49,15 @@ public sealed class AwardCalculationRateVersion
         };
 
         version._penaltyMultipliers.AddRange(penaltyMultipliers);
+        version._flatDollarLoadings.AddRange(flatDollarLoadings ?? []);
         return version;
     }
 
     public AwardCalculationRates ToRates() =>
-        new(CasualLoadingPercent, PenaltyMultipliers.ToDictionary(m => m.PenaltyType, m => m.Multiplier));
+        new(
+            CasualLoadingPercent,
+            PenaltyMultipliers.ToDictionary(m => m.PenaltyType, m => m.Multiplier),
+            FlatDollarLoadings.ToDictionary(f => f.PenaltyType, f => f.DollarPerHour));
 
     /// <summary>
     /// Picks the version in force on a given date from a set of versions for

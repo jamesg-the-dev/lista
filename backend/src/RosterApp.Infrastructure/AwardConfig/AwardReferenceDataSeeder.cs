@@ -61,7 +61,8 @@ public static class AwardReferenceDataSeeder
                     version.AwardId,
                     version.EffectiveFromUtc,
                     version.CasualLoadingPercent,
-                    version.PenaltyMultipliers.Select(m => PenaltyMultiplier.Create(m.Type, m.Multiplier))));
+                    version.PenaltyMultipliers.Select(m => PenaltyMultiplier.Create(m.Type, m.Multiplier)),
+                    version.FlatDollarLoadings?.Select(f => FlatDollarLoading.Create(f.Type, f.DollarPerHour))));
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);

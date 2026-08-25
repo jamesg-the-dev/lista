@@ -593,11 +593,27 @@ route directory.
   calculator class's doc comment and docs/award-calculator-routing-fix.md
   for the exact clause/table citations): ordinary/Saturday/Sunday
   multipliers, casual = permanent + 25 points, never compounded
-  (`CasualLoadingStackingMode.AdditivePercentagePoints`). **Known gaps,
-  flagged rather than guessed at:**
-  * MA000009: weekday evening (+10%) and early-morning multipliers, and
-    public holiday, were never independently verified against Table 14 —
-    illustrative only.
+  (`CasualLoadingStackingMode.AdditivePercentagePoints`). Public holiday
+  penalties (225% permanent / 250% casual, all three awards) and
+  MA000119's Mon-Fri late-night/early-morning flat-dollar loading
+  (+$2.95/hr, +$4.42/hr) are now implemented — see
+  docs/public-holiday-and-night-differential-fix.md for the FWO Pay Guide
+  citations, `IPublicHolidayCalculationLookup` for how a shift's date
+  resolves to "is this a public holiday" from the venue's state, and
+  `AwardCalculationRates.FlatDollarLoadings` for why the flat-dollar figure
+  type is kept structurally separate from `PenaltyMultipliers`. **Known
+  gaps, flagged rather than guessed at:**
+  * **MA000009's weekday evening/early-morning loading is very likely also
+    a flat-dollar figure, not a percentage** — the same FWO Pay Guide used
+    to verify the public holiday figures above shows +$2.95/hr
+    (7pm-midnight) and +$4.42/hr (midnight-7am), identical to MA000119's
+    night differential before the fix above. `HospitalityGeneralAwardRateCalculator`
+    still models these as a percentage multiplier (`EveningAfter7pm` =
+    1.10, still "NOT verified... illustrative only"). This is probably a
+    real, likely-common underpayment (any weeknight evening shift under
+    MA000009) rather than merely an unverified figure — flagged as the
+    next priority audit, see docs/public-holiday-and-night-differential-fix.md
+    "Flagged for human review" §1.
   * MA000003 and MA000119 both split their Sunday penalty by
     classification level in the primary source, which
     `IAwardRateCalculator.Calculate` can't represent (no classification
@@ -605,13 +621,14 @@ route directory.
     which overpays a lower-level casual relative to the award minimum but
     never underpays. Needs classification threaded through Shift pricing
     to resolve precisely.
-  * MA000119's Mon-Fri 10pm-6am penalty is a flat **dollar** addition in
-    the award text, not a percentage multiplier — not implemented at all
-    (those hours price at the plain ordinary rate, understating the award
-    minimum for that window).
-  * Public holiday penalties are cited for all three awards but not
-    applied anywhere — `Calculate` has no "is this shift on a public
-    holiday" input at all.
+  * Public holiday jurisdiction: a venue with no `Address` (state unknown
+    — Address is optional until the owner completes the Venue Profile
+    form) only gets nationally-observed public holidays detected, not
+    state-specific ones, until its Address is set — a deliberate fallback
+    over guessing a state, not a gap to silently paper over. See
+    `PublicHolidayCalculationLookup`'s doc comment and
+    docs/public-holiday-and-night-differential-fix.md "Flagged for human
+    review" §2.
   * `AwardConfiguration.CasualLoadingPercent`/`PenaltyToggles` (the
     venue's own Settings-recorded overrides) are still not consumed by any
     calculator — every calculator prices from its own

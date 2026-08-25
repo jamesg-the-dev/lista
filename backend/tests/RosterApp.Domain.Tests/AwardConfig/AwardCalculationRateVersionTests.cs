@@ -78,4 +78,30 @@ public class AwardCalculationRateVersionTests
         Assert.Equal(1.25m, rates.GetMultiplier(PenaltyType.Saturday));
         Assert.Equal(1.50m, rates.GetMultiplier(PenaltyType.Sunday));
     }
+
+    [Fact]
+    public void ToRates_MapsFlatDollarLoadingsIntoDictionaryKeyedByPenaltyType()
+    {
+        var version = AwardCalculationRateVersion.Create(
+            Guid.NewGuid(), AwardId, OldVersionEffectiveFrom, casualLoadingPercent: 25.00m,
+            [PenaltyMultiplier.Create(PenaltyType.Saturday, 1.25m)],
+            [FlatDollarLoading.Create(PenaltyType.EveningAfter7pm, 2.95m), FlatDollarLoading.Create(PenaltyType.EarlyMorningBefore7am, 4.42m)]);
+
+        var rates = version.ToRates();
+
+        Assert.Equal(2.95m, rates.GetFlatDollarLoading(PenaltyType.EveningAfter7pm));
+        Assert.Equal(4.42m, rates.GetFlatDollarLoading(PenaltyType.EarlyMorningBefore7am));
+    }
+
+    [Fact]
+    public void ToRates_NoFlatDollarLoadings_ProducesEmptyDictionary_DoesNotThrowOnConstruction()
+    {
+        var version = AwardCalculationRateVersion.Create(
+            Guid.NewGuid(), AwardId, OldVersionEffectiveFrom, casualLoadingPercent: 25.00m,
+            [PenaltyMultiplier.Create(PenaltyType.Saturday, 1.25m)]);
+
+        var rates = version.ToRates();
+
+        Assert.Empty(rates.FlatDollarLoadings);
+    }
 }

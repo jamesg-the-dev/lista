@@ -22,12 +22,33 @@ namespace RosterApp.Domain.AwardConfig;
 /// </summary>
 public sealed record AwardCalculationRates(
     decimal CasualLoadingPercent,
-    IReadOnlyDictionary<PenaltyType, decimal> PenaltyMultipliers)
+    IReadOnlyDictionary<PenaltyType, decimal> PenaltyMultipliers,
+    IReadOnlyDictionary<PenaltyType, decimal>? FlatDollarLoadings = null)
 {
+    private static readonly IReadOnlyDictionary<PenaltyType, decimal> EmptyFlatDollarLoadings =
+        new Dictionary<PenaltyType, decimal>();
+
+    /// <summary>
+    /// Flat per-hour dollar additions (e.g. MA000119's Mon-Fri late-night/
+    /// early-morning loading) — a separate dictionary from PenaltyMultipliers
+    /// so a percentage-based helper can never accidentally consume one of
+    /// these as a multiplier. Empty for an award whose penalty periods are
+    /// all percentage-based.
+    /// </summary>
+    public IReadOnlyDictionary<PenaltyType, decimal> FlatDollarLoadings { get; init; } =
+        FlatDollarLoadings ?? EmptyFlatDollarLoadings;
+
     /// <summary>Throws if the calculator's award doesn't have a seeded multiplier for this PenaltyType — a missing row is a seed-data gap, not a "treat as zero" situation.</summary>
     public decimal GetMultiplier(PenaltyType penaltyType) =>
         PenaltyMultipliers.TryGetValue(penaltyType, out var multiplier)
             ? multiplier
             : throw new InvalidOperationException(
                 $"No penalty multiplier is configured for {penaltyType}. This award's AwardCalculationRateVersion seed data is incomplete.");
+
+    /// <summary>Throws if the calculator's award doesn't have a seeded flat-dollar loading for this PenaltyType — same "seed-data gap, not zero" rule as GetMultiplier.</summary>
+    public decimal GetFlatDollarLoading(PenaltyType penaltyType) =>
+        FlatDollarLoadings.TryGetValue(penaltyType, out var loading)
+            ? loading
+            : throw new InvalidOperationException(
+                $"No flat-dollar loading is configured for {penaltyType}. This award's AwardCalculationRateVersion seed data is incomplete.");
 }

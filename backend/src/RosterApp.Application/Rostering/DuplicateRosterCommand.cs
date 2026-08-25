@@ -43,6 +43,7 @@ public sealed class DuplicateRosterCommandHandler(
     IRosterLookup rosterLookup,
     IAwardRateCalculatorFactory awardRateCalculatorFactory,
     IAwardCalculationRateLookup awardCalculationRateLookup,
+    IPublicHolidayCalculationLookup publicHolidayCalculationLookup,
     IAwardConfigurationLookup awardConfigurationLookup,
     IRosterComplianceValidator complianceValidator,
     IRosterComplianceThresholdsLookup complianceThresholdsLookup,
@@ -87,6 +88,12 @@ public sealed class DuplicateRosterCommandHandler(
         // target spans a 1 July wage-review boundary.
         var ratesByTargetDate = new Dictionary<DateOnly, AwardCalculationRates>();
 
+        // Cached per target date for the same reason — a week's duplication
+        // target can span multiple distinct dates, and public holiday
+        // status is date-specific, not something that's true for the whole
+        // request the way the venue's award/calculator is.
+        var isPublicHolidayByTargetDate = new Dictionary<DateOnly, bool>();
+
         var offsetDays = request.TargetWeekStart.DayNumber - request.SourceWeekStart.DayNumber;
         var createdShifts = new List<Shift>();
 
@@ -111,8 +118,15 @@ public sealed class DuplicateRosterCommandHandler(
                 ratesByTargetDate[targetDate] = rates;
             }
 
+            if (!isPublicHolidayByTargetDate.TryGetValue(targetDate, out var isPublicHoliday))
+            {
+                isPublicHoliday = await publicHolidayCalculationLookup.IsPublicHolidayAsync(request.VenueId, targetDate, cancellationToken);
+                isPublicHolidayByTargetDate[targetDate] = isPublicHoliday;
+            }
+
             var awardBreakdown = awardRateCalculator.Calculate(
                 targetDate.DayOfWeek,
+                isPublicHoliday,
                 source.Start,
                 source.End,
                 source.UnpaidBreakMinutes,

@@ -20,6 +20,7 @@ public class FastFoodIndustryAwardRateCalculatorTests
         {
             [PenaltyType.Saturday] = 1.25m,
             [PenaltyType.Sunday] = 1.50m, // Level 2-3 figure — see class "KNOWN APPROXIMATION"
+            [PenaltyType.PublicHoliday] = 2.25m, // FWO Pay Guide (01/07/2026) — 225% permanent
             [PenaltyType.EveningAfter7pm] = 1.10m, // Mon-Fri 10pm-midnight
             [PenaltyType.EarlyMorningBefore7am] = 1.15m, // Mon-Fri midnight-6am
         });
@@ -30,7 +31,7 @@ public class FastFoodIndustryAwardRateCalculatorTests
     public void Calculate_WeekdayOrdinaryHours_FullTime_PaysBaseRate()
     {
         var lines = _calculator.Calculate(
-            DayOfWeek.Tuesday, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.FullTime, Rates);
+            DayOfWeek.Tuesday, false, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.FullTime, Rates);
 
         var line = Assert.Single(lines);
         Assert.Equal(20.00m, line.RatePerHour);
@@ -40,7 +41,7 @@ public class FastFoodIndustryAwardRateCalculatorTests
     public void Calculate_WeekdayOrdinaryHours_Casual_AppliesClause11Point2bTwentyFivePercentLoading()
     {
         var lines = _calculator.Calculate(
-            DayOfWeek.Tuesday, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.Casual, Rates);
+            DayOfWeek.Tuesday, false, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.Casual, Rates);
 
         var line = Assert.Single(lines);
         Assert.Equal(25.00m, line.RatePerHour); // $20 x 1.25 — clause 11.2(b)
@@ -50,7 +51,7 @@ public class FastFoodIndustryAwardRateCalculatorTests
     public void Calculate_Saturday_FullTime_Pays125Percent()
     {
         var lines = _calculator.Calculate(
-            DayOfWeek.Saturday, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.FullTime, Rates);
+            DayOfWeek.Saturday, false, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.FullTime, Rates);
 
         Assert.Equal(25.00m, Assert.Single(lines).RatePerHour); // Table 6 — Saturday (any time) 125%
     }
@@ -59,7 +60,7 @@ public class FastFoodIndustryAwardRateCalculatorTests
     public void Calculate_Saturday_Casual_Pays150Percent()
     {
         var lines = _calculator.Calculate(
-            DayOfWeek.Saturday, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.Casual, Rates);
+            DayOfWeek.Saturday, false, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.Casual, Rates);
 
         Assert.Equal(30.00m, Assert.Single(lines).RatePerHour); // Table 6 — Saturday casual 150% (125% + 25pts)
     }
@@ -68,7 +69,7 @@ public class FastFoodIndustryAwardRateCalculatorTests
     public void Calculate_Sunday_FullTime_Pays150Percent_UsingLevel2To3Figure()
     {
         var lines = _calculator.Calculate(
-            DayOfWeek.Sunday, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.FullTime, Rates);
+            DayOfWeek.Sunday, false, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.FullTime, Rates);
 
         // Table 6 Level 2-3 Sunday figure (150%) — see class doc comment
         // "KNOWN APPROXIMATION" re: Level 1's lower 125% not being modelled.
@@ -79,9 +80,41 @@ public class FastFoodIndustryAwardRateCalculatorTests
     public void Calculate_Sunday_Casual_Pays175Percent_UsingLevel2To3Figure()
     {
         var lines = _calculator.Calculate(
-            DayOfWeek.Sunday, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.Casual, Rates);
+            DayOfWeek.Sunday, false, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.Casual, Rates);
 
         Assert.Equal(35.00m, Assert.Single(lines).RatePerHour); // 150% + 25pts
+    }
+
+    [Fact]
+    public void Calculate_PublicHoliday_FullTime_Pays225Percent()
+    {
+        // FWO Pay Guide (MA000003, effective 01/07/2026): Level 1 —
+        // ordinary $27.81/hr, public holiday $62.57/hr = 225% of ordinary.
+        var lines = _calculator.Calculate(
+            DayOfWeek.Wednesday, true, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.FullTime, Rates);
+
+        Assert.Equal(45.00m, Assert.Single(lines).RatePerHour); // $20 x 2.25
+    }
+
+    [Fact]
+    public void Calculate_PublicHoliday_Casual_Pays250Percent_NotCompounded()
+    {
+        // FWO Pay Guide: casual ordinary $34.76/hr, casual public holiday
+        // $69.53/hr = 200% of the casual rate = 250% of the permanent base
+        // (225% + 25 points, additive — not 225% x 1.25).
+        var lines = _calculator.Calculate(
+            DayOfWeek.Wednesday, true, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.Casual, Rates);
+
+        Assert.Equal(50.00m, Assert.Single(lines).RatePerHour); // $20 x 2.50
+    }
+
+    [Fact]
+    public void Calculate_PublicHoliday_OverridesDayOfWeekRouting_EvenOnASunday()
+    {
+        var lines = _calculator.Calculate(
+            DayOfWeek.Sunday, true, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.FullTime, Rates);
+
+        Assert.Equal(45.00m, Assert.Single(lines).RatePerHour); // public holiday 225%, not Sunday's 150%
     }
 
     [Fact]
@@ -89,7 +122,7 @@ public class FastFoodIndustryAwardRateCalculatorTests
     {
         // 8pm-11pm: 2h ordinary (before 10pm) + 1h late-night (10pm-midnight).
         var lines = _calculator.Calculate(
-            DayOfWeek.Wednesday, new TimeOnly(20, 0), new TimeOnly(23, 0), 0, BaseRate, EmploymentType.FullTime, Rates);
+            DayOfWeek.Wednesday, false, new TimeOnly(20, 0), new TimeOnly(23, 0), 0, BaseRate, EmploymentType.FullTime, Rates);
 
         Assert.Equal(2, lines.Count);
         Assert.Equal(2.00m, lines[0].Hours);
@@ -102,7 +135,7 @@ public class FastFoodIndustryAwardRateCalculatorTests
     public void Calculate_WeekdayLateNightSplit_Casual_AppliesLoadingToBothPortions()
     {
         var lines = _calculator.Calculate(
-            DayOfWeek.Wednesday, new TimeOnly(20, 0), new TimeOnly(23, 0), 0, BaseRate, EmploymentType.Casual, Rates);
+            DayOfWeek.Wednesday, false, new TimeOnly(20, 0), new TimeOnly(23, 0), 0, BaseRate, EmploymentType.Casual, Rates);
 
         Assert.Equal(2, lines.Count);
         Assert.Equal(25.00m, lines[0].RatePerHour); // ordinary: $20 x 1.25
@@ -114,7 +147,7 @@ public class FastFoodIndustryAwardRateCalculatorTests
     {
         // 5am-7am: 1h early-morning (midnight-6am) + 1h ordinary (from 6am).
         var lines = _calculator.Calculate(
-            DayOfWeek.Thursday, new TimeOnly(5, 0), new TimeOnly(7, 0), 0, BaseRate, EmploymentType.FullTime, Rates);
+            DayOfWeek.Thursday, false, new TimeOnly(5, 0), new TimeOnly(7, 0), 0, BaseRate, EmploymentType.FullTime, Rates);
 
         Assert.Equal(2, lines.Count);
         Assert.Equal(1.00m, lines[0].Hours);
@@ -127,7 +160,7 @@ public class FastFoodIndustryAwardRateCalculatorTests
     public void Calculate_ZeroOrNegativeDuration_ReturnsNoLines()
     {
         var lines = _calculator.Calculate(
-            DayOfWeek.Monday, new TimeOnly(9, 0), new TimeOnly(9, 30), 30, BaseRate, EmploymentType.Casual, Rates);
+            DayOfWeek.Monday, false, new TimeOnly(9, 0), new TimeOnly(9, 30), 30, BaseRate, EmploymentType.Casual, Rates);
 
         Assert.Empty(lines);
     }

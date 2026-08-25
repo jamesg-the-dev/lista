@@ -68,7 +68,8 @@ public static class AwardReferenceDataSeed
         Guid AwardId,
         DateTime EffectiveFromUtc,
         decimal CasualLoadingPercent,
-        IReadOnlyList<(PenaltyType Type, decimal Multiplier)> PenaltyMultipliers);
+        IReadOnlyList<(PenaltyType Type, decimal Multiplier)> PenaltyMultipliers,
+        IReadOnlyList<(PenaltyType Type, decimal DollarPerHour)>? FlatDollarLoadings = null);
 
     /// <summary>
     /// Seeds AwardCalculationRateVersion — the effective-dated figures
@@ -95,6 +96,14 @@ public static class AwardReferenceDataSeed
             [
                 (PenaltyType.Saturday, 1.25m),
                 (PenaltyType.Sunday, 1.50m),
+                // Verified against the FWO Pay Guide - Hospitality Industry
+                // (General) Award [MA000009], effective 01/07/2026: public
+                // holiday $59.49/hr on a $26.44/hr base = 225% (permanent);
+                // casual public holiday $66.10/hr on a $33.05/hr casual base
+                // = 200% of the casual rate, i.e. 250% of the permanent base
+                // (225% + 25 points), matching
+                // CasualLoadingStackingMode.AdditivePercentagePoints.
+                (PenaltyType.PublicHoliday, 2.25m),
                 (PenaltyType.EveningAfter7pm, 1.10m),
             ]),
         new(
@@ -107,6 +116,12 @@ public static class AwardReferenceDataSeed
                 // Level 2-3 figure applied universally — see
                 // FastFoodIndustryAwardRateCalculator's "KNOWN APPROXIMATION".
                 (PenaltyType.Sunday, 1.50m),
+                // Reconfirmed against the FWO Pay Guide - Fast Food Industry
+                // Award [MA000003], effective 01/07/2026: Level 1 public
+                // holiday $62.57/hr on a $27.81/hr base = 225% (permanent);
+                // casual public holiday $69.53/hr on a $34.76/hr casual base
+                // = 200% of the casual rate = 250% of the permanent base
+                // (225% + 25 points).
                 (PenaltyType.PublicHoliday, 2.25m),
                 (PenaltyType.EveningAfter7pm, 1.10m), // Mon-Fri 10pm-midnight
                 (PenaltyType.EarlyMorningBefore7am, 1.15m), // Mon-Fri midnight-6am
@@ -121,12 +136,33 @@ public static class AwardReferenceDataSeed
                 // Level 3-6 figure applied universally — see
                 // RestaurantIndustryAwardRateCalculator's "KNOWN APPROXIMATION".
                 (PenaltyType.Sunday, 1.50m),
+                // Reconfirmed against the FWO Pay Guide - Restaurant
+                // Industry Award [MA000119], effective 01/07/2026:
+                // Introductory level public holiday $57.92/hr on a
+                // $25.74/hr base = 225% (permanent); casual public holiday
+                // $64.35/hr on a $32.18/hr casual base = 200% of the
+                // casual rate = 250% of the permanent base (225% + 25
+                // points).
                 (PenaltyType.PublicHoliday, 2.25m),
-                // No EveningAfter7pm/EarlyMorningBefore7am row: MA000119's
+                // No EveningAfter7pm/EarlyMorningBefore7am row here: MA000119's
                 // night differential is a flat dollar addition, not a
-                // percentage multiplier — see the calculator's "NOT
-                // implemented" note. Seeding a percentage figure here would
-                // misrepresent it as modelled.
+                // percentage multiplier — see FlatDollarLoadings below.
+                // Seeding a percentage figure here would misrepresent it as
+                // modelled that way.
+            ],
+            // Verified against the FWO Pay Guide - Restaurant Industry
+            // Award [MA000119], effective 01/07/2026: "Late night - Monday
+            // to Friday - 10pm to midnight" = base rate plus $2.95/hour;
+            // "Early morning - Monday to Friday - midnight to 6am" = base
+            // rate plus $4.42/hour. Identical to MA000009's evening/night
+            // flat-dollar figures (same allowance schedule shared across
+            // the hospitality-family awards). Applies identically to
+            // casual and permanent employees — the addition sits on top of
+            // whichever base rate (loaded or not) already applies; see
+            // RestaurantIndustryAwardRateCalculator.BuildFlatDollarLine.
+            [
+                (PenaltyType.EveningAfter7pm, 2.95m), // Mon-Fri 10pm-midnight
+                (PenaltyType.EarlyMorningBefore7am, 4.42m), // Mon-Fri midnight-6am
             ]),
     ];
 }

@@ -20,6 +20,14 @@ namespace RosterApp.Infrastructure.AwardCalculator;
 ///     CasualLoadingStackingMode.AdditivePercentagePoints — see that
 ///     enum's doc comment for the full citation and cross-check against
 ///     MA000003's explicit award Note confirming the same mode.
+///   - Public holiday: verified against the FWO's official Pay Guide for
+///     MA000009 (Award Code: MA000009, Effective 01/07/2026, Published
+///     24/06/2026, portal.fairwork.gov.au) — 225% (permanent) / 250%
+///     (casual, +25 points), same additive pattern as Saturday/Sunday.
+///     E.g. Level 1 food and beverage attendant: ordinary $26.44/hr,
+///     public holiday $59.49/hr (225%); casual ordinary $33.05/hr, casual
+///     public holiday $66.10/hr (200% of the casual rate = 250% of the
+///     permanent base).
 ///
 /// The casual loading percentage and every permanent penalty multiplier
 /// below (1.50/1.25/1.10) are STRUCTURE labels only — the actual numbers
@@ -34,14 +42,29 @@ namespace RosterApp.Infrastructure.AwardCalculator;
 ///
 /// NOT verified against Table 14 (still illustrative-only, same
 /// disclaimer as before this audit — see CLAUDE.md § Award compliance):
-/// weekday evening (after 7pm) and early-morning multipliers, and public
-/// holiday. Casual loading is still applied to these using the same
+/// weekday evening (after 7pm) and early-morning multipliers. Casual
+/// loading is still applied to these using the same
 /// AdditivePercentagePoints formula (clause 11.1's "for each hour worked"
 /// applies regardless of period), so a casual employee is never left with
 /// zero loading on an unverified period — but the *permanent* multiplier
 /// for those periods, and therefore the resulting casual total, has not
 /// been confirmed against Table 14 and must not be treated as sourced
 /// payroll data until it is.
+///
+/// FLAGGED (found during the 2026-08-25 public-holiday audit, out of that
+/// audit's scope to fix): the same FWO Pay Guide used to verify the public
+/// holiday figures above shows MA000009's evening (7pm-midnight) and night
+/// (midnight-7am) loadings as FLAT DOLLAR additions (+$2.95/hr and
+/// +$4.42/hr respectively at the 01/07/2026 rates), not percentage
+/// multipliers — structurally the same issue MA000119's night differential
+/// had (see RestaurantIndustryAwardRateCalculator). This calculator still
+/// models them as percentage multipliers (EveningAfter7pm), which is very
+/// likely a distinct, pre-existing underpayment bug independent of the
+/// "unverified multiplier" disclaimer above. Left unfixed here because it
+/// changes this award's calculation STRUCTURE (a bigger, separate change
+/// from wiring in a numeric rate), not merely an unverified number — flagged
+/// for a dedicated follow-up fix, same treatment as MA000119's night
+/// differential got in this audit.
 /// </summary>
 public sealed class HospitalityGeneralAwardRateCalculator : IAwardRateCalculator
 {
@@ -49,6 +72,7 @@ public sealed class HospitalityGeneralAwardRateCalculator : IAwardRateCalculator
 
     public IReadOnlyList<AwardBreakdownLine> Calculate(
         DayOfWeek dayOfWeek,
+        bool isPublicHoliday,
         TimeOnly start,
         TimeOnly end,
         int unpaidBreakMinutes,
@@ -66,6 +90,15 @@ public sealed class HospitalityGeneralAwardRateCalculator : IAwardRateCalculator
 
         var isCasual = employmentType == EmploymentType.Casual;
         var casualLoadingFraction = rates.CasualLoadingPercent / 100m;
+
+        if (isPublicHoliday)
+        {
+            // Public holiday pricing applies to the whole shift regardless
+            // of day of week — it is its own column in Table 14, not a
+            // variant of the Saturday/Sunday/evening rate, and a public
+            // holiday can (rarely) fall on a weekend.
+            return [BuildLine("Public holiday", rates.GetMultiplier(PenaltyType.PublicHoliday), isCasual, totalMinutes, baseRatePerHour, casualLoadingFraction)];
+        }
 
         if (dayOfWeek == DayOfWeek.Sunday)
         {
