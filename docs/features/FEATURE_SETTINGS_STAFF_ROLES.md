@@ -43,9 +43,14 @@ duplicate.
 1. `Role` is a venue-scoped entity with a free-text display name, but **cannot be used in a
    published roster** until it has an active `RoleAwardMapping` (enforced at roster-publish
    time, cross-checked against Section 2's requirements).
-2. Creating a role surfaces the award mapping step inline (not as a separate, skippable
-   step) — this is the single most important UX guardrail in this document, directly
-   addressing the original problem this whole settings section was designed to solve.
+2. **Revised:** creating a role no longer requires mapping it to an award classification in
+   the same step. The award mapping field is optional and only usable once the venue has an
+   active award configuration — role creation (name, colour tag) is decoupled from award
+   setup so an owner can define their role list before configuring Award &amp; Pay. The
+   guardrail from AC1 (unmapped roles can't be used on a published roster) is what actually
+   prevents an unpaid-correctly role from reaching a live roster, so it still applies with
+   this change — an unmapped role remains visible (flagged "Not mapped" in the role list) and
+   editable until it's mapped.
 3. Permission levels are a fixed enum (`Owner`, `Manager`, `Supervisor`, `Staff`) — not
    custom/configurable, to keep the permission matrix auditable and simple. Each level has a
    fixed, code-defined capability set (documented below), not per-venue customisable
@@ -300,7 +305,7 @@ so it's split into two clearly separated sub-sections within the tab rather than
 │  ── New Role dialog (triggered by [+ New Role]) ──           │
 │  │  Role name        [ Cellar Hand              ]         │  │
 │  │  Colour tag        (•)🔵 ( )🟢 ( )🟡 ( )🟣 ( )⚪         │  │
-│  │  Award classification (required)                        │  │
+│  │  Award classification (optional)                        │  │
 │  │            [ Select classification ▾ ]                  │  │
 │  │  ⓘ Every role must map to an award classification        │  │
 │  │    before it can be used on a published roster.          │  │

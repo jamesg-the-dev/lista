@@ -1,5 +1,5 @@
 1. Venue Profile — org/venue aggregate structure, ABN/address/timezone value objects, trading hours with multi-session support. Use the docs/features/FEATURE_SETTINGS_VENUE_PROFILE.md file
 2. Award & Pay Config — versioned (temporal) config so payroll recalculation always uses the rate active on the shift date, not today's config; includes the role→award mapping table. Use the docs/features/FEATURE_SETTINGS_AWARD_PAY_CONFIG.md file
 3. Roster Rules & Compliance — hard vs. soft rule distinction, minor rostering rules, public holiday reference data. Use the docs/features/FEATURE_SETTINGS_ROSTER_RULES_COMPLIANCE.md file
-4. Staff & Roles — the custom role feature, with the award-mapping step baked into role creation as a non-skippable UI step, plus permission levels and pay overrides. Use the docs/features/FEATURE_SETTINGS_STAFF_ROLES.md file
+4. Staff & Roles — the custom role feature, with award mapping as an optional step decoupled from role creation (see FEATURE_SETTINGS_STAFF_ROLES.md §2 AC2), plus permission levels and pay overrides. Use the docs/features/FEATURE_SETTINGS_STAFF_ROLES.md file
 5. Backlog TODOs — notifications, labour cost/budgeting, payroll export, GPS clock-in, each with a note on what needs to happen before they're spec-ready

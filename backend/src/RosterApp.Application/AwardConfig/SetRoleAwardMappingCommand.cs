@@ -9,11 +9,12 @@ namespace RosterApp.Application.AwardConfig;
 /// <summary>
 /// Never updates RoleAwardMapping in place — same supersede-then-create
 /// pattern as UpdateAwardConfigurationCommand, per
-/// FEATURE_SETTINGS_AWARD_PAY_CONFIG.md §3/§5. Fired by the frontend
-/// immediately after CreateRoleCommand succeeds (NewRoleDialog's
-/// non-skippable award-mapping step, §2 AC2) and again any time an owner
-/// re-maps an existing role from the Award &amp; Pay screen's
-/// RoleAwardMappingTable.
+/// FEATURE_SETTINGS_AWARD_PAY_CONFIG.md §3/§5. Fired by the frontend from
+/// NewRoleDialog right after CreateRoleCommand succeeds, but only when the
+/// owner picked a classification in that same dialog (optional now that the
+/// venue's award may not be configured yet — §2 AC2 revised); otherwise
+/// mapping happens later, either by editing the role from the list or from
+/// the Award &amp; Pay screen's RoleAwardMappingTable.
 /// </summary>
 public sealed record SetRoleAwardMappingCommand(Guid VenueId, Guid RoleId, Guid AwardClassificationId)
     : IRequest<RoleAwardMappingDto>, IVenueScopedRequest, IRequiresPermissionLevel

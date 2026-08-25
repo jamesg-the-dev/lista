@@ -72,10 +72,12 @@ export default function NewRoleDialog({
             })
           ).id;
 
-      await setMappingMutation.mutateAsync({
-        roleId,
-        awardClassificationId: value.awardClassificationId,
-      });
+      if (value.awardClassificationId) {
+        await setMappingMutation.mutateAsync({
+          roleId,
+          awardClassificationId: value.awardClassificationId,
+        });
+      }
 
       onOpenChange(false);
       form.reset();
@@ -169,44 +171,48 @@ export default function NewRoleDialog({
             )}
           </form.Field>
 
-          <form.Field name="awardClassificationId">
-            {field => (
-              <Field>
-                <FieldLabel htmlFor="role-classification">
-                  Award classification <span className="text-destructive">*</span>
-                </FieldLabel>
-                {!awardId ? (
+          {(awardId || existingRole) && (
+            <form.Field name="awardClassificationId">
+              {field => (
+                <Field>
+                  <FieldLabel htmlFor="role-classification">
+                    Award classification
+                    {existingRole && <span className="text-destructive">*</span>}
+                  </FieldLabel>
+                  {!awardId ? (
+                    <FieldDescription>
+                      Configure this venue's award in Award &amp; Pay, then come back here
+                      to map this role to a classification.
+                    </FieldDescription>
+                  ) : (
+                    <Select
+                      items={classifications.map(c => ({ value: c.id, label: c.name }))}
+                      value={field.state.value || null}
+                      required={!!existingRole}
+                      onValueChange={value => value !== null && field.handleChange(value)}
+                    >
+                      <SelectTrigger id="role-classification">
+                        <SelectValue placeholder="Select classification" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {classifications.map(c => (
+                            <SelectItem key={c.id} value={c.id}>
+                              {c.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  )}
                   <FieldDescription>
-                    Configure this venue's award in Award &amp; Pay before mapping roles.
+                    Every role must map to an award classification before it can be used
+                    on a published roster.
                   </FieldDescription>
-                ) : (
-                  <Select
-                    items={classifications.map(c => ({ value: c.id, label: c.name }))}
-                    value={field.state.value || null}
-                    required
-                    onValueChange={value => value !== null && field.handleChange(value)}
-                  >
-                    <SelectTrigger id="role-classification">
-                      <SelectValue placeholder="Select classification" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {classifications.map(c => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.name}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                )}
-                <FieldDescription>
-                  Every role must map to an award classification before it can be used on
-                  a published roster.
-                </FieldDescription>
-              </Field>
-            )}
-          </form.Field>
+                </Field>
+              )}
+            </form.Field>
+          )}
         </FieldGroup>
 
         <DialogFooter>
@@ -220,7 +226,11 @@ export default function NewRoleDialog({
             {([displayName, awardClassificationId]) => (
               <Button
                 onClick={() => form.handleSubmit()}
-                disabled={isSaving || !displayName.trim() || !awardClassificationId}
+                disabled={
+                  isSaving ||
+                  !displayName.trim() ||
+                  (!!existingRole && !awardClassificationId)
+                }
               >
                 {isSaving ? 'Saving…' : existingRole ? 'Save mapping' : 'Create role'}
               </Button>

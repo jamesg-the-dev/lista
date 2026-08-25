@@ -7,13 +7,15 @@ namespace RosterApp.Application.Staffing;
 
 /// <summary>
 /// Creates the Role only — award classification mapping is a separate call
-/// (SetRoleAwardMappingCommand, RosterApp.Application.AwardConfig) that the
-/// frontend's NewRoleDialog fires immediately after this one succeeds, in
-/// the same non-skippable dialog flow (§2 AC2). Kept as two commands rather
-/// than one combined "create with mapping" command so RoleAwardMapping can
-/// keep being re-versioned independently of Role, per Role's own doc
-/// comment — a UI-level guarantee ("not a separate, skippable step"), not a
-/// backend-transaction one.
+/// (SetRoleAwardMappingCommand, RosterApp.Application.AwardConfig). The
+/// frontend's NewRoleDialog fires that call immediately afterwards only when
+/// the venue already has an award configured and the owner picked a
+/// classification; mapping is otherwise deferred and done later from the
+/// role list or the Award &amp; Pay screen (§2 AC2 revised — mapping at
+/// creation is no longer required or forced inline). Kept as two commands
+/// rather than one combined "create with mapping" command so
+/// RoleAwardMapping can keep being re-versioned independently of Role, per
+/// Role's own doc comment.
 /// </summary>
 public sealed record CreateRoleCommand(Guid VenueId, string DisplayName, string? ColorTag)
     : IRequest<RoleDto>,
