@@ -101,7 +101,7 @@ function NameCell({ staff, onSelect }: { staff: StaffMember; onSelect: () => voi
     <button
       type="button"
       onClick={onSelect}
-      className="flex min-w-0 items-center gap-3 text-left"
+      className="flex min-w-0 cursor-pointer items-center gap-3 text-left"
     >
       <div className="min-w-0">
         <p className="truncate text-sm font-medium">{staff.name}</p>
