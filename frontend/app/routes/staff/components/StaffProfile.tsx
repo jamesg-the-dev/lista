@@ -80,6 +80,22 @@ const STATUS_META: Record<LeaveRequestStatus, { label: string; className: string
   declined: { label: 'Declined', className: 'bg-destructive-tint text-destructive' },
 };
 
+function StaffProfileSkeleton() {
+  return (
+    <div className="flex w-full flex-col gap-7">
+      <div className="flex flex-col gap-3">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-8 w-full" />
+      </div>
+      <div className="flex flex-col gap-3">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-8 w-full" />
+      </div>
+      <Skeleton className="h-8 w-24" />
+    </div>
+  );
+}
+
 function StatusBadge({ status }: { status: LeaveRequestStatus }) {
   const meta = STATUS_META[status];
   return <Badge className={meta.className}>{meta.label}</Badge>;
@@ -397,7 +413,7 @@ export default function StaffProfile({ staffId, venues, onBack }: StaffProfilePr
 
       <main className="flex-1 px-6 py-6">
         <div className="mx-auto flex max-w-2xl flex-col gap-8">
-          {staffQuery.isLoading && <Skeleton className="h-64 rounded-lg" />}
+          {staffQuery.isLoading && <StaffProfileSkeleton />}
 
           {staffQuery.isError && (
             <ErrorBlock

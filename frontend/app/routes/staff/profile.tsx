@@ -21,7 +21,7 @@ export default function StaffProfileRoute() {
     <StaffProfile
       staffId={staffId}
       venues={venuesQuery.data ?? []}
-      onBack={() => navigate('/staff')}
+      onBack={() => navigate(-1)}
     />
   );
 }

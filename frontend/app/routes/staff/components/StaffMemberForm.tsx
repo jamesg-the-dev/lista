@@ -7,6 +7,7 @@ import type {
 import { DatePickerSimple } from '~/components/ui/date-picker';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '~/components/ui/field';
 import { Input } from '~/components/ui/input';
+import { PhoneInput } from '~/components/ui/phone-input';
 import {
   Select,
   SelectContent,
@@ -169,13 +170,14 @@ export default function StaffMemberForm({ form, venues }: StaffMemberFormProps) 
                 <FieldLabel htmlFor="staff-phone">
                   Phone<span className="text-destructive">*</span>
                 </FieldLabel>
-                <Input
+                <PhoneInput
                   id="staff-phone"
                   required
+                  defaultCountry="AU"
                   value={field.state.value}
                   onBlur={field.handleBlur}
-                  onChange={e => field.handleChange(e.target.value)}
-                  placeholder="04xx xxx xxx"
+                  onChange={field.handleChange}
+                  placeholder="+61 4XX XXX XXX"
                 />
               </Field>
             )}

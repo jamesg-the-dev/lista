@@ -10,7 +10,7 @@ import {
 } from '~/components/ui/dropdown-menu';
 import { useVenueContextStore } from '~/lib/venue-context';
 import { useVenues } from './hooks';
-import { cn, usePageTitle } from '~/lib/utils';
+import { usePageTitle } from '~/lib/utils';
 import { Separator } from '~/components/ui/separator';
 
 export default function StaffRoute() {
