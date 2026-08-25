@@ -17,14 +17,7 @@ import {
 
 import { useAwardConfigurationHistory } from '../hooks';
 import type { AwardConfigurationDto, AwardDto } from '../types';
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-AU', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-}
+import { formatDate } from '~/lib/utils';
 
 // Read-only audit view — collapsed by default so it doesn't compete for
 // attention with the actual configuration form above it (per the spec's

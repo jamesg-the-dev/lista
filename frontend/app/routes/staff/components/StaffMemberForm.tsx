@@ -27,6 +27,13 @@ import type {
   Venue,
 } from '../types';
 import { SectionHeader } from './form-ui';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '~/components/ui/card';
 
 // Fields shared by the "add staff member" and "edit staff profile" screens —
 // name/contact details and the fields that drive IAwardRateCalculator and
@@ -122,101 +129,148 @@ interface StaffMemberFormProps {
 
 export default function StaffMemberForm({ form, venues }: StaffMemberFormProps) {
   return (
-    <section>
-      <SectionHeader
-        title="Profile"
-        subtitle="Name, contact details and the fields that drive award pay and compliance checks."
-      />
-      <FieldGroup>
-        <div className="grid grid-cols-2 gap-3">
-          <form.Field name="name">
-            {field => (
-              <Field className="col-span-2">
-                <FieldLabel htmlFor="staff-name">
-                  Name<span className="text-destructive">*</span>
-                </FieldLabel>
-                <Input
-                  id="staff-name"
-                  value={field.state.value}
-                  required
-                  onBlur={field.handleBlur}
-                  onChange={e => field.handleChange(e.target.value)}
-                  placeholder="Full name"
-                />
-              </Field>
-            )}
-          </form.Field>
-          <form.Field name="email">
-            {field => (
-              <Field>
-                <FieldLabel htmlFor="staff-email">
-                  Email<span className="text-destructive">*</span>
-                </FieldLabel>
-                <Input
-                  id="staff-email"
-                  type="email"
-                  required
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={e => field.handleChange(e.target.value)}
-                  placeholder="name@example.com"
-                />
-              </Field>
-            )}
-          </form.Field>
-          <form.Field name="phone">
-            {field => (
-              <Field>
-                <FieldLabel htmlFor="staff-phone">
-                  Phone<span className="text-destructive">*</span>
-                </FieldLabel>
-                <PhoneInput
-                  id="staff-phone"
-                  required
-                  defaultCountry="AU"
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={field.handleChange}
-                  placeholder="+61 4XX XXX XXX"
-                />
-              </Field>
-            )}
-          </form.Field>
-        </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Profile</CardTitle>
+        <CardDescription>
+          Name, contact details and the fields that drive award pay and compliance checks.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <FieldGroup>
+          <div className="grid grid-cols-2 gap-3">
+            <form.Field name="name">
+              {field => (
+                <Field className="col-span-2">
+                  <FieldLabel htmlFor="staff-name">
+                    Name<span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <Input
+                    id="staff-name"
+                    value={field.state.value}
+                    required
+                    onBlur={field.handleBlur}
+                    onChange={e => field.handleChange(e.target.value)}
+                    placeholder="Full name"
+                  />
+                </Field>
+              )}
+            </form.Field>
+            <form.Field name="email">
+              {field => (
+                <Field>
+                  <FieldLabel htmlFor="staff-email">
+                    Email<span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <Input
+                    id="staff-email"
+                    type="email"
+                    required
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={e => field.handleChange(e.target.value)}
+                    placeholder="name@example.com"
+                  />
+                </Field>
+              )}
+            </form.Field>
+            <form.Field name="phone">
+              {field => (
+                <Field>
+                  <FieldLabel htmlFor="staff-phone">
+                    Phone<span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <PhoneInput
+                    id="staff-phone"
+                    required
+                    defaultCountry="AU"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={field.handleChange}
+                    placeholder="+61 4XX XXX XXX"
+                  />
+                </Field>
+              )}
+            </form.Field>
+          </div>
 
-        <form.Field name="dateOfBirth">
-          {field => (
-            <DatePickerSimple
-              id="staff-date-of-birth"
-              label="Date of birth"
-              required
-              value={field.state.value.getTime() === 0 ? undefined : field.state.value}
-              onChange={date => date && field.handleChange(date)}
-              className="max-w-xs"
-            />
-          )}
-        </form.Field>
-        <FieldDescription className="-mt-2">
-          Collected for compliance — minor rostering rules (max hours, latest finish time)
-          apply automatically below 18, not for marketing.
-        </FieldDescription>
+          <form.Field name="dateOfBirth">
+            {field => (
+              <DatePickerSimple
+                id="staff-date-of-birth"
+                label="Date of birth"
+                required
+                value={field.state.value.getTime() === 0 ? undefined : field.state.value}
+                onChange={date => date && field.handleChange(date)}
+                className="max-w-xs"
+              />
+            )}
+          </form.Field>
+          <FieldDescription className="-mt-2">
+            Collected for compliance — minor rostering rules (max hours, latest finish
+            time) apply automatically below 18, not for marketing.
+          </FieldDescription>
 
-        <div className="grid grid-cols-2 gap-3">
-          <form.Field name="employmentType">
+          <div className="grid grid-cols-2 gap-3">
+            <form.Field name="employmentType">
+              {field => (
+                <Field>
+                  <FieldLabel htmlFor="staff-employment-type">Employment type</FieldLabel>
+                  <Select
+                    items={EMPLOYMENT_TYPE_ITEMS}
+                    value={field.state.value}
+                    onValueChange={value => value !== null && field.handleChange(value)}
+                  >
+                    <SelectTrigger id="staff-employment-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {EMPLOYMENT_TYPE_ITEMS.map(item => (
+                          <SelectItem key={item.value} value={item.value}>
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </Field>
+              )}
+            </form.Field>
+            <form.Field name="maxWeeklyHours">
+              {field => (
+                <Field>
+                  <FieldLabel htmlFor="staff-max-hours">Max weekly hours</FieldLabel>
+                  <Input
+                    id="staff-max-hours"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={field.state.value}
+                    onChange={e => field.handleChange(Number(e.target.value) || 0)}
+                  />
+                </Field>
+              )}
+            </form.Field>
+          </div>
+
+          <form.Field name="classification">
             {field => (
               <Field>
-                <FieldLabel htmlFor="staff-employment-type">Employment type</FieldLabel>
+                <FieldLabel htmlFor="staff-classification">
+                  Pay tier / classification (MA000009)
+                </FieldLabel>
                 <Select
-                  items={EMPLOYMENT_TYPE_ITEMS}
+                  items={CLASSIFICATION_ITEMS}
                   value={field.state.value}
                   onValueChange={value => value !== null && field.handleChange(value)}
                 >
-                  <SelectTrigger id="staff-employment-type">
+                  <SelectTrigger id="staff-classification">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      {EMPLOYMENT_TYPE_ITEMS.map(item => (
+                      {CLASSIFICATION_ITEMS.map(item => (
                         <SelectItem key={item.value} value={item.value}>
                           {item.label}
                         </SelectItem>
@@ -224,78 +278,35 @@ export default function StaffMemberForm({ form, venues }: StaffMemberFormProps) 
                     </SelectGroup>
                   </SelectContent>
                 </Select>
+                <FieldDescription>
+                  Levels shown are illustrative for demo purposes — not authoritative
+                  payroll advice.
+                </FieldDescription>
               </Field>
             )}
           </form.Field>
-          <form.Field name="maxWeeklyHours">
+
+          <form.Field name="venueIds">
             {field => (
               <Field>
-                <FieldLabel htmlFor="staff-max-hours">Max weekly hours</FieldLabel>
-                <Input
-                  id="staff-max-hours"
-                  type="number"
-                  min="0"
-                  step="1"
+                <FieldLabel>Venue(s) assigned</FieldLabel>
+                <ToggleGroup
+                  multiple
+                  variant="outline"
                   value={field.state.value}
-                  onChange={e => field.handleChange(Number(e.target.value) || 0)}
-                />
+                  onValueChange={field.handleChange}
+                >
+                  {venues.map(v => (
+                    <ToggleGroupItem key={v.id} value={v.id}>
+                      {v.name}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
               </Field>
             )}
           </form.Field>
-        </div>
-
-        <form.Field name="classification">
-          {field => (
-            <Field>
-              <FieldLabel htmlFor="staff-classification">
-                Pay tier / classification (MA000009)
-              </FieldLabel>
-              <Select
-                items={CLASSIFICATION_ITEMS}
-                value={field.state.value}
-                onValueChange={value => value !== null && field.handleChange(value)}
-              >
-                <SelectTrigger id="staff-classification">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {CLASSIFICATION_ITEMS.map(item => (
-                      <SelectItem key={item.value} value={item.value}>
-                        {item.label}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-              <FieldDescription>
-                Levels shown are illustrative for demo purposes — not authoritative
-                payroll advice.
-              </FieldDescription>
-            </Field>
-          )}
-        </form.Field>
-
-        <form.Field name="venueIds">
-          {field => (
-            <Field>
-              <FieldLabel>Venue(s) assigned</FieldLabel>
-              <ToggleGroup
-                multiple
-                variant="outline"
-                value={field.state.value}
-                onValueChange={field.handleChange}
-              >
-                {venues.map(v => (
-                  <ToggleGroupItem key={v.id} value={v.id}>
-                    {v.name}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-            </Field>
-          )}
-        </form.Field>
-      </FieldGroup>
-    </section>
+        </FieldGroup>
+      </CardContent>
+    </Card>
   );
 }

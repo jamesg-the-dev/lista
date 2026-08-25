@@ -41,6 +41,13 @@ import StaffMemberForm, {
   blankStaffMemberForm,
   toStaffMemberFormValue,
 } from './StaffMemberForm';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '~/components/ui/card';
 
 const DAY_ITEMS = DAY_LABELS.map((label, i) => ({ value: String(i), label }));
 
@@ -123,109 +130,115 @@ function AvailabilitySection({
   });
 
   return (
-    <section>
-      <SectionHeader
-        title="Standing availability"
-        subtitle="Days/blocks this staff member is NOT available. Anything not listed here is assumed available."
-      />
-      <div className="mb-4 flex flex-col gap-2">
-        {exceptions.length === 0 && (
-          <EmptyNote text="No standing exceptions — assumed available every day." />
-        )}
-        {exceptions.map(ex => (
-          <div
-            key={ex.id}
-            className="border-border flex items-center justify-between rounded-lg border px-3 py-2"
-          >
-            <span className="text-sm">
-              <strong>{DAY_LABELS[ex.dayOfWeek]}</strong>{' '}
-              {ex.blocks === 'all_day'
-                ? '— unavailable all day'
-                : `— unavailable ${ex.blocks.map(b => TIME_BLOCK_META[b].label).join(', ')}`}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => removeMutation.mutate(ex.id)}
-              disabled={removeMutation.isPending}
-            >
-              <XIcon size={14} />
-            </Button>
-          </div>
-        ))}
-      </div>
-      <div className="border-border flex flex-wrap items-end gap-3 rounded-lg border p-3">
-        <form.Subscribe selector={state => state.values}>
-          {values => (
-            <>
-              <Field className="w-auto">
-                <FieldLabel htmlFor="availability-day">Day</FieldLabel>
-                <Select
-                  items={DAY_ITEMS}
-                  value={String(values.dayOfWeek)}
-                  onValueChange={v =>
-                    form.setFieldValue('dayOfWeek', Number(v) as DayOfWeek)
-                  }
-                >
-                  <SelectTrigger id="availability-day">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {DAY_ITEMS.map(item => (
-                        <SelectItem key={item.value} value={item.value}>
-                          {item.label}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </Field>
-              <Field orientation="horizontal" className="w-auto pb-2.5">
-                <Checkbox
-                  id="availability-all-day"
-                  checked={values.allDay}
-                  onCheckedChange={checked =>
-                    form.setFieldValue('allDay', checked === true)
-                  }
-                />
-                <FieldLabel
-                  htmlFor="availability-all-day"
-                  className="text-xs font-normal"
-                >
-                  All day
-                </FieldLabel>
-              </Field>
-              {!values.allDay && (
-                <ToggleGroup
-                  className="pb-1"
-                  variant="outline"
-                  multiple
-                  value={values.blocks}
-                  onValueChange={v => form.setFieldValue('blocks', v as TimeBlock[])}
-                >
-                  {(Object.keys(TIME_BLOCK_META) as TimeBlock[]).map(b => (
-                    <ToggleGroupItem key={b} value={b}>
-                      {TIME_BLOCK_META[b].label}
-                    </ToggleGroupItem>
-                  ))}
-                </ToggleGroup>
-              )}
-              <Button
-                size="sm"
-                className="ml-auto"
-                onClick={() => form.handleSubmit()}
-                disabled={
-                  addMutation.isPending || (!values.allDay && values.blocks.length === 0)
-                }
-              >
-                Add exception
-              </Button>
-            </>
+    <Card>
+      <CardHeader>
+        <CardTitle>Standing availability</CardTitle>
+        <CardDescription>
+          Days/blocks this staff member is NOT available. Anything not listed here is
+          assumed available.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="mb-4 flex flex-col gap-2">
+          {exceptions.length === 0 && (
+            <EmptyNote text="No standing exceptions — assumed available every day." />
           )}
-        </form.Subscribe>
-      </div>
-    </section>
+          {exceptions.map(ex => (
+            <div
+              key={ex.id}
+              className="border-border flex items-center justify-between rounded-lg border px-3 py-2"
+            >
+              <span className="text-sm">
+                <strong>{DAY_LABELS[ex.dayOfWeek]}</strong>{' '}
+                {ex.blocks === 'all_day'
+                  ? '— unavailable all day'
+                  : `— unavailable ${ex.blocks.map(b => TIME_BLOCK_META[b].label).join(', ')}`}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => removeMutation.mutate(ex.id)}
+                disabled={removeMutation.isPending}
+              >
+                <XIcon size={14} />
+              </Button>
+            </div>
+          ))}
+        </div>
+        <div className="border-border flex flex-wrap items-end gap-3 rounded-lg border p-3">
+          <form.Subscribe selector={state => state.values}>
+            {values => (
+              <>
+                <Field className="w-auto">
+                  <FieldLabel htmlFor="availability-day">Day</FieldLabel>
+                  <Select
+                    items={DAY_ITEMS}
+                    value={String(values.dayOfWeek)}
+                    onValueChange={v =>
+                      form.setFieldValue('dayOfWeek', Number(v) as DayOfWeek)
+                    }
+                  >
+                    <SelectTrigger id="availability-day">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {DAY_ITEMS.map(item => (
+                          <SelectItem key={item.value} value={item.value}>
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field orientation="horizontal" className="w-auto pb-2.5">
+                  <Checkbox
+                    id="availability-all-day"
+                    checked={values.allDay}
+                    onCheckedChange={checked =>
+                      form.setFieldValue('allDay', checked === true)
+                    }
+                  />
+                  <FieldLabel
+                    htmlFor="availability-all-day"
+                    className="text-xs font-normal"
+                  >
+                    All day
+                  </FieldLabel>
+                </Field>
+                {!values.allDay && (
+                  <ToggleGroup
+                    className="pb-1"
+                    variant="outline"
+                    multiple
+                    value={values.blocks}
+                    onValueChange={v => form.setFieldValue('blocks', v as TimeBlock[])}
+                  >
+                    {(Object.keys(TIME_BLOCK_META) as TimeBlock[]).map(b => (
+                      <ToggleGroupItem key={b} value={b}>
+                        {TIME_BLOCK_META[b].label}
+                      </ToggleGroupItem>
+                    ))}
+                  </ToggleGroup>
+                )}
+                <Button
+                  size="sm"
+                  className="ml-auto"
+                  onClick={() => form.handleSubmit()}
+                  disabled={
+                    addMutation.isPending ||
+                    (!values.allDay && values.blocks.length === 0)
+                  }
+                >
+                  Add exception
+                </Button>
+              </>
+            )}
+          </form.Subscribe>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -253,108 +266,112 @@ function LeaveRequestsSection({
   });
 
   return (
-    <section>
-      <SectionHeader
-        title="Leave requests"
-        subtitle="One-off leave. Approve or decline a request below — no wider workflow yet."
-      />
-      <div className="mb-4 flex flex-col gap-2">
-        {leaveRequests.length === 0 && <EmptyNote text="No leave requests yet." />}
-        {leaveRequests.map(lr => (
-          <div
-            key={lr.id}
-            className="border-border flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
-          >
-            <div className="min-w-0">
-              <p className="text-sm font-medium">
-                {formatDate(lr.startDate)} – {formatDate(lr.endDate)}
-              </p>
-              {lr.reason && (
-                <p className="text-muted-foreground truncate text-xs">{lr.reason}</p>
-              )}
+    <Card>
+      <CardHeader>
+        <CardTitle>Leave requests</CardTitle>
+        <CardDescription>
+          One-off leave. Approve or decline a request below — no wider workflow yet.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="mb-4 flex flex-col gap-2">
+          {leaveRequests.length === 0 && <EmptyNote text="No leave requests yet." />}
+          {leaveRequests.map(lr => (
+            <div
+              key={lr.id}
+              className="border-border flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-medium">
+                  {formatDate(lr.startDate)} – {formatDate(lr.endDate)}
+                </p>
+                {lr.reason && (
+                  <p className="text-muted-foreground truncate text-xs">{lr.reason}</p>
+                )}
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <StatusBadge status={lr.status} />
+                {lr.status === 'requested' && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={statusMutation.isPending}
+                      onClick={() =>
+                        statusMutation.mutate({
+                          leaveRequestId: lr.id,
+                          status: 'approved',
+                        })
+                      }
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      disabled={statusMutation.isPending}
+                      onClick={() =>
+                        statusMutation.mutate({
+                          leaveRequestId: lr.id,
+                          status: 'declined',
+                        })
+                      }
+                    >
+                      Decline
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <StatusBadge status={lr.status} />
-              {lr.status === 'requested' && (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={statusMutation.isPending}
-                    onClick={() =>
-                      statusMutation.mutate({
-                        leaveRequestId: lr.id,
-                        status: 'approved',
-                      })
-                    }
-                  >
-                    Approve
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    disabled={statusMutation.isPending}
-                    onClick={() =>
-                      statusMutation.mutate({
-                        leaveRequestId: lr.id,
-                        status: 'declined',
-                      })
-                    }
-                  >
-                    Decline
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="border-border flex flex-wrap items-end gap-3 rounded-lg border p-3">
-        <form.Subscribe selector={state => state.values}>
-          {values => (
-            <>
-              <Field className="w-auto">
-                <FieldLabel htmlFor="leave-start">Start</FieldLabel>
-                <Input
-                  id="leave-start"
-                  type="date"
-                  value={values.startDate}
-                  onChange={e => form.setFieldValue('startDate', e.target.value)}
-                />
-              </Field>
-              <Field className="w-auto">
-                <FieldLabel htmlFor="leave-end">End</FieldLabel>
-                <Input
-                  id="leave-end"
-                  type="date"
-                  value={values.endDate}
-                  onChange={e => form.setFieldValue('endDate', e.target.value)}
-                />
-              </Field>
-              <Field className="min-w-[180px] flex-1">
-                <FieldLabel htmlFor="leave-reason">Reason (optional)</FieldLabel>
-                <Textarea
-                  id="leave-reason"
-                  rows={1}
-                  value={values.reason}
-                  onChange={e => form.setFieldValue('reason', e.target.value)}
-                  placeholder="e.g. Annual leave"
-                />
-              </Field>
-              <Button
-                size="sm"
-                onClick={() => form.handleSubmit()}
-                disabled={
-                  createMutation.isPending || !values.startDate || !values.endDate
-                }
-              >
-                Request leave
-              </Button>
-            </>
-          )}
-        </form.Subscribe>
-      </div>
-    </section>
+          ))}
+        </div>
+        <div className="border-border flex flex-wrap items-end gap-3 rounded-lg border p-3">
+          <form.Subscribe selector={state => state.values}>
+            {values => (
+              <>
+                <Field className="w-auto">
+                  <FieldLabel htmlFor="leave-start">Start</FieldLabel>
+                  <Input
+                    id="leave-start"
+                    type="date"
+                    value={values.startDate}
+                    onChange={e => form.setFieldValue('startDate', e.target.value)}
+                  />
+                </Field>
+                <Field className="w-auto">
+                  <FieldLabel htmlFor="leave-end">End</FieldLabel>
+                  <Input
+                    id="leave-end"
+                    type="date"
+                    value={values.endDate}
+                    onChange={e => form.setFieldValue('endDate', e.target.value)}
+                  />
+                </Field>
+                <Field className="min-w-[180px] flex-1">
+                  <FieldLabel htmlFor="leave-reason">Reason (optional)</FieldLabel>
+                  <Textarea
+                    id="leave-reason"
+                    rows={1}
+                    value={values.reason}
+                    onChange={e => form.setFieldValue('reason', e.target.value)}
+                    placeholder="e.g. Annual leave"
+                  />
+                </Field>
+                <Button
+                  size="sm"
+                  onClick={() => form.handleSubmit()}
+                  disabled={
+                    createMutation.isPending || !values.startDate || !values.endDate
+                  }
+                >
+                  Request leave
+                </Button>
+              </>
+            )}
+          </form.Subscribe>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

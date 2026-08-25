@@ -16,14 +16,7 @@ import {
 } from '~/components/ui/table';
 
 import { useRosterComplianceConfigurationHistory } from '../hooks';
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-AU', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-}
+import { formatDate } from '~/lib/utils';
 
 // Read-only audit view — collapsed by default, same treatment as
 // ConfigurationHistoryPanel.tsx (Award & Pay's equivalent).
