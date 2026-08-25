@@ -4,12 +4,10 @@ import { useNavigate } from 'react-router';
 
 import { supabase } from '~/lib/supabase-client';
 
-import { LoginForm } from './components/LoginForm';
+import { LoginForm, type LoginFormValues } from './components/LoginForm';
 
 export default function Login() {
   const navigate = useNavigate();
-  const [email] = useState('');
-  const [password] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -19,8 +17,7 @@ export default function Login() {
     });
   }, [navigate]);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit({ email, password }: LoginFormValues) {
     setSubmitting(true);
     setError(null);
     const { error: signInError } = await supabase.auth.signInWithPassword({
