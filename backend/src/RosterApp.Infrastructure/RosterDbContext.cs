@@ -31,6 +31,7 @@ public sealed class RosterDbContext(DbContextOptions<RosterDbContext> options) :
     public DbSet<AwardClassificationDefinition> AwardClassificationDefinitions => Set<AwardClassificationDefinition>();
     public DbSet<AwardRate> AwardRates => Set<AwardRate>();
     public DbSet<AwardConfiguration> AwardConfigurations => Set<AwardConfiguration>();
+    public DbSet<AwardCalculationRateVersion> AwardCalculationRateVersions => Set<AwardCalculationRateVersion>();
     public DbSet<RoleAwardMapping> RoleAwardMappings => Set<RoleAwardMapping>();
     public DbSet<RosterComplianceConfiguration> RosterComplianceConfigurations => Set<RosterComplianceConfiguration>();
     public DbSet<PublicHoliday> PublicHolidays => Set<PublicHoliday>();

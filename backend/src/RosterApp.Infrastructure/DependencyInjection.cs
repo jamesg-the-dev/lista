@@ -43,7 +43,11 @@ public static class DependencyInjection
         services.AddScoped<ISwapRequestLookup, SwapRequestLookup>();
         services.AddScoped<ILabourCostLookup, LabourCostLookup>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
-        services.AddScoped<IAwardRateCalculator, HospitalityGeneralAwardRateCalculator>();
+        services.AddScoped<HospitalityGeneralAwardRateCalculator>();
+        services.AddScoped<FastFoodIndustryAwardRateCalculator>();
+        services.AddScoped<RestaurantIndustryAwardRateCalculator>();
+        services.AddScoped<IAwardRateCalculatorFactory, AwardRateCalculatorFactory>();
+        services.AddScoped<IAwardCalculationRateLookup, AwardCalculationRateLookup>();
         services.AddScoped<IRosterComplianceValidator, HospitalityGeneralAwardComplianceValidator>();
         services.AddScoped<IVenueRepository, VenueRepository>();
         services.AddScoped<IVenueLookup, VenueLookup>();

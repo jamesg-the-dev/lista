@@ -1,7 +1,7 @@
 using RosterApp.Application.Rostering;
+using RosterApp.Domain.AwardConfig;
 using RosterApp.Domain.Rostering;
 using RosterApp.Domain.Staffing;
-using RosterApp.Infrastructure.AwardConfig;
 
 namespace RosterApp.Infrastructure.AwardCalculator;
 
@@ -13,16 +13,24 @@ namespace RosterApp.Infrastructure.AwardCalculator;
 /// against the Fair Work Commission's consolidated award PDF) as at
 /// 2026-08-25:
 ///   - Clause 11.1: casual loading is 25% "for each hour worked ... in
-///     addition to the ordinary hourly rate" — this is
-///     AwardReferenceDataSeed.HospitalityGeneralCasualLoadingPercentMin,
-///     the single source of truth for the figure so it can't drift from
-///     the seeded reference data.
+///     addition to the ordinary hourly rate".
 ///   - Table 14 (clause 29.2(b)): Saturday 125% (permanent) / 150%
 ///     (casual); Sunday 150% (permanent) / 175% (casual). Both casual
 ///     figures equal permanent + 25 points, matching
 ///     CasualLoadingStackingMode.AdditivePercentagePoints — see that
 ///     enum's doc comment for the full citation and cross-check against
 ///     MA000003's explicit award Note confirming the same mode.
+///
+/// The casual loading percentage and every permanent penalty multiplier
+/// below (1.50/1.25/1.10) are STRUCTURE labels only — the actual numbers
+/// are supplied per-call via the `rates` parameter (AwardCalculationRates),
+/// resolved by IAwardCalculationRateLookup from AwardCalculationRateVersion
+/// for the shift's date. This is deliberate: which day/period maps to which
+/// PenaltyType and how the loading stacks with it are legally-structural
+/// facts about MA000009 that only change if the award itself is restructured,
+/// so they stay hardcoded here; the percentages themselves change on the
+/// annual wage review and are effective-dated data instead — see
+/// docs/award-calculator-routing-fix.md for the full rationale.
 ///
 /// NOT verified against Table 14 (still illustrative-only, same
 /// disclaimer as before this audit — see CLAUDE.md § Award compliance):
@@ -39,16 +47,14 @@ public sealed class HospitalityGeneralAwardRateCalculator : IAwardRateCalculator
 {
     private static readonly TimeSpan EveningBoundary = new(19, 0, 0);
 
-    private static readonly decimal CasualLoadingFraction =
-        AwardReferenceDataSeed.HospitalityGeneralCasualLoadingPercentMin / 100m;
-
     public IReadOnlyList<AwardBreakdownLine> Calculate(
         DayOfWeek dayOfWeek,
         TimeOnly start,
         TimeOnly end,
         int unpaidBreakMinutes,
         decimal baseRatePerHour,
-        EmploymentType employmentType
+        EmploymentType employmentType,
+        AwardCalculationRates rates
     )
     {
         var totalMinutes =
@@ -59,25 +65,28 @@ public sealed class HospitalityGeneralAwardRateCalculator : IAwardRateCalculator
         }
 
         var isCasual = employmentType == EmploymentType.Casual;
+        var casualLoadingFraction = rates.CasualLoadingPercent / 100m;
 
         if (dayOfWeek == DayOfWeek.Sunday)
         {
-            return [BuildLine("Sunday", 1.50m, isCasual, totalMinutes, baseRatePerHour)];
+            return [BuildLine("Sunday", rates.GetMultiplier(PenaltyType.Sunday), isCasual, totalMinutes, baseRatePerHour, casualLoadingFraction)];
         }
 
         if (dayOfWeek == DayOfWeek.Saturday)
         {
-            return [BuildLine("Saturday", 1.25m, isCasual, totalMinutes, baseRatePerHour)];
+            return [BuildLine("Saturday", rates.GetMultiplier(PenaltyType.Saturday), isCasual, totalMinutes, baseRatePerHour, casualLoadingFraction)];
         }
 
-        return BuildWeekdayLines(start, totalMinutes, baseRatePerHour, isCasual);
+        return BuildWeekdayLines(start, totalMinutes, baseRatePerHour, isCasual, rates.GetMultiplier(PenaltyType.EveningAfter7pm), casualLoadingFraction);
     }
 
     private static List<AwardBreakdownLine> BuildWeekdayLines(
         TimeOnly start,
         double totalMinutes,
         decimal baseRatePerHour,
-        bool isCasual
+        bool isCasual,
+        decimal eveningMultiplier,
+        decimal casualLoadingFraction
     )
     {
         var startOfDay = start.ToTimeSpan();
@@ -101,14 +110,14 @@ public sealed class HospitalityGeneralAwardRateCalculator : IAwardRateCalculator
         if (ordinaryMinutes > 0)
         {
             lines.Add(
-                BuildLine("Ordinary hours", 1.00m, isCasual, ordinaryMinutes, baseRatePerHour)
+                BuildLine("Ordinary hours", 1.00m, isCasual, ordinaryMinutes, baseRatePerHour, casualLoadingFraction)
             );
         }
 
         if (eveningMinutes > 0)
         {
             lines.Add(
-                BuildLine("Weekday evening", 1.10m, isCasual, eveningMinutes, baseRatePerHour)
+                BuildLine("Weekday evening", eveningMultiplier, isCasual, eveningMinutes, baseRatePerHour, casualLoadingFraction)
             );
         }
 
@@ -117,25 +126,27 @@ public sealed class HospitalityGeneralAwardRateCalculator : IAwardRateCalculator
 
     /// <summary>
     /// Applies CasualLoadingStackingMode.AdditivePercentagePoints:
-    /// casualMultiplier = permanentMultiplier + 25 points, never
-    /// permanentMultiplier * 1.25 (that would double-count against Table
-    /// 14's published casual figures — see this class's doc comment).
+    /// casualMultiplier = permanentMultiplier + casualLoadingFraction, never
+    /// permanentMultiplier * (1 + casualLoadingFraction) (that would
+    /// double-count against Table 14's published casual figures — see this
+    /// class's doc comment).
     /// </summary>
     private static AwardBreakdownLine BuildLine(
         string periodLabel,
         decimal permanentMultiplier,
         bool isCasual,
         double minutes,
-        decimal baseRatePerHour
+        decimal baseRatePerHour,
+        decimal casualLoadingFraction
     )
     {
         var multiplier = isCasual
-            ? permanentMultiplier + CasualLoadingFraction
+            ? permanentMultiplier + casualLoadingFraction
             : permanentMultiplier;
         var label =
             permanentMultiplier == 1.00m
-                ? (isCasual ? $"{periodLabel} (casual, incl. 25% loading)" : periodLabel)
-                : $"{periodLabel} (+{(permanentMultiplier - 1) * 100:0.#}%{(isCasual ? ", casual incl. 25% loading" : "")})";
+                ? (isCasual ? $"{periodLabel} (casual, incl. {casualLoadingFraction * 100:0.#}% loading)" : periodLabel)
+                : $"{periodLabel} (+{(permanentMultiplier - 1) * 100:0.#}%{(isCasual ? $", casual incl. {casualLoadingFraction * 100:0.#}% loading" : "")})";
 
         var hours = Math.Round((decimal)(minutes / 60.0), 2);
         var ratePerHour = baseRatePerHour * multiplier;

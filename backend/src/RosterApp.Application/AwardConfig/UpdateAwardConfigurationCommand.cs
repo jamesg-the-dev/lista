@@ -1,6 +1,7 @@
 using FluentValidation;
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Application.Rostering;
 using RosterApp.Domain.AwardConfig;
 
 namespace RosterApp.Application.AwardConfig;
@@ -40,14 +41,20 @@ public sealed record UpdateAwardConfigurationCommand(
 /// </summary>
 public sealed class UpdateAwardConfigurationCommandValidator : AbstractValidator<UpdateAwardConfigurationCommand>
 {
-    public UpdateAwardConfigurationCommandValidator(IAwardReferenceDataLookup referenceDataLookup)
+    public UpdateAwardConfigurationCommandValidator(
+        IAwardReferenceDataLookup referenceDataLookup,
+        IAwardRateCalculatorFactory calculatorFactory)
     {
         RuleFor(c => c.VenueId).NotEmpty();
 
         RuleFor(c => c.AwardId)
             .NotEmpty()
             .MustAsync(async (awardId, ct) => await referenceDataLookup.AwardExistsAsync(awardId, ct))
-            .WithMessage("Selected award does not exist.");
+            .WithMessage("Selected award does not exist.")
+            .Must(calculatorFactory.IsSupported)
+            .WithMessage(
+                "This award has no verified pay calculator yet and cannot be selected — see " +
+                "CasualLoadingStackingMode.Unverified for why.");
 
         RuleFor(c => c.CasualLoadingPercent).InclusiveBetween(0, 100);
         RuleFor(c => c.SuperannuationRatePercent).InclusiveBetween(0, 100);

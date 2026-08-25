@@ -1,7 +1,9 @@
 using FluentValidation;
 using MediatR;
+using RosterApp.Application.AwardConfig;
 using RosterApp.Application.Common;
 using RosterApp.Application.Staffing;
+using RosterApp.Domain.AwardConfig;
 using RosterApp.Domain.Rostering;
 using RosterApp.Domain.Staffing;
 
@@ -47,7 +49,9 @@ public sealed class CreateShiftCommandValidator : AbstractValidator<CreateShiftC
 }
 
 public sealed class CreateShiftCommandHandler(
-    IAwardRateCalculator awardRateCalculator,
+    IAwardRateCalculatorFactory awardRateCalculatorFactory,
+    IAwardCalculationRateLookup awardCalculationRateLookup,
+    IAwardConfigurationLookup awardConfigurationLookup,
     IRosterComplianceValidator complianceValidator,
     IRosterComplianceThresholdsLookup complianceThresholdsLookup,
     IStaffLookup staffLookup,
@@ -70,13 +74,22 @@ public sealed class CreateShiftCommandHandler(
         var employee = await staffLookup.GetStaffMemberAsync(request.EmployeeId, cancellationToken)
             ?? throw new NotFoundException($"Staff member '{request.EmployeeId}' was not found.");
 
+        // Resolves the venue's configured award (defaults to Hospitality if
+        // never configured) rather than always pricing under MA000009 — see
+        // IAwardRateCalculatorFactory.
+        var awardConfig = await awardConfigurationLookup.GetActiveAsync(request.VenueId, cancellationToken);
+        var awardId = awardConfig?.AwardId ?? WellKnownAwards.HospitalityGeneralAwardId;
+        var awardRateCalculator = awardRateCalculatorFactory.GetCalculator(awardId);
+        var rates = await awardCalculationRateLookup.GetEffectiveRatesAsync(awardId, request.ShiftDate, cancellationToken);
+
         var awardBreakdown = awardRateCalculator.Calculate(
             request.ShiftDate.DayOfWeek,
             request.Start,
             request.End,
             request.UnpaidBreakMinutes,
             request.BaseRatePerHour,
-            Enum.Parse<EmploymentType>(employee.EmploymentType));
+            Enum.Parse<EmploymentType>(employee.EmploymentType),
+            rates);
 
         var shift = Shift.Create(
             request.VenueId,

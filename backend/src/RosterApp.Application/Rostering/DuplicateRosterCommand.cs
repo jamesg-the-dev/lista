@@ -1,7 +1,9 @@
 using FluentValidation;
 using MediatR;
+using RosterApp.Application.AwardConfig;
 using RosterApp.Application.Common;
 using RosterApp.Application.Staffing;
+using RosterApp.Domain.AwardConfig;
 using RosterApp.Domain.Rostering;
 using RosterApp.Domain.Staffing;
 
@@ -39,7 +41,9 @@ public sealed class DuplicateRosterCommandValidator : AbstractValidator<Duplicat
 /// </summary>
 public sealed class DuplicateRosterCommandHandler(
     IRosterLookup rosterLookup,
-    IAwardRateCalculator awardRateCalculator,
+    IAwardRateCalculatorFactory awardRateCalculatorFactory,
+    IAwardCalculationRateLookup awardCalculationRateLookup,
+    IAwardConfigurationLookup awardConfigurationLookup,
     IRosterComplianceValidator complianceValidator,
     IRosterComplianceThresholdsLookup complianceThresholdsLookup,
     IStaffLookup staffLookup,
@@ -66,10 +70,22 @@ public sealed class DuplicateRosterCommandHandler(
             cancellationToken
         );
 
+        // The whole request is scoped to one venue, so its award (and
+        // therefore its calculator) is resolved once, not per shift.
+        var awardConfig = await awardConfigurationLookup.GetActiveAsync(request.VenueId, cancellationToken);
+        var awardId = awardConfig?.AwardId ?? WellKnownAwards.HospitalityGeneralAwardId;
+        var awardRateCalculator = awardRateCalculatorFactory.GetCalculator(awardId);
+
         // Cached per employee — a week's roster commonly rosters the same
         // employee across several shifts, and EmploymentType doesn't change
         // mid-duplication.
         var employmentTypeByEmployeeId = new Dictionary<Guid, EmploymentType>();
+
+        // Cached per target date rather than resolved once for the whole
+        // request — unlike the calculator/awardId above, the effective
+        // rates genuinely could differ per shift if a week's duplication
+        // target spans a 1 July wage-review boundary.
+        var ratesByTargetDate = new Dictionary<DateOnly, AwardCalculationRates>();
 
         var offsetDays = request.TargetWeekStart.DayNumber - request.SourceWeekStart.DayNumber;
         var createdShifts = new List<Shift>();
@@ -89,13 +105,20 @@ public sealed class DuplicateRosterCommandHandler(
                 employmentTypeByEmployeeId[source.EmployeeId] = employmentType;
             }
 
+            if (!ratesByTargetDate.TryGetValue(targetDate, out var rates))
+            {
+                rates = await awardCalculationRateLookup.GetEffectiveRatesAsync(awardId, targetDate, cancellationToken);
+                ratesByTargetDate[targetDate] = rates;
+            }
+
             var awardBreakdown = awardRateCalculator.Calculate(
                 targetDate.DayOfWeek,
                 source.Start,
                 source.End,
                 source.UnpaidBreakMinutes,
                 source.BaseRatePerHour,
-                employmentType
+                employmentType,
+                rates
             );
 
             var shift = Shift.Create(

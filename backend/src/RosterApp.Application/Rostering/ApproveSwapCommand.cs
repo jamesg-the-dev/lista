@@ -1,6 +1,8 @@
 using MediatR;
+using RosterApp.Application.AwardConfig;
 using RosterApp.Application.Common;
 using RosterApp.Application.Staffing;
+using RosterApp.Domain.AwardConfig;
 using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Rostering;
@@ -27,7 +29,9 @@ public sealed class ApproveSwapCommandHandler(
     ISwapRequestRepository swapRequestRepository,
     IShiftRepository shiftRepository,
     IRosterLookup rosterLookup,
-    IAwardRateCalculator awardRateCalculator,
+    IAwardRateCalculatorFactory awardRateCalculatorFactory,
+    IAwardCalculationRateLookup awardCalculationRateLookup,
+    IAwardConfigurationLookup awardConfigurationLookup,
     IRosterComplianceValidator complianceValidator,
     IRosterComplianceThresholdsLookup complianceThresholdsLookup,
     IStaffLookup staffLookup,
@@ -71,13 +75,19 @@ public sealed class ApproveSwapCommandHandler(
         var newEmployee = await staffLookup.GetStaffMemberAsync(newEmployeeId, cancellationToken)
             ?? throw new NotFoundException($"Staff member '{newEmployeeId}' was not found.");
 
+        var awardConfig = await awardConfigurationLookup.GetActiveAsync(shift.VenueId, cancellationToken);
+        var awardId = awardConfig?.AwardId ?? WellKnownAwards.HospitalityGeneralAwardId;
+        var awardRateCalculator = awardRateCalculatorFactory.GetCalculator(awardId);
+        var rates = await awardCalculationRateLookup.GetEffectiveRatesAsync(awardId, shift.ShiftDate, cancellationToken);
+
         var awardBreakdown = awardRateCalculator.Calculate(
             shift.ShiftDate.DayOfWeek,
             shift.Start,
             shift.End,
             shift.UnpaidBreakMinutes,
             shift.BaseRatePerHour,
-            Enum.Parse<EmploymentType>(newEmployee.EmploymentType));
+            Enum.Parse<EmploymentType>(newEmployee.EmploymentType),
+            rates);
 
         shift.UpdateSchedule(
             newEmployeeId,

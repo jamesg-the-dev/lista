@@ -541,56 +541,82 @@ route directory.
   `Venue`s; staff are assigned to one or more venues; managers switch venue
   context (see the venue switcher in the roster builder).
 
-* **Award compliance (MVP):** Hospitality Industry General Award
-  (MA000009) only, hardcoded behind `IAwardRateCalculator`
-  (`HospitalityGeneralAwardRateCalculator`). Only MA000009 has a working
-  calculator — `AwardConfiguration`/`RoleAwardMapping` let an owner select
-  Fast Food (MA000003), Restaurant (MA000119), or Clubs (MA000058) in
-  Settings, but every venue's shifts are still priced by the MA000009
-  calculator regardless of that selection (DI registers a single global
-  `IAwardRateCalculator`, and no command resolves the venue's configured
-  award before calculating). Treat this as a known gap, not a documented
-  design choice — the "second implementation slots in later" promise
-  above doesn't yet include a resolver to route to it.
+* **Award compliance (MVP):** Three awards have working calculators —
+  Hospitality (MA000009), Fast Food (MA000003), Restaurant (MA000119) —
+  each its own `IAwardRateCalculator` implementation in
+  `RosterApp.Infrastructure.AwardCalculator`, resolved per venue/shift by
+  `IAwardRateCalculatorFactory` (`AwardRateCalculatorFactory`) from the
+  venue's `AwardConfiguration.AwardId` (defaults to Hospitality for a venue
+  that's never configured an award). This replaced the earlier routing bug
+  where DI registered a single global `IAwardRateCalculator` and every
+  venue was priced under MA000009 regardless of its configured award — see
+  docs/award-calculator-routing-fix.md for the full fix, citations, and
+  what's still flagged.
 
-  Casual loading (clause 11.1, 25% "for each hour worked ... in addition
-  to the ordinary hourly rate") **is applied** as of the
-  docs/casual-loading-calculation.md audit — before that audit it was
-  computed nowhere in the codebase, so casual and full-time staff produced
-  identical pay for identical shifts, for every venue, regardless of
-  which award was configured. `EmploymentType` is resolved server-side per
-  shift (via `IStaffLookup`, not client-supplied) and passed into
-  `IAwardRateCalculator.Calculate`. See
+  Registered and Licensed Clubs (MA000058) remains unimplemented — its
+  casual loading stacking mode is still unresolved against primary source
+  (`CasualLoadingStackingMode.Unverified`) — and is actively **blocked from
+  selection** in Settings (`GetAvailableAwardsQueryHandler` filters it out;
+  `UpdateAwardConfigurationCommandValidator` independently rejects it
+  server-side), not just silently mispriced if selected. Do not implement a
+  Clubs calculator without resolving the stacking mode against primary
+  source or a licensed award-interpretation feed first, and don't lift the
+  Settings block until a calculator actually ships.
+
+  **Architecture: hybrid, not pure code or pure DB config.** Calculation
+  *structure* — which day/time window maps to which `PenaltyType`, the
+  evening/night boundaries, how casual loading stacks with a penalty
+  multiplier — stays hardcoded per award, one calculator class per file, in
+  `RosterApp.Infrastructure.AwardCalculator` (`HospitalityGeneralAwardRateCalculator`,
+  `FastFoodIndustryAwardRateCalculator`, `RestaurantIndustryAwardRateCalculator`).
+  The *numbers* that change on the annual wage review (casual loading
+  percentage, penalty multipliers) live in an effective-dated table,
+  `RosterApp.Domain.AwardConfig.AwardCalculationRateVersion`, resolved via
+  `IAwardCalculationRateLookup` for the shift's date — so a shift worked
+  before a rate change prices at the old rate. Each `IAwardRateCalculator`
+  stays a pure function of its inputs (shift details + `EmploymentType` +
+  the resolved `AwardCalculationRates`), no repository dependency of its
+  own, same as `IRosterComplianceValidator`.
+
+  Casual loading (clause 11.1/11.2(b) across these awards, 25% "for each
+  hour worked ... in addition to the ordinary hourly rate") **is applied**
+  as of the docs/casual-loading-calculation.md audit — before that audit
+  it was computed nowhere in the codebase, so casual and full-time staff
+  produced identical pay for identical shifts. `EmploymentType` is resolved
+  server-side per shift (via `IStaffLookup`, not client-supplied) and
+  passed into `IAwardRateCalculator.Calculate`. See
   `RosterApp.Domain.AwardConfig.CasualLoadingStackingMode` for the named
   stacking concept and its citations.
 
-  Verified against the primary source (Fair Work Ombudsman's published
-  MA000009 text, cross-checked against the FWC's consolidated award PDF):
-  ordinary hours casual = base × 1.25; Saturday permanent 125% / casual
-  150%; Sunday permanent 150% / casual 175% (Table 14, clause 29.2(b)) —
-  casual figures are the permanent percentage **plus 25 points, never
-  compounded** (`CasualLoadingStackingMode.AdditivePercentagePoints`).
-  **Not verified** (illustrative only, same disclaimer as before this
-  audit): the weekday evening (+10%) multiplier, and public holiday/early-
-  morning multipliers were never implemented in the calculator at all —
-  casual loading is still applied to evening hours using the same
-  additive formula so a casual is never left with zero loading, but the
-  permanent evening multiplier itself, and the resulting total, are not
-  award-verified.
-
-  MA000003 (Fast Food) was independently verified during the same audit —
-  clause 11.2(b) casual loading, Table 6 penalty rates, and an explicit
-  award Note confirming the same additive stacking mode — but has no
-  seeded classification/rate data and no calculator; treat its figures
-  (cited in `CasualLoadingStackingMode`'s doc comment) as a verified
-  starting point for a future implementation, not shipped behavior.
-  MA000119 (Restaurant) is high-confidence but not independently
-  Note-confirmed the way MA000003 is. **MA000058 (Clubs) stacking
-  behaviour is unresolved** — sources actively conflicted on whether
-  casual loading stacks on top of a flat "all employees" weekend rate or
-  is already folded into it; do not implement a Clubs calculator without
-  resolving this against primary source or a licensed award-
-  interpretation feed first.
+  Verified against primary source for all three implemented awards
+  (Fair Work Ombudsman/Fair Work Commission published text — see each
+  calculator class's doc comment and docs/award-calculator-routing-fix.md
+  for the exact clause/table citations): ordinary/Saturday/Sunday
+  multipliers, casual = permanent + 25 points, never compounded
+  (`CasualLoadingStackingMode.AdditivePercentagePoints`). **Known gaps,
+  flagged rather than guessed at:**
+  * MA000009: weekday evening (+10%) and early-morning multipliers, and
+    public holiday, were never independently verified against Table 14 —
+    illustrative only.
+  * MA000003 and MA000119 both split their Sunday penalty by
+    classification level in the primary source, which
+    `IAwardRateCalculator.Calculate` can't represent (no classification
+    input yet) — both calculators always apply the higher/safer tier,
+    which overpays a lower-level casual relative to the award minimum but
+    never underpays. Needs classification threaded through Shift pricing
+    to resolve precisely.
+  * MA000119's Mon-Fri 10pm-6am penalty is a flat **dollar** addition in
+    the award text, not a percentage multiplier — not implemented at all
+    (those hours price at the plain ordinary rate, understating the award
+    minimum for that window).
+  * Public holiday penalties are cited for all three awards but not
+    applied anywhere — `Calculate` has no "is this shift on a public
+    holiday" input at all.
+  * `AwardConfiguration.CasualLoadingPercent`/`PenaltyToggles` (the
+    venue's own Settings-recorded overrides) are still not consumed by any
+    calculator — every calculator prices from its own
+    `AwardCalculationRateVersion` figures regardless of what a venue has
+    configured there.
 
   **These figures — verified periods included — are for UI/architecture
   purposes only, not a substitute for a licensed award-interpretation

@@ -53,6 +53,17 @@ public static class AwardReferenceDataSeeder
                     penaltyMultipliers));
         }
 
+        foreach (var version in AwardReferenceDataSeed.CalculationRateVersions)
+        {
+            dbContext.AwardCalculationRateVersions.Add(
+                AwardCalculationRateVersion.Create(
+                    version.VersionId,
+                    version.AwardId,
+                    version.EffectiveFromUtc,
+                    version.CasualLoadingPercent,
+                    version.PenaltyMultipliers.Select(m => PenaltyMultiplier.Create(m.Type, m.Multiplier))));
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

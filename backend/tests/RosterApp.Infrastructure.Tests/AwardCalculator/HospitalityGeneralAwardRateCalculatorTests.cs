@@ -1,3 +1,4 @@
+using RosterApp.Domain.AwardConfig;
 using RosterApp.Domain.Staffing;
 using RosterApp.Infrastructure.AwardCalculator;
 
@@ -10,10 +11,23 @@ namespace RosterApp.Infrastructure.Tests.AwardCalculator;
 /// (MA000009 clause 11.1 casual loading, Table 14 / clause 29.2(b) penalty
 /// rates) these tests are asserting against. Base rate is a round $20.00/hr
 /// throughout so the expected dollar figures are easy to verify by hand.
+/// Rates are passed in explicitly (matching AwardReferenceDataSeed's
+/// current MA000009 figures) rather than resolved via
+/// IAwardCalculationRateLookup — the calculator is a pure function of its
+/// inputs and doesn't own a repository dependency.
 /// </summary>
 public class HospitalityGeneralAwardRateCalculatorTests
 {
     private const decimal BaseRate = 20.00m;
+
+    private static readonly AwardCalculationRates Rates = new(
+        CasualLoadingPercent: 25.00m,
+        PenaltyMultipliers: new Dictionary<PenaltyType, decimal>
+        {
+            [PenaltyType.Saturday] = 1.25m,
+            [PenaltyType.Sunday] = 1.50m,
+            [PenaltyType.EveningAfter7pm] = 1.10m,
+        });
 
     private readonly HospitalityGeneralAwardRateCalculator _calculator = new();
 
@@ -21,7 +35,7 @@ public class HospitalityGeneralAwardRateCalculatorTests
     public void Calculate_WeekdayOrdinaryHours_FullTime_PaysBaseRate()
     {
         var lines = _calculator.Calculate(
-            DayOfWeek.Tuesday, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.FullTime);
+            DayOfWeek.Tuesday, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.FullTime, Rates);
 
         var line = Assert.Single(lines);
         Assert.Equal(20.00m, line.RatePerHour);
@@ -33,7 +47,7 @@ public class HospitalityGeneralAwardRateCalculatorTests
     public void Calculate_WeekdayOrdinaryHours_Casual_AppliesClause11Point1TwentyFivePercentLoading()
     {
         var lines = _calculator.Calculate(
-            DayOfWeek.Tuesday, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.Casual);
+            DayOfWeek.Tuesday, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.Casual, Rates);
 
         var line = Assert.Single(lines);
         Assert.Equal(25.00m, line.RatePerHour); // $20 x 1.25 (clause 11.1: 25% "for each hour worked")
@@ -44,7 +58,7 @@ public class HospitalityGeneralAwardRateCalculatorTests
     public void Calculate_Saturday_FullTime_Pays125Percent()
     {
         var lines = _calculator.Calculate(
-            DayOfWeek.Saturday, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.FullTime);
+            DayOfWeek.Saturday, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.FullTime, Rates);
 
         var line = Assert.Single(lines);
         Assert.Equal(25.00m, line.RatePerHour); // $20 x 1.25 — Table 14, permanent Saturday rate
@@ -54,7 +68,7 @@ public class HospitalityGeneralAwardRateCalculatorTests
     public void Calculate_Saturday_Casual_Pays150Percent_NotCompounded()
     {
         var lines = _calculator.Calculate(
-            DayOfWeek.Saturday, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.Casual);
+            DayOfWeek.Saturday, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.Casual, Rates);
 
         var line = Assert.Single(lines);
         // Table 14's published casual Saturday figure is 150% (125% + 25
@@ -71,7 +85,7 @@ public class HospitalityGeneralAwardRateCalculatorTests
     public void Calculate_Sunday_FullTime_Pays150Percent()
     {
         var lines = _calculator.Calculate(
-            DayOfWeek.Sunday, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.FullTime);
+            DayOfWeek.Sunday, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.FullTime, Rates);
 
         var line = Assert.Single(lines);
         Assert.Equal(30.00m, line.RatePerHour); // $20 x 1.50 — Table 14, permanent Sunday rate
@@ -81,7 +95,7 @@ public class HospitalityGeneralAwardRateCalculatorTests
     public void Calculate_Sunday_Casual_Pays175Percent()
     {
         var lines = _calculator.Calculate(
-            DayOfWeek.Sunday, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.Casual);
+            DayOfWeek.Sunday, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.Casual, Rates);
 
         var line = Assert.Single(lines);
         Assert.Equal(35.00m, line.RatePerHour); // $20 x 1.75 (1.50 + 0.25) — Table 14 casual Sunday figure
@@ -91,9 +105,9 @@ public class HospitalityGeneralAwardRateCalculatorTests
     public void Calculate_PartTime_TreatedSameAsFullTime_NoCasualLoading()
     {
         var fullTime = _calculator.Calculate(
-            DayOfWeek.Saturday, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.FullTime);
+            DayOfWeek.Saturday, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.FullTime, Rates);
         var partTime = _calculator.Calculate(
-            DayOfWeek.Saturday, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.PartTime);
+            DayOfWeek.Saturday, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.PartTime, Rates);
 
         Assert.Equal(fullTime.Single().RatePerHour, partTime.Single().RatePerHour);
     }
@@ -106,7 +120,7 @@ public class HospitalityGeneralAwardRateCalculatorTests
         // worked" loading applies to both portions regardless of which
         // portion's permanent multiplier is award-verified.
         var lines = _calculator.Calculate(
-            DayOfWeek.Wednesday, new TimeOnly(17, 0), new TimeOnly(21, 0), 0, BaseRate, EmploymentType.Casual);
+            DayOfWeek.Wednesday, new TimeOnly(17, 0), new TimeOnly(21, 0), 0, BaseRate, EmploymentType.Casual, Rates);
 
         Assert.Equal(2, lines.Count);
         Assert.Equal(25.00m, lines[0].RatePerHour); // ordinary: $20 x 1.25
@@ -117,8 +131,26 @@ public class HospitalityGeneralAwardRateCalculatorTests
     public void Calculate_ZeroOrNegativeDuration_ReturnsNoLines()
     {
         var lines = _calculator.Calculate(
-            DayOfWeek.Monday, new TimeOnly(9, 0), new TimeOnly(9, 30), 30, BaseRate, EmploymentType.Casual);
+            DayOfWeek.Monday, new TimeOnly(9, 0), new TimeOnly(9, 30), 30, BaseRate, EmploymentType.Casual, Rates);
 
         Assert.Empty(lines);
+    }
+
+    [Fact]
+    public void Calculate_UsesSuppliedRates_NotHardcodedFigures()
+    {
+        // Proves the calculator is genuinely driven by the `rates`
+        // parameter rather than a compile-time constant — a hypothetical
+        // wage-review update (30% casual loading, 130% Saturday) prices
+        // differently with no code change.
+        var hypotheticalRates = new AwardCalculationRates(
+            CasualLoadingPercent: 30.00m,
+            PenaltyMultipliers: new Dictionary<PenaltyType, decimal> { [PenaltyType.Saturday] = 1.30m });
+
+        var lines = _calculator.Calculate(
+            DayOfWeek.Saturday, new TimeOnly(9, 0), new TimeOnly(15, 0), 0, BaseRate, EmploymentType.Casual, hypotheticalRates);
+
+        var line = Assert.Single(lines);
+        Assert.Equal(32.00m, line.RatePerHour); // $20 x (1.30 + 0.30)
     }
 }

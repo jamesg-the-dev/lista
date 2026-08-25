@@ -22,10 +22,13 @@ namespace RosterApp.Infrastructure.AwardConfig;
 /// </summary>
 public static class AwardReferenceDataSeed
 {
-    public static readonly Guid HospitalityGeneralAwardId = new("11111111-0000-0000-0000-000000000001");
-    public static readonly Guid RestaurantIndustryAwardId = new("11111111-0000-0000-0000-000000000002");
-    public static readonly Guid RegisteredClubsAwardId = new("11111111-0000-0000-0000-000000000003");
-    public static readonly Guid FastFoodIndustryAwardId = new("11111111-0000-0000-0000-000000000004");
+    // These four ids are the single source of truth in RosterApp.Domain.AwardConfig.WellKnownAwards
+    // (Application-layer code needs to reference them without depending on this Infrastructure project)
+    // — aliased here so every existing usage in this file/the seeder keeps working unchanged.
+    public static readonly Guid HospitalityGeneralAwardId = WellKnownAwards.HospitalityGeneralAwardId;
+    public static readonly Guid RestaurantIndustryAwardId = WellKnownAwards.RestaurantIndustryAwardId;
+    public static readonly Guid RegisteredClubsAwardId = WellKnownAwards.RegisteredClubsAwardId;
+    public static readonly Guid FastFoodIndustryAwardId = WellKnownAwards.FastFoodIndustryAwardId;
 
     /// <summary>Effective-from date for every seeded MA000009 rate row — the most recent FWC annual wage review baked into this MVP's illustrative figures.</summary>
     public static readonly DateTime CurrentRatesEffectiveFromUtc = new(2025, 7, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -58,5 +61,72 @@ public static class AwardReferenceDataSeed
         (PenaltyType.PublicHoliday, 2.50m),
         (PenaltyType.EveningAfter7pm, 1.10m),
         (PenaltyType.EarlyMorningBefore7am, 1.15m),
+    ];
+
+    public sealed record CalculationRateVersionSeed(
+        Guid VersionId,
+        Guid AwardId,
+        DateTime EffectiveFromUtc,
+        decimal CasualLoadingPercent,
+        IReadOnlyList<(PenaltyType Type, decimal Multiplier)> PenaltyMultipliers);
+
+    /// <summary>
+    /// Seeds AwardCalculationRateVersion — the effective-dated figures
+    /// IAwardRateCalculator actually consumes at calculate-time (distinct
+    /// from AwardRate.PenaltyMultipliers above, which is decorative
+    /// reference data for the Settings UI, not consumed by any calculator).
+    /// Every multiplier here is the PERMANENT (full-time/part-time)
+    /// figure — casual pay is derived by each calculator via
+    /// CasualLoadingStackingMode.AdditivePercentagePoints (permanent +
+    /// CasualLoadingPercent points), never stored as a separate casual
+    /// figure. See each calculator class's doc comment for the primary
+    /// source citations these numbers come from, and
+    /// docs/award-calculator-routing-fix.md for the architecture this
+    /// enables (a wage-review update becomes a new seeded version, not a
+    /// code change).
+    /// </summary>
+    public static readonly IReadOnlyList<CalculationRateVersionSeed> CalculationRateVersions =
+    [
+        new(
+            new Guid("44444444-0000-0000-0000-000000000001"),
+            HospitalityGeneralAwardId,
+            CurrentRatesEffectiveFromUtc,
+            HospitalityGeneralCasualLoadingPercentMin,
+            [
+                (PenaltyType.Saturday, 1.25m),
+                (PenaltyType.Sunday, 1.50m),
+                (PenaltyType.EveningAfter7pm, 1.10m),
+            ]),
+        new(
+            new Guid("44444444-0000-0000-0000-000000000002"),
+            FastFoodIndustryAwardId,
+            CurrentRatesEffectiveFromUtc,
+            25.00m,
+            [
+                (PenaltyType.Saturday, 1.25m),
+                // Level 2-3 figure applied universally — see
+                // FastFoodIndustryAwardRateCalculator's "KNOWN APPROXIMATION".
+                (PenaltyType.Sunday, 1.50m),
+                (PenaltyType.PublicHoliday, 2.25m),
+                (PenaltyType.EveningAfter7pm, 1.10m), // Mon-Fri 10pm-midnight
+                (PenaltyType.EarlyMorningBefore7am, 1.15m), // Mon-Fri midnight-6am
+            ]),
+        new(
+            new Guid("44444444-0000-0000-0000-000000000003"),
+            RestaurantIndustryAwardId,
+            CurrentRatesEffectiveFromUtc,
+            25.00m,
+            [
+                (PenaltyType.Saturday, 1.25m),
+                // Level 3-6 figure applied universally — see
+                // RestaurantIndustryAwardRateCalculator's "KNOWN APPROXIMATION".
+                (PenaltyType.Sunday, 1.50m),
+                (PenaltyType.PublicHoliday, 2.25m),
+                // No EveningAfter7pm/EarlyMorningBefore7am row: MA000119's
+                // night differential is a flat dollar addition, not a
+                // percentage multiplier — see the calculator's "NOT
+                // implemented" note. Seeding a percentage figure here would
+                // misrepresent it as modelled.
+            ]),
     ];
 }

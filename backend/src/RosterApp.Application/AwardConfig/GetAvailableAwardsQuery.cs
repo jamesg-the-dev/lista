@@ -1,5 +1,6 @@
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Application.Rostering;
 using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.AwardConfig;
@@ -17,9 +18,20 @@ public sealed record GetAvailableAwardsQuery : IRequest<IReadOnlyList<AwardDto>>
     public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Manager;
 }
 
-public sealed class GetAvailableAwardsQueryHandler(IAwardReferenceDataLookup referenceDataLookup)
+/// <summary>
+/// Filters out any award with no verified IAwardRateCalculator behind it
+/// (currently MA000058 — see CasualLoadingStackingMode.Unverified) so it
+/// can never be selected in Settings, not just silently mispriced if
+/// selected. See docs/award-calculator-routing-fix.md.
+/// </summary>
+public sealed class GetAvailableAwardsQueryHandler(
+    IAwardReferenceDataLookup referenceDataLookup,
+    IAwardRateCalculatorFactory calculatorFactory)
     : IRequestHandler<GetAvailableAwardsQuery, IReadOnlyList<AwardDto>>
 {
-    public Task<IReadOnlyList<AwardDto>> Handle(GetAvailableAwardsQuery request, CancellationToken cancellationToken) =>
-        referenceDataLookup.GetAvailableAwardsAsync(cancellationToken);
+    public async Task<IReadOnlyList<AwardDto>> Handle(GetAvailableAwardsQuery request, CancellationToken cancellationToken)
+    {
+        var awards = await referenceDataLookup.GetAvailableAwardsAsync(cancellationToken);
+        return awards.Where(a => calculatorFactory.IsSupported(a.Id)).ToList();
+    }
 }
