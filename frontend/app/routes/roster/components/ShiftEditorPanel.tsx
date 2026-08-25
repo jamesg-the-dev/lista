@@ -237,7 +237,9 @@ export function ShiftEditorPanel({
                   <div className="border-border mb-3 flex justify-between border-b border-dashed pb-3">
                     <span className="text-foreground">{rateInfo.label}</span>
                     <span className="text-foreground">
-                      ×{rateInfo.multiplier.toFixed(2)}
+                      {rateInfo.flatDollarPerHour > 0
+                        ? `+${currency2(rateInfo.flatDollarPerHour)}/hr`
+                        : `×${rateInfo.multiplier.toFixed(2)}`}
                     </span>
                   </div>
                   <div className="flex justify-between text-base font-semibold">

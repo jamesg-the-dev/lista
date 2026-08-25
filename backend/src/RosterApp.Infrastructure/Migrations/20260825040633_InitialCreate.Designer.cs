@@ -12,8 +12,8 @@ using RosterApp.Infrastructure;
 namespace RosterApp.Infrastructure.Migrations
 {
     [DbContext(typeof(RosterDbContext))]
-    [Migration("20260825032823_AddPublicHolidayAndFlatDollarLoading")]
-    partial class AddPublicHolidayAndFlatDollarLoading
+    [Migration("20260825040633_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

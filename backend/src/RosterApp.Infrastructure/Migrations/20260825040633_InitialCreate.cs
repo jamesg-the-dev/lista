@@ -73,6 +73,27 @@ namespace RosterApp.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AwardCalculationRateVersions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    AwardId = table.Column<Guid>(type: "uuid", nullable: false),
+                    EffectiveFromUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    EffectiveToUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CasualLoadingPercent = table.Column<decimal>(type: "numeric(5,2)", precision: 5, scale: 2, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AwardCalculationRateVersions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AwardCalculationRateVersions_AwardDefinitions_AwardId",
+                        column: x => x.AwardId,
+                        principalTable: "AwardDefinitions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AwardClassificationDefinitions",
                 columns: table => new
                 {
@@ -121,6 +142,48 @@ namespace RosterApp.Infrastructure.Migrations
                         name: "FK_Venues_Organisations_OrganisationId",
                         column: x => x.OrganisationId,
                         principalTable: "Organisations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AwardCalculationRateFlatDollarLoadings",
+                columns: table => new
+                {
+                    AwardCalculationRateVersionId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    PenaltyType = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    DollarPerHour = table.Column<decimal>(type: "numeric(6,2)", precision: 6, scale: 2, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AwardCalculationRateFlatDollarLoadings", x => new { x.AwardCalculationRateVersionId, x.Id });
+                    table.ForeignKey(
+                        name: "FK_AwardCalculationRateFlatDollarLoadings_AwardCalculationRate~",
+                        column: x => x.AwardCalculationRateVersionId,
+                        principalTable: "AwardCalculationRateVersions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AwardCalculationRatePenaltyMultipliers",
+                columns: table => new
+                {
+                    AwardCalculationRateVersionId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    PenaltyType = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    Multiplier = table.Column<decimal>(type: "numeric(5,2)", precision: 5, scale: 2, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AwardCalculationRatePenaltyMultipliers", x => new { x.AwardCalculationRateVersionId, x.Id });
+                    table.ForeignKey(
+                        name: "FK_AwardCalculationRatePenaltyMultipliers_AwardCalculationRate~",
+                        column: x => x.AwardCalculationRateVersionId,
+                        principalTable: "AwardCalculationRateVersions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -631,6 +694,13 @@ namespace RosterApp.Infrastructure.Migrations
                 column: "OrganisationId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AwardCalculationRateVersions_AwardId_Active",
+                table: "AwardCalculationRateVersions",
+                column: "AwardId",
+                unique: true,
+                filter: "\"EffectiveToUtc\" IS NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AwardClassificationDefinitions_AwardId",
                 table: "AwardClassificationDefinitions",
                 column: "AwardId");
@@ -815,6 +885,12 @@ namespace RosterApp.Infrastructure.Migrations
                 name: "AuditLogEntries");
 
             migrationBuilder.DropTable(
+                name: "AwardCalculationRateFlatDollarLoadings");
+
+            migrationBuilder.DropTable(
+                name: "AwardCalculationRatePenaltyMultipliers");
+
+            migrationBuilder.DropTable(
                 name: "AwardConfigurationPenaltyToggles");
 
             migrationBuilder.DropTable(
@@ -855,6 +931,9 @@ namespace RosterApp.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "VenueTradingHours");
+
+            migrationBuilder.DropTable(
+                name: "AwardCalculationRateVersions");
 
             migrationBuilder.DropTable(
                 name: "AwardConfigurations");

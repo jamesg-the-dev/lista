@@ -13,6 +13,7 @@ import { StrictMode } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 
 import { queryClient } from './lib/query-client';
+import { Spinner } from './components/ui/spinner';
 
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -42,6 +43,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Scripts />
       </body>
     </html>
+  );
+}
+
+export function HydrateFallback() {
+  return (
+    <div className="flex h-dvh w-dvw items-center justify-center">
+      <Spinner className="size-8" />
+    </div>
   );
 }
 

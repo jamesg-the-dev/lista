@@ -170,6 +170,14 @@ export interface RateInfo {
   grossHrs: number;
   paidHrs: number;
   multiplier: number;
+  // MA000009 models weekday evening (7pm-midnight)/night (midnight-7am)
+  // loading as a flat $/hour addition, not a percentage — see
+  // docs/hospitality-night-differential-fix.md. Kept separate from
+  // `multiplier` (which stays 0 whenever this is nonzero) rather than
+  // folded into it, mirroring the backend's own separate
+  // PenaltyMultipliers/FlatDollarLoadings dictionaries so the two figure
+  // types can't be silently conflated here either.
+  flatDollarPerHour: number;
   label: string;
   cost: number | null; // null when the staff member's rate is unresolved (see resolveStaffRate)
 }
@@ -195,6 +203,7 @@ export function getRateInfo(
   const paidHrs = Math.max(0, grossHrs - breakHrs);
 
   let multiplier = 1;
+  let flatDollarPerHour = 0;
   let label = 'Ordinary hours';
   if (dayOfWeek === 5) {
     multiplier = 1.25;
@@ -202,13 +211,17 @@ export function getRateInfo(
   } else if (dayOfWeek === 6) {
     multiplier = 1.5;
     label = 'Sunday penalty +50%';
+  } else if (startDT.hour < 7) {
+    flatDollarPerHour = 4.42;
+    label = 'Night work loading +$4.42/hr';
   } else if (endDT.hour + endDT.minute / 60 > 19) {
-    multiplier = 1.1;
-    label = 'Weekday evening loading +10%';
+    flatDollarPerHour = 2.95;
+    label = 'Weekday evening loading +$2.95/hr';
   }
 
-  const cost = baseRate === null ? null : paidHrs * baseRate * multiplier;
-  return { grossHrs, paidHrs, multiplier, label, cost };
+  const cost =
+    baseRate === null ? null : paidHrs * baseRate * multiplier + paidHrs * flatDollarPerHour;
+  return { grossHrs, paidHrs, multiplier, flatDollarPerHour, label, cost };
 }
 
 export function currency(n: number): string {

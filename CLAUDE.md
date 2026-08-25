@@ -594,26 +594,21 @@ route directory.
   for the exact clause/table citations): ordinary/Saturday/Sunday
   multipliers, casual = permanent + 25 points, never compounded
   (`CasualLoadingStackingMode.AdditivePercentagePoints`). Public holiday
-  penalties (225% permanent / 250% casual, all three awards) and
-  MA000119's Mon-Fri late-night/early-morning flat-dollar loading
-  (+$2.95/hr, +$4.42/hr) are now implemented — see
-  docs/public-holiday-and-night-differential-fix.md for the FWO Pay Guide
+  penalties (225% permanent / 250% casual, all three awards), MA000119's
+  Mon-Fri late-night/early-morning flat-dollar loading (+$2.95/hr,
+  +$4.42/hr), and MA000009's own Mon-Fri evening/night flat-dollar loading
+  (also +$2.95/hr 7pm-midnight, +$4.42/hr midnight-7am — same figures as
+  MA000119, different time windows) are now implemented — see
+  docs/public-holiday-and-night-differential-fix.md and
+  docs/hospitality-night-differential-fix.md for the FWO Pay Guide
   citations, `IPublicHolidayCalculationLookup` for how a shift's date
   resolves to "is this a public holiday" from the venue's state, and
   `AwardCalculationRates.FlatDollarLoadings` for why the flat-dollar figure
-  type is kept structurally separate from `PenaltyMultipliers`. **Known
-  gaps, flagged rather than guessed at:**
-  * **MA000009's weekday evening/early-morning loading is very likely also
-    a flat-dollar figure, not a percentage** — the same FWO Pay Guide used
-    to verify the public holiday figures above shows +$2.95/hr
-    (7pm-midnight) and +$4.42/hr (midnight-7am), identical to MA000119's
-    night differential before the fix above. `HospitalityGeneralAwardRateCalculator`
-    still models these as a percentage multiplier (`EveningAfter7pm` =
-    1.10, still "NOT verified... illustrative only"). This is probably a
-    real, likely-common underpayment (any weeknight evening shift under
-    MA000009) rather than merely an unverified figure — flagged as the
-    next priority audit, see docs/public-holiday-and-night-differential-fix.md
-    "Flagged for human review" §1.
+  type is kept structurally separate from `PenaltyMultipliers`. MA000003
+  (Fast Food) was independently re-verified during the MA000009 fix and
+  confirmed to be genuinely percentage-based (110%/115%) on its own primary
+  source — no change needed there. **Known gaps, flagged rather than
+  guessed at:**
   * MA000003 and MA000119 both split their Sunday penalty by
     classification level in the primary source, which
     `IAwardRateCalculator.Calculate` can't represent (no classification

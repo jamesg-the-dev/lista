@@ -53,14 +53,28 @@ public static class AwardReferenceDataSeed
 
     public const decimal HospitalityGeneralCasualLoadingPercentMin = 25.00m;
 
-    /// <summary>Matches HospitalityGeneralAwardRateCalculator's hardcoded MVP multipliers for Saturday/Sunday/evening; PublicHoliday and EarlyMorningBefore7am aren't implemented there yet but are seeded here as reference data for the settings UI to display.</summary>
+    /// <summary>
+    /// Matches HospitalityGeneralAwardRateCalculator's hardcoded MVP
+    /// multipliers for Saturday/Sunday/public holiday; seeded here as
+    /// reference data for the Settings UI to display via AwardRate (a
+    /// separate, decorative structure from CalculationRateVersions above,
+    /// not consumed by the calculator). Deliberately excludes
+    /// EveningAfter7pm/EarlyMorningBefore7am: those are flat-dollar
+    /// additions, not percentage multipliers (see
+    /// docs/hospitality-night-differential-fix.md), and AwardRate/
+    /// PenaltyMultiplier has no flat-dollar concept to display them
+    /// correctly — showing the old 1.10/1.15 figures here would keep
+    /// misrepresenting them in Settings even after the calculator fix.
+    /// Flagged rather than silently worked around: closing this gap needs a
+    /// flat-dollar counterpart on AwardRate, mirroring
+    /// AwardCalculationRates.FlatDollarLoadings, which is out of scope for
+    /// this fix.
+    /// </summary>
     public static readonly IReadOnlyList<(PenaltyType Type, decimal Multiplier)> HospitalityGeneralPenaltyMultipliers =
     [
         (PenaltyType.Saturday, 1.25m),
         (PenaltyType.Sunday, 1.50m),
         (PenaltyType.PublicHoliday, 2.50m),
-        (PenaltyType.EveningAfter7pm, 1.10m),
-        (PenaltyType.EarlyMorningBefore7am, 1.15m),
     ];
 
     public sealed record CalculationRateVersionSeed(
@@ -104,7 +118,30 @@ public static class AwardReferenceDataSeed
                 // (225% + 25 points), matching
                 // CasualLoadingStackingMode.AdditivePercentagePoints.
                 (PenaltyType.PublicHoliday, 2.25m),
-                (PenaltyType.EveningAfter7pm, 1.10m),
+                // No EveningAfter7pm/EarlyMorningBefore7am row here:
+                // MA000009's evening/night differential is a flat dollar
+                // addition, not a percentage multiplier — see
+                // FlatDollarLoadings below. Seeding a percentage figure here
+                // would misrepresent it as modelled that way (this is the
+                // 2026-08-25 fix for a bug found during the MA000119 night-
+                // differential audit — see
+                // docs/hospitality-night-differential-fix.md).
+            ],
+            // Verified against the FWO Pay Guide - Hospitality Industry
+            // (General) Award [MA000009], effective 01/07/2026: "Evening -
+            // Monday to Friday - 7pm to midnight" = base rate plus
+            // $2.95/hour; "Night work - Monday to Friday - midnight to 7am"
+            // = base rate plus $4.42/hour. Identical dollar figures to
+            // MA000119's night differential (same allowance schedule shared
+            // across the hospitality-family awards), but MA000009's own
+            // time windows (7pm-midnight / midnight-7am) differ from
+            // MA000119's (10pm-midnight / midnight-6am) — see
+            // HospitalityGeneralAwardRateCalculator's window boundaries.
+            // Applies identically to casual and permanent employees; see
+            // HospitalityGeneralAwardRateCalculator.BuildFlatDollarLine.
+            [
+                (PenaltyType.EveningAfter7pm, 2.95m), // Mon-Fri 7pm-midnight
+                (PenaltyType.EarlyMorningBefore7am, 4.42m), // Mon-Fri midnight-7am
             ]),
         new(
             new Guid("44444444-0000-0000-0000-000000000002"),
