@@ -51,45 +51,48 @@ export default function SettingsLayout() {
       <header className="border-border bg-card sticky top-0 z-30 flex items-center justify-between gap-4 border-b px-6 py-4">
         <div className="flex min-w-0 items-center gap-4">
           {venues.length > 1 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    className="bg-muted h-auto gap-2 rounded-lg px-3 py-2"
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      className="bg-muted h-auto gap-2 rounded-lg px-3 py-2"
+                    />
+                  }
+                >
+                  <span className="bg-foreground h-2 w-2 shrink-0 rounded-full" />
+                  <div className="text-left">
+                    <p className="font-sans text-sm leading-tight font-semibold uppercase">
+                      {activeVenue?.name ?? 'Loading venue…'}
+                    </p>
+                  </div>
+                  <ChevronDownIcon
+                    size={14}
+                    className="text-muted-foreground ml-1 shrink-0"
                   />
-                }
-              >
-                <span className="bg-foreground h-2 w-2 shrink-0 rounded-full" />
-                <div className="text-left">
-                  <p className="font-sans text-sm leading-tight font-semibold uppercase">
-                    {activeVenue?.name ?? 'Loading venue…'}
-                  </p>
-                </div>
-                <ChevronDownIcon
-                  size={14}
-                  className="text-muted-foreground ml-1 shrink-0"
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-muted w-64">
-                {venues.map(v => (
-                  <DropdownMenuItem
-                    key={v.id}
-                    onClick={() => setActiveVenueId(v.id)}
-                    className="justify-between px-4 py-3"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">{v.name}</p>
-                    </div>
-                    {v.id === activeVenueId && (
-                      <span className="bg-foreground h-1.5 w-1.5 rounded-full" />
-                    )}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-muted w-64">
+                  {venues.map(v => (
+                    <DropdownMenuItem
+                      key={v.id}
+                      onClick={() => setActiveVenueId(v.id)}
+                      className="justify-between px-4 py-3"
+                    >
+                      <div>
+                        <p className="text-sm font-medium">{v.name}</p>
+                      </div>
+                      {v.id === activeVenueId && (
+                        <span className="bg-foreground h-1.5 w-1.5 rounded-full" />
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Separator orientation="vertical" />
+            </>
           )}
-          <div className={cn(venues.length > 1 && 'border-border border-l pl-4')}>
+          <div>
             <p className="font-sans text-sm font-semibold">Settings</p>
             <p className="text-muted-foreground text-xs">
               Business profile, pay rules and compliance for this venue
