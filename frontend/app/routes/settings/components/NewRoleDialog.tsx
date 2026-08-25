@@ -31,16 +31,13 @@ import {
 } from '../hooks';
 import { ROLE_COLOR_SWATCHES } from '../types';
 import type { Role } from '../types';
+import { Icon, Plus } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip';
 
 interface NewRoleDialogProps {
   venueId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  // When set, this is a re-map of an existing role rather than a new one —
-  // the backend has no "rename a role" command (RoleController only exposes
-  // create/deactivate, see FEATURE_SETTINGS_STAFF_ROLES.md §5's CQRS
-  // table), so name/colour become read-only and only the award
-  // classification select is actually submitted (SetRoleAwardMappingCommand).
   existingRole?: Role;
 }
 
@@ -152,7 +149,22 @@ export default function NewRoleDialog({
                       />
                     </ToggleGroupItem>
                   ))}
+                  {/* TODO hook the color picker up when ready */}
+                  {/* <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <FieldLabel
+                          htmlFor="color-picker"
+                          className="border-border text-muted-foreground hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background size-6 min-h-6 min-w-6 cursor-pointer rounded-full border p-0 *:focus-visible:ring-1 *:focus-visible:ring-offset-1"
+                        >
+                          <Plus />
+                        </FieldLabel>
+                      }
+                    />
+                    <TooltipContent>Add colour</TooltipContent>
+                  </Tooltip> */}
                 </ToggleGroup>
+                {/* <Input type="color" id="color-picker" className="sr-only" /> */}
               </Field>
             )}
           </form.Field>

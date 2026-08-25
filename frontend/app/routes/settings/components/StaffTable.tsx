@@ -130,7 +130,7 @@ export default function StaffTable({ venueId }: { venueId: string }) {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => setEditingStaffId(member.id)}>
-                          Edit permission & pay
+                          Edit
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
