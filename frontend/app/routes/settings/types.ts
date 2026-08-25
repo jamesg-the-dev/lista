@@ -9,6 +9,8 @@
 // consume. Enum fields (State, TradingHourSession.dayOfWeek) are the exact
 // C# member name string, per CLAUDE.md's wire-format rule — never an int.
 
+import { DAY_LABELS } from '~/lib/date-types';
+
 // ---------------------------------------------------------------------------
 // Address — structured, not free text (see CLAUDE.md's Address VO).
 // ---------------------------------------------------------------------------
@@ -101,8 +103,6 @@ export function isValidAbn(raw: string): boolean {
 // replaces the whole week's sessions in one call, so no server-assigned id
 // is needed to address an individual row.
 // ---------------------------------------------------------------------------
-
-export const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 
 const WEEKDAY_TABLE: Record<string, number> = {
   Monday: 0,

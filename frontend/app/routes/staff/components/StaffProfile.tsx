@@ -1,72 +1,23 @@
 import { useState } from 'react';
 import { useForm } from '@tanstack/react-form';
-import { ArrowLeftIcon, XIcon } from 'lucide-react';
+import { ArrowLeftIcon } from 'lucide-react';
 
-import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
-import { Checkbox } from '~/components/ui/checkbox';
-import { Field, FieldLabel } from '~/components/ui/field';
-import { Input } from '~/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '~/components/ui/select';
 import { Skeleton } from '~/components/ui/skeleton';
-import { Textarea } from '~/components/ui/textarea';
-import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group';
 
-import {
-  useAddAvailabilityException,
-  useCreateLeaveRequest,
-  useRemoveAvailabilityException,
-  useSaveStaffMember,
-  useStaffMember,
-  useUpdateLeaveRequestStatus,
-} from '../hooks';
-import { DAY_LABELS, TIME_BLOCK_META } from '../types';
-import type {
-  AvailabilityException,
-  DayOfWeek,
-  LeaveRequest,
-  LeaveRequestStatus,
-  TimeBlock,
-  Venue,
-} from '../types';
-import { SectionHeader } from './form-ui';
+import { useSaveStaffMember, useStaffMember } from '../hooks';
+import type { Venue } from '../types';
 import StaffMemberForm, {
   blankStaffMemberForm,
   toStaffMemberFormValue,
 } from './StaffMemberForm';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '~/components/ui/card';
-
-const DAY_ITEMS = DAY_LABELS.map((label, i) => ({ value: String(i), label }));
+import { LeaveRequestsSection } from './LeaveRequestSection';
+import { AvailabilitySection } from './AvailabilitySection';
 
 interface StaffProfileProps {
   staffId: string;
   venues: Venue[];
   onBack: () => void;
-}
-
-function formatDate(d: Date): string {
-  return d.toLocaleDateString('en-AU', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
-function EmptyNote({ text }: { text: string }) {
-  return <p className="text-muted-foreground text-xs italic">{text}</p>;
 }
 
 function ErrorBlock({ message, onRetry }: { message: string; onRetry: () => void }) {
@@ -81,12 +32,6 @@ function ErrorBlock({ message, onRetry }: { message: string; onRetry: () => void
   );
 }
 
-const STATUS_META: Record<LeaveRequestStatus, { label: string; className: string }> = {
-  requested: { label: 'Requested', className: 'bg-muted text-muted-foreground' },
-  approved: { label: 'Approved', className: 'bg-success-tint text-success' },
-  declined: { label: 'Declined', className: 'bg-destructive-tint text-destructive' },
-};
-
 function StaffProfileSkeleton() {
   return (
     <div className="flex w-full flex-col gap-7">
@@ -100,278 +45,6 @@ function StaffProfileSkeleton() {
       </div>
       <Skeleton className="h-8 w-24" />
     </div>
-  );
-}
-
-function StatusBadge({ status }: { status: LeaveRequestStatus }) {
-  const meta = STATUS_META[status];
-  return <Badge className={meta.className}>{meta.label}</Badge>;
-}
-
-function AvailabilitySection({
-  staffId,
-  exceptions,
-}: {
-  staffId: string;
-  exceptions: AvailabilityException[];
-}) {
-  const addMutation = useAddAvailabilityException(staffId);
-  const removeMutation = useRemoveAvailabilityException(staffId);
-
-  const form = useForm({
-    defaultValues: { dayOfWeek: 0 as DayOfWeek, allDay: true, blocks: [] as TimeBlock[] },
-    onSubmit: async ({ value }) => {
-      await addMutation.mutateAsync({
-        dayOfWeek: value.dayOfWeek,
-        blocks: value.allDay ? 'all_day' : value.blocks,
-      });
-      form.reset();
-    },
-  });
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Standing availability</CardTitle>
-        <CardDescription>
-          Days/blocks this staff member is NOT available. Anything not listed here is
-          assumed available.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="mb-4 flex flex-col gap-2">
-          {exceptions.length === 0 && (
-            <EmptyNote text="No standing exceptions — assumed available every day." />
-          )}
-          {exceptions.map(ex => (
-            <div
-              key={ex.id}
-              className="border-border flex items-center justify-between rounded-lg border px-3 py-2"
-            >
-              <span className="text-sm">
-                <strong>{DAY_LABELS[ex.dayOfWeek]}</strong>{' '}
-                {ex.blocks === 'all_day'
-                  ? '— unavailable all day'
-                  : `— unavailable ${ex.blocks.map(b => TIME_BLOCK_META[b].label).join(', ')}`}
-              </span>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => removeMutation.mutate(ex.id)}
-                disabled={removeMutation.isPending}
-              >
-                <XIcon size={14} />
-              </Button>
-            </div>
-          ))}
-        </div>
-        <div className="border-border flex flex-wrap items-end gap-3 rounded-lg border p-3">
-          <form.Subscribe selector={state => state.values}>
-            {values => (
-              <>
-                <Field className="w-auto">
-                  <FieldLabel htmlFor="availability-day">Day</FieldLabel>
-                  <Select
-                    items={DAY_ITEMS}
-                    value={String(values.dayOfWeek)}
-                    onValueChange={v =>
-                      form.setFieldValue('dayOfWeek', Number(v) as DayOfWeek)
-                    }
-                  >
-                    <SelectTrigger id="availability-day">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {DAY_ITEMS.map(item => (
-                          <SelectItem key={item.value} value={item.value}>
-                            {item.label}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field orientation="horizontal" className="w-auto pb-2.5">
-                  <Checkbox
-                    id="availability-all-day"
-                    checked={values.allDay}
-                    onCheckedChange={checked =>
-                      form.setFieldValue('allDay', checked === true)
-                    }
-                  />
-                  <FieldLabel
-                    htmlFor="availability-all-day"
-                    className="text-xs font-normal"
-                  >
-                    All day
-                  </FieldLabel>
-                </Field>
-                {!values.allDay && (
-                  <ToggleGroup
-                    className="pb-1"
-                    variant="outline"
-                    multiple
-                    value={values.blocks}
-                    onValueChange={v => form.setFieldValue('blocks', v as TimeBlock[])}
-                  >
-                    {(Object.keys(TIME_BLOCK_META) as TimeBlock[]).map(b => (
-                      <ToggleGroupItem key={b} value={b}>
-                        {TIME_BLOCK_META[b].label}
-                      </ToggleGroupItem>
-                    ))}
-                  </ToggleGroup>
-                )}
-                <Button
-                  size="sm"
-                  className="ml-auto"
-                  onClick={() => form.handleSubmit()}
-                  disabled={
-                    addMutation.isPending ||
-                    (!values.allDay && values.blocks.length === 0)
-                  }
-                >
-                  Add exception
-                </Button>
-              </>
-            )}
-          </form.Subscribe>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function LeaveRequestsSection({
-  staffId,
-  leaveRequests,
-}: {
-  staffId: string;
-  leaveRequests: LeaveRequest[];
-}) {
-  const createMutation = useCreateLeaveRequest(staffId);
-  const statusMutation = useUpdateLeaveRequestStatus(staffId);
-
-  const form = useForm({
-    defaultValues: { startDate: '', endDate: '', reason: '' },
-    onSubmit: async ({ value }) => {
-      if (!value.startDate || !value.endDate) return;
-      await createMutation.mutateAsync({
-        startDate: new Date(`${value.startDate}T00:00:00Z`),
-        endDate: new Date(`${value.endDate}T00:00:00Z`),
-        reason: value.reason.trim() || null,
-      });
-      form.reset();
-    },
-  });
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Leave requests</CardTitle>
-        <CardDescription>
-          One-off leave. Approve or decline a request below — no wider workflow yet.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="mb-4 flex flex-col gap-2">
-          {leaveRequests.length === 0 && <EmptyNote text="No leave requests yet." />}
-          {leaveRequests.map(lr => (
-            <div
-              key={lr.id}
-              className="border-border flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
-            >
-              <div className="min-w-0">
-                <p className="text-sm font-medium">
-                  {formatDate(lr.startDate)} – {formatDate(lr.endDate)}
-                </p>
-                {lr.reason && (
-                  <p className="text-muted-foreground truncate text-xs">{lr.reason}</p>
-                )}
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <StatusBadge status={lr.status} />
-                {lr.status === 'requested' && (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={statusMutation.isPending}
-                      onClick={() =>
-                        statusMutation.mutate({
-                          leaveRequestId: lr.id,
-                          status: 'approved',
-                        })
-                      }
-                    >
-                      Approve
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      disabled={statusMutation.isPending}
-                      onClick={() =>
-                        statusMutation.mutate({
-                          leaveRequestId: lr.id,
-                          status: 'declined',
-                        })
-                      }
-                    >
-                      Decline
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="border-border flex flex-wrap items-end gap-3 rounded-lg border p-3">
-          <form.Subscribe selector={state => state.values}>
-            {values => (
-              <>
-                <Field className="w-auto">
-                  <FieldLabel htmlFor="leave-start">Start</FieldLabel>
-                  <Input
-                    id="leave-start"
-                    type="date"
-                    value={values.startDate}
-                    onChange={e => form.setFieldValue('startDate', e.target.value)}
-                  />
-                </Field>
-                <Field className="w-auto">
-                  <FieldLabel htmlFor="leave-end">End</FieldLabel>
-                  <Input
-                    id="leave-end"
-                    type="date"
-                    value={values.endDate}
-                    onChange={e => form.setFieldValue('endDate', e.target.value)}
-                  />
-                </Field>
-                <Field className="min-w-[180px] flex-1">
-                  <FieldLabel htmlFor="leave-reason">Reason (optional)</FieldLabel>
-                  <Textarea
-                    id="leave-reason"
-                    rows={1}
-                    value={values.reason}
-                    onChange={e => form.setFieldValue('reason', e.target.value)}
-                    placeholder="e.g. Annual leave"
-                  />
-                </Field>
-                <Button
-                  size="sm"
-                  onClick={() => form.handleSubmit()}
-                  disabled={
-                    createMutation.isPending || !values.startDate || !values.endDate
-                  }
-                >
-                  Request leave
-                </Button>
-              </>
-            )}
-          </form.Subscribe>
-        </div>
-      </CardContent>
-    </Card>
   );
 }
 
@@ -429,7 +102,7 @@ export default function StaffProfile({ staffId, venues, onBack }: StaffProfilePr
       </header>
 
       <main className="flex-1 px-6 py-6">
-        <div className="mx-auto flex max-w-2xl flex-col gap-8">
+        <div className="mx-auto flex max-w-3xl flex-col gap-8">
           {staffQuery.isLoading && <StaffProfileSkeleton />}
 
           {staffQuery.isError && (
@@ -456,6 +129,7 @@ export default function StaffProfile({ staffId, venues, onBack }: StaffProfilePr
               <StaffMemberForm form={form} venues={venues} />
 
               <AvailabilitySection staffId={staffId} exceptions={staff.unavailability} />
+
               <LeaveRequestsSection
                 staffId={staffId}
                 leaveRequests={staff.leaveRequests}

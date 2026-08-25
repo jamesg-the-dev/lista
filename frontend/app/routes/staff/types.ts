@@ -16,6 +16,8 @@
 // lists venues, so it's sourced from useCurrentAccount()'s venues instead
 // (see hooks.ts's useVenues) rather than mocked or given its own endpoint.
 
+import type { DayOfWeek } from '~/lib/date-types';
+
 function mustMapWireEnum<T extends string>(
   wire: string,
   table: Record<string, T>,
@@ -128,14 +130,6 @@ export const CLASSIFICATION_META: Record<
     description: 'Supervisor',
   },
 };
-
-// ---------------------------------------------------------------------------
-// Standing weekly availability — default-available-unless-excepted. Anything
-// not listed as an exception is assumed available.
-// ---------------------------------------------------------------------------
-
-export const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
-export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 // Kept as a numeric view model (index into DAY_LABELS) rather than a string
 // union, matching the existing UI's <select> handling — only the wire

@@ -21,6 +21,7 @@
 // instead (see hooks.ts's useVenues).
 
 import { DateTime, Duration, Interval } from 'luxon';
+import type { DayOfWeek } from '~/lib/date-types';
 
 import type { Role } from '~/routes/settings/types';
 import type { StaffMember } from '~/routes/staff/types';
@@ -117,16 +118,6 @@ export function resolveStaffRate(
   return { rate: null, source: 'unresolved' };
 }
 
-// ---------------------------------------------------------------------------
-// Day of week — 0=Mon..6=Sun. The grid is organised by day-of-week column
-// within the selected week; the wire model underneath is an absolute
-// shiftDate (see Shift below), so dayOfWeekForDate/dateForDay convert
-// between the two at the UI boundary.
-// ---------------------------------------------------------------------------
-
-export const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
-export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
-
 export function dateForDay(weekStart: DateTime, dayOfWeek: number): DateTime {
   return weekStart.plus({ days: dayOfWeek });
 }
@@ -220,7 +211,9 @@ export function getRateInfo(
   }
 
   const cost =
-    baseRate === null ? null : paidHrs * baseRate * multiplier + paidHrs * flatDollarPerHour;
+    baseRate === null
+      ? null
+      : paidHrs * baseRate * multiplier + paidHrs * flatDollarPerHour;
   return { grossHrs, paidHrs, multiplier, flatDollarPerHour, label, cost };
 }
 

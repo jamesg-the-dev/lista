@@ -873,6 +873,13 @@ just because a component happens to render an `<Input>`.
   `AvailabilitySection`/`LeaveRequestsSection` show the `form.Subscribe`
   pattern for compact inline forms).
 
+### 5. Dates, times and durations
+* All dates and times must use Luxon. If the datetime comes back as an ISO
+datetime string, then make sure it is converted to Luxon DateTime using 
+`DateTime.fromISO()`.
+* All durations and duration calculations must use Luxons API for ease of
+handling
+
 ### Types: wire type vs view model
 
 DTOs match the shape of the corresponding MediatR query/command response
