@@ -50,6 +50,7 @@ public sealed class CreateShiftCommandHandler(
     IAwardRateCalculator awardRateCalculator,
     IRosterComplianceValidator complianceValidator,
     IRosterComplianceThresholdsLookup complianceThresholdsLookup,
+    IStaffLookup staffLookup,
     IShiftRepository shiftRepository,
     IRosterLookup rosterLookup,
     IUnitOfWork unitOfWork
@@ -66,12 +67,16 @@ public sealed class CreateShiftCommandHandler(
 
     public async Task<ShiftDto> Handle(CreateShiftCommand request, CancellationToken cancellationToken)
     {
+        var employee = await staffLookup.GetStaffMemberAsync(request.EmployeeId, cancellationToken)
+            ?? throw new NotFoundException($"Staff member '{request.EmployeeId}' was not found.");
+
         var awardBreakdown = awardRateCalculator.Calculate(
             request.ShiftDate.DayOfWeek,
             request.Start,
             request.End,
             request.UnpaidBreakMinutes,
-            request.BaseRatePerHour);
+            request.BaseRatePerHour,
+            Enum.Parse<EmploymentType>(employee.EmploymentType));
 
         var shift = Shift.Create(
             request.VenueId,

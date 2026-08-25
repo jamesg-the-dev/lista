@@ -1,15 +1,17 @@
 using FluentValidation;
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Application.Staffing;
 using RosterApp.Domain.Rostering;
 using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Rostering;
 
-public sealed record DuplicateRosterCommand(Guid VenueId, DateOnly SourceWeekStart, DateOnly TargetWeekStart)
-    : IRequest<IReadOnlyList<ShiftDto>>,
-        IVenueScopedRequest,
-        IRequiresPermissionLevel
+public sealed record DuplicateRosterCommand(
+    Guid VenueId,
+    DateOnly SourceWeekStart,
+    DateOnly TargetWeekStart
+) : IRequest<IReadOnlyList<ShiftDto>>, IVenueScopedRequest, IRequiresPermissionLevel
 {
     public PermissionLevel? MinimumPermissionLevel => PermissionLevel.Supervisor;
 }
@@ -40,6 +42,7 @@ public sealed class DuplicateRosterCommandHandler(
     IAwardRateCalculator awardRateCalculator,
     IRosterComplianceValidator complianceValidator,
     IRosterComplianceThresholdsLookup complianceThresholdsLookup,
+    IStaffLookup staffLookup,
     IShiftRepository shiftRepository,
     IUnitOfWork unitOfWork
 ) : IRequestHandler<DuplicateRosterCommand, IReadOnlyList<ShiftDto>>
@@ -47,14 +50,26 @@ public sealed class DuplicateRosterCommandHandler(
     // Same context window as CreateShiftCommandHandler — see the comment there.
     private const int ComplianceContextDays = 8;
 
-    public async Task<IReadOnlyList<ShiftDto>> Handle(DuplicateRosterCommand request, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ShiftDto>> Handle(
+        DuplicateRosterCommand request,
+        CancellationToken cancellationToken
+    )
     {
         var sourceShifts = await rosterLookup.GetRosterForWeekAsync(
             request.VenueId,
             request.SourceWeekStart,
-            cancellationToken);
+            cancellationToken
+        );
 
-        var thresholds = await complianceThresholdsLookup.GetActiveThresholdsAsync(request.VenueId, cancellationToken);
+        var thresholds = await complianceThresholdsLookup.GetActiveThresholdsAsync(
+            request.VenueId,
+            cancellationToken
+        );
+
+        // Cached per employee — a week's roster commonly rosters the same
+        // employee across several shifts, and EmploymentType doesn't change
+        // mid-duplication.
+        var employmentTypeByEmployeeId = new Dictionary<Guid, EmploymentType>();
 
         var offsetDays = request.TargetWeekStart.DayNumber - request.SourceWeekStart.DayNumber;
         var createdShifts = new List<Shift>();
@@ -63,12 +78,25 @@ public sealed class DuplicateRosterCommandHandler(
         {
             var targetDate = source.ShiftDate.AddDays(offsetDays);
 
+            if (!employmentTypeByEmployeeId.TryGetValue(source.EmployeeId, out var employmentType))
+            {
+                var employee =
+                    await staffLookup.GetStaffMemberAsync(source.EmployeeId, cancellationToken)
+                    ?? throw new NotFoundException(
+                        $"Staff member '{source.EmployeeId}' was not found."
+                    );
+                employmentType = Enum.Parse<EmploymentType>(employee.EmploymentType);
+                employmentTypeByEmployeeId[source.EmployeeId] = employmentType;
+            }
+
             var awardBreakdown = awardRateCalculator.Calculate(
                 targetDate.DayOfWeek,
                 source.Start,
                 source.End,
                 source.UnpaidBreakMinutes,
-                source.BaseRatePerHour);
+                source.BaseRatePerHour,
+                employmentType
+            );
 
             var shift = Shift.Create(
                 request.VenueId,
@@ -78,7 +106,8 @@ public sealed class DuplicateRosterCommandHandler(
                 source.End,
                 source.UnpaidBreakMinutes,
                 source.BaseRatePerHour,
-                awardBreakdown);
+                awardBreakdown
+            );
 
             // Adjacent shifts created earlier in this same loop iteration
             // aren't visible here yet (not saved until the loop completes) —
@@ -90,9 +119,15 @@ public sealed class DuplicateRosterCommandHandler(
                 targetDate.AddDays(-ComplianceContextDays),
                 targetDate.AddDays(ComplianceContextDays),
                 excludeShiftId: null,
-                cancellationToken);
+                cancellationToken
+            );
 
-            var violations = await complianceValidator.ValidateAsync(shift, adjacentShifts, thresholds, cancellationToken);
+            var violations = await complianceValidator.ValidateAsync(
+                shift,
+                adjacentShifts,
+                thresholds,
+                cancellationToken
+            );
             shift.SetComplianceViolations(violations);
 
             shiftRepository.Add(shift);

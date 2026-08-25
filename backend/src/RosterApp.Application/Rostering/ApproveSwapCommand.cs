@@ -1,5 +1,6 @@
 using MediatR;
 using RosterApp.Application.Common;
+using RosterApp.Application.Staffing;
 using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Rostering;
@@ -29,6 +30,7 @@ public sealed class ApproveSwapCommandHandler(
     IAwardRateCalculator awardRateCalculator,
     IRosterComplianceValidator complianceValidator,
     IRosterComplianceThresholdsLookup complianceThresholdsLookup,
+    IStaffLookup staffLookup,
     ICurrentTenantContext tenantContext,
     IUnitOfWork unitOfWork
 ) : IRequestHandler<ApproveSwapCommand, ShiftDto>
@@ -62,12 +64,20 @@ public sealed class ApproveSwapCommandHandler(
         var newEmployeeId = swapRequest.TargetStaffId
             ?? throw new InvalidOperationException($"Swap request '{swapRequest.Id}' has no target staff member to reassign to.");
 
+        // Must be the incoming employee's EmploymentType, not the outgoing
+        // one's — a swap can hand a shift from a full-time employee to a
+        // casual (or vice versa), and casual loading depends on who is
+        // actually rostered on after the swap.
+        var newEmployee = await staffLookup.GetStaffMemberAsync(newEmployeeId, cancellationToken)
+            ?? throw new NotFoundException($"Staff member '{newEmployeeId}' was not found.");
+
         var awardBreakdown = awardRateCalculator.Calculate(
             shift.ShiftDate.DayOfWeek,
             shift.Start,
             shift.End,
             shift.UnpaidBreakMinutes,
-            shift.BaseRatePerHour);
+            shift.BaseRatePerHour,
+            Enum.Parse<EmploymentType>(newEmployee.EmploymentType));
 
         shift.UpdateSchedule(
             newEmployeeId,

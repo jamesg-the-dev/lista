@@ -48,6 +48,7 @@ public sealed class UpdateShiftCommandHandler(
     IAwardRateCalculator awardRateCalculator,
     IRosterComplianceValidator complianceValidator,
     IRosterComplianceThresholdsLookup complianceThresholdsLookup,
+    IStaffLookup staffLookup,
     IShiftRepository shiftRepository,
     IRosterLookup rosterLookup,
     IUnitOfWork unitOfWork
@@ -64,12 +65,16 @@ public sealed class UpdateShiftCommandHandler(
             throw new NotFoundException($"Shift '{request.ShiftId}' was not found.");
         }
 
+        var employee = await staffLookup.GetStaffMemberAsync(request.EmployeeId, cancellationToken)
+            ?? throw new NotFoundException($"Staff member '{request.EmployeeId}' was not found.");
+
         var awardBreakdown = awardRateCalculator.Calculate(
             request.ShiftDate.DayOfWeek,
             request.Start,
             request.End,
             request.UnpaidBreakMinutes,
-            request.BaseRatePerHour);
+            request.BaseRatePerHour,
+            Enum.Parse<EmploymentType>(employee.EmploymentType));
 
         shift.UpdateSchedule(
             request.EmployeeId,

@@ -542,12 +542,63 @@ route directory.
   context (see the venue switcher in the roster builder).
 
 * **Award compliance (MVP):** Hospitality Industry General Award
-  (MA000009) only, hardcoded behind `IAwardRateCalculator`. Current rules
-  implemented: ordinary hours, Saturday +25%, Sunday +50%, weekday evening
-  (after 7pm) +10%. **These figures are illustrative for UI/architecture
-  purposes only — not sourced from Fair Work's Pay Calculator or verified
-  against a licensed award-interpretation feed.** Do not ship real payroll
-  calculations against this logic without that verification step. The
+  (MA000009) only, hardcoded behind `IAwardRateCalculator`
+  (`HospitalityGeneralAwardRateCalculator`). Only MA000009 has a working
+  calculator — `AwardConfiguration`/`RoleAwardMapping` let an owner select
+  Fast Food (MA000003), Restaurant (MA000119), or Clubs (MA000058) in
+  Settings, but every venue's shifts are still priced by the MA000009
+  calculator regardless of that selection (DI registers a single global
+  `IAwardRateCalculator`, and no command resolves the venue's configured
+  award before calculating). Treat this as a known gap, not a documented
+  design choice — the "second implementation slots in later" promise
+  above doesn't yet include a resolver to route to it.
+
+  Casual loading (clause 11.1, 25% "for each hour worked ... in addition
+  to the ordinary hourly rate") **is applied** as of the
+  docs/casual-loading-calculation.md audit — before that audit it was
+  computed nowhere in the codebase, so casual and full-time staff produced
+  identical pay for identical shifts, for every venue, regardless of
+  which award was configured. `EmploymentType` is resolved server-side per
+  shift (via `IStaffLookup`, not client-supplied) and passed into
+  `IAwardRateCalculator.Calculate`. See
+  `RosterApp.Domain.AwardConfig.CasualLoadingStackingMode` for the named
+  stacking concept and its citations.
+
+  Verified against the primary source (Fair Work Ombudsman's published
+  MA000009 text, cross-checked against the FWC's consolidated award PDF):
+  ordinary hours casual = base × 1.25; Saturday permanent 125% / casual
+  150%; Sunday permanent 150% / casual 175% (Table 14, clause 29.2(b)) —
+  casual figures are the permanent percentage **plus 25 points, never
+  compounded** (`CasualLoadingStackingMode.AdditivePercentagePoints`).
+  **Not verified** (illustrative only, same disclaimer as before this
+  audit): the weekday evening (+10%) multiplier, and public holiday/early-
+  morning multipliers were never implemented in the calculator at all —
+  casual loading is still applied to evening hours using the same
+  additive formula so a casual is never left with zero loading, but the
+  permanent evening multiplier itself, and the resulting total, are not
+  award-verified.
+
+  MA000003 (Fast Food) was independently verified during the same audit —
+  clause 11.2(b) casual loading, Table 6 penalty rates, and an explicit
+  award Note confirming the same additive stacking mode — but has no
+  seeded classification/rate data and no calculator; treat its figures
+  (cited in `CasualLoadingStackingMode`'s doc comment) as a verified
+  starting point for a future implementation, not shipped behavior.
+  MA000119 (Restaurant) is high-confidence but not independently
+  Note-confirmed the way MA000003 is. **MA000058 (Clubs) stacking
+  behaviour is unresolved** — sources actively conflicted on whether
+  casual loading stacks on top of a flat "all employees" weekend rate or
+  is already folded into it; do not implement a Clubs calculator without
+  resolving this against primary source or a licensed award-
+  interpretation feed first.
+
+  **These figures — verified periods included — are for UI/architecture
+  purposes only, not a substitute for a licensed award-interpretation
+  feed.** Do not ship real payroll calculations against this logic
+  without independent verification (e.g. Fair Work's Pay Calculator or a
+  paid interpretation service), and note that award percentages/dollar
+  figures are reviewed annually (effective first full pay period on or
+  after 1 July each year) — this is not a "set and forget" dataset. The
   same disclaimer applies to `IRosterComplianceValidator`'s rule set once
   specified (rest breaks, span of hours, max consecutive days) — treat
   those figures as illustrative/needs-verification too, not as sourced

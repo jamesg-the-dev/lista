@@ -1,4 +1,5 @@
 using RosterApp.Domain.Rostering;
+using RosterApp.Domain.Staffing;
 
 namespace RosterApp.Application.Rostering;
 
@@ -12,10 +13,20 @@ namespace RosterApp.Application.Rostering;
 /// </summary>
 public interface IAwardRateCalculator
 {
+    /// <summary>
+    /// employmentType drives casual loading — see
+    /// RosterApp.Domain.AwardConfig.CasualLoadingStackingMode for how a
+    /// given award's implementation combines the loading with penalty
+    /// rates. The caller resolves the shift's employee's EmploymentType
+    /// (from StaffMember) and passes it in; the calculator stays a pure
+    /// function with no repository dependency of its own.
+    /// </summary>
     IReadOnlyList<AwardBreakdownLine> Calculate(
         DayOfWeek dayOfWeek,
         TimeOnly start,
         TimeOnly end,
         int unpaidBreakMinutes,
-        decimal baseRatePerHour);
+        decimal baseRatePerHour,
+        EmploymentType employmentType
+    );
 }
