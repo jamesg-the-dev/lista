@@ -35,14 +35,13 @@ import {
 } from '../types';
 import type {
   ComplianceViolationType,
-  DayOfWeek,
   Role,
   Shift,
   ShiftDraft,
   StaffMember,
 } from '../types';
-import { DAY_LABELS } from '../types';
 import { Link } from 'react-router';
+import { DAY_LABELS, type DayOfWeek } from '~/lib/date-types';
 
 export interface ShiftEditorPanelState {
   staffId: string;

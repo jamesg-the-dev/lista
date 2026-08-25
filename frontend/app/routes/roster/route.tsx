@@ -38,7 +38,6 @@ import {
 } from './hooks';
 import type { ComplianceViolationType, Role, Shift, ShiftDraft } from './types';
 import {
-  DAY_LABELS,
   currency,
   currency2,
   dateForDay,
@@ -52,6 +51,7 @@ import {
   totalAwardCost,
 } from './types';
 import { initials, usePageTitle } from '~/lib/utils';
+import { DAY_LABELS } from '~/lib/date-types';
 
 const WEEK_START = DateTime.local(2026, 8, 17); // Mon 17 Aug 2026
 const TODAY_INDEX = 1; // Tue 18 Aug 2026

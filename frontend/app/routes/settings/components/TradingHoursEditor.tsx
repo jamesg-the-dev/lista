@@ -9,10 +9,10 @@ import {
   InputGroupInput,
 } from '~/components/ui/input-group';
 
-import { DAY_LABELS, blankSession } from '../types';
-import type { TradingHourSession } from '../types';
+import { blankSession, type TradingHourSession } from '../types';
 import type { VenueProfileTabFormApi } from './VenueProfileForm';
 import { SectionHeader } from './form-ui';
+import { DAY_LABELS } from '~/lib/date-types';
 
 const TIME_INPUT_CLASSES =
   'appearance-none tabular-nums [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none';
