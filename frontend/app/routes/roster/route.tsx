@@ -26,8 +26,8 @@ import {
   useUpdateShift,
   useVenues,
 } from './hooks';
-import { CommandPalette } from './shift-command/CommandPalette';
-import type { ParsedShiftDraft } from './shift-command/types';
+import { CommandPalette } from './shift-command';
+import type { ParsedShiftDraft } from './shift-command';
 import type { ComplianceViolationType, Role, Shift, ShiftDraft } from './types';
 import {
   dateForDay,
@@ -138,12 +138,21 @@ export default function RosterBuilder() {
     setPanelOpen(false);
   }
 
-  // Opens the AI shift command palette on "/", per the spec's UX Flow step
-  // 1 — skipped while the manager is typing into a real field, or while
-  // another modal is already open, so "/" in a text box still types a
-  // slash.
+  // Opens the AI shift command palette on "/" or toggles it on Cmd/Ctrl+K,
+  // per the spec's UX Flow step 1 and its "Key UX rules". "/" is skipped
+  // while the manager is typing into a real field, or while another modal
+  // is already open, so "/" in a text box still types a slash — Cmd/Ctrl+K
+  // is a global shortcut (the standard convention for command palettes)
+  // and isn't gated the same way, so it also works to close the palette
+  // again while it's open.
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        if (panelOpen) return;
+        setCommandPaletteOpen(o => !o);
+        return;
+      }
       if (e.key !== '/') return;
       const target = e.target as HTMLElement | null;
       const isTypingElsewhere =

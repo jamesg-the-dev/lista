@@ -1,27 +1,40 @@
-// AI Shift Command Palette — Phase 1. Opened by pressing "/" on the roster
-// page (wired in route.tsx). See docs/features/FEATURE_AI_SHIFTS.md.
+// AI Shift Command Palette. Opened by pressing "/" or Cmd/Ctrl+K on the
+// roster page (wired in route.tsx). Ported from the approved
+// docs/features/RosterCommandPalette.jsx prototype's browse -> compose ->
+// confirm -> success flow — see docs/features/FEATURE_AI_SHIFTS.md and
+// docs/features/FEATURE_NEW_AI_SHIFT_LOGIC.md. The UX itself is signed off
+// and unchanged; this file is the real TypeScript component wired to real
+// app context (useCommandPalette.ts owns the state/behaviour, this file is
+// rendering only).
 //
-// TODO(Phase 1 follow-up, agreed scope call): the spec's UX shows typed
-// tokens resolving into interactive INLINE chips as the manager types
-// (Notion/Linear-style mention editor). Building that well is a
-// substantial custom contentEditable component in its own right, so Phase 1
-// ships a plain text input instead (shadcn's Input) with a live preview
-// strip rendered below it that shows the same resolved fields as read-only
-// badges, re-parsed on every keystroke. The manager sees the same
-// information before confirming either way — revisit true inline chips as
-// a follow-up polish pass, not a functional gap.
-//
-// Only the create-shift verb is wired up this phase. swap-shift/clear-day
-// are Phase 3 per the spec (each needs its own confirmation design — a
-// swap has a different blast radius than adding a shift, and a bulk clear
-// needs an undo affordance) — this palette doesn't offer them yet.
+// Only "create-shift" is functionally wired this phase — see
+// useCommandPalette.ts's COMMANDS list. The confirm phase reuses
+// ConfirmationCard, which already supports full inline editing of every
+// chip value before commit (staff/date/start/end), same requirement as the
+// prototype's "Edit" affordance, just richer than the prototype's
+// read-only chip summary since Phase 1 has no separate edit mode to fall
+// back into.
 
-import { useMemo, useState } from 'react';
-import type { KeyboardEvent } from 'react';
+import { useEffect } from 'react';
 import { DateTime } from 'luxon';
-import { AlertTriangleIcon, SearchIcon } from 'lucide-react';
+import {
+  AlertTriangleIcon,
+  ArrowLeftRightIcon,
+  CheckIcon,
+  CopyIcon,
+  MinusCircleIcon,
+  PlusCircleIcon,
+  XCircleIcon,
+} from 'lucide-react';
 
 import { Badge } from '~/components/ui/badge';
+import {
+  Command,
+  CommandEmpty,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '~/components/ui/command';
 import {
   Dialog,
   DialogContent,
@@ -33,12 +46,22 @@ import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
+  InputGroupText,
 } from '~/components/ui/input-group';
 
-import { ConfirmationCard, type EditableDraft } from './ConfirmationCard';
-import { parseShiftCommand } from './parser';
+import { ConfirmationCard } from './ConfirmationCard';
+import type { CommandDefinition } from './useCommandPalette';
+import { COMMANDS, useCommandPalette } from './useCommandPalette';
 import type { ParseContext, ParsedShiftDraft, StaffCandidate } from './types';
 import type { Role, StaffMember } from '../types';
+
+const COMMAND_ICONS: Record<CommandDefinition['id'], typeof PlusCircleIcon> = {
+  'create-shift': PlusCircleIcon,
+  'remove-shift': MinusCircleIcon,
+  'swap-shift': ArrowLeftRightIcon,
+  'copy-week': CopyIcon,
+  'clear-day': XCircleIcon,
+};
 
 interface CommandPaletteProps {
   open: boolean;
@@ -52,7 +75,13 @@ interface CommandPaletteProps {
   onConfirmDrafts: (drafts: ParsedShiftDraft[]) => Promise<void>;
 }
 
-function PreviewRow({ draft }: { draft: ParsedShiftDraft }) {
+function PreviewRow({
+  draft,
+  onPickStaff,
+}: {
+  draft: ParsedShiftDraft;
+  onPickStaff: (staffId: string) => void;
+}) {
   const dateLabel = draft.date
     ? DateTime.fromISO(draft.date).toFormat('ccc d LLL')
     : 'no date yet';
@@ -75,6 +104,27 @@ function PreviewRow({ draft }: { draft: ParsedShiftDraft }) {
           {draft.confidence}
         </Badge>
       </div>
+
+      {/* Inline staff picker — spec: "staff picker appears when multiple
+          candidates match". Tapping a candidate rewrites the query with a
+          resolved chip (see pickStaffCandidate) rather than mutating the
+          draft directly, so the parser stays the single source of truth. */}
+      {draft.staff.candidates.length > 1 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-muted-foreground text-[11px]">Who?</span>
+          {draft.staff.candidates.map(c => (
+            <button
+              key={c.staffId}
+              type="button"
+              onClick={() => onPickStaff(c.staffId)}
+              className="border-border hover:bg-accent hover:text-accent-foreground rounded-full border px-2.5 py-0.5 text-xs transition-colors"
+            >
+              {c.displayName}
+            </button>
+          ))}
+        </div>
+      )}
+
       {draft.ambiguities.map(a => (
         <p key={a} className="text-muted-foreground text-[11px]">
           {a}
@@ -100,106 +150,122 @@ export function CommandPalette({
   viewedWeekStart,
   onConfirmDrafts,
 }: CommandPaletteProps) {
-  const [rawInput, setRawInput] = useState('');
-  const [editableDrafts, setEditableDrafts] = useState<EditableDraft[] | null>(null);
-  const [confirming, setConfirming] = useState(false);
+  const ctx: ParseContext = {
+    venueId,
+    managerId,
+    venueStaff,
+    viewedWeekStart,
+    now: DateTime.now(),
+  };
 
-  const ctx: ParseContext = useMemo(
-    () => ({ venueId, managerId, venueStaff, viewedWeekStart, now: DateTime.now() }),
-    [venueId, managerId, venueStaff, viewedWeekStart],
-  );
-
-  const liveResult = useMemo(() => parseShiftCommand(rawInput, ctx), [rawInput, ctx]);
-
-  function reset() {
-    setRawInput('');
-    setEditableDrafts(null);
-    setConfirming(false);
-  }
+  const {
+    phase,
+    query,
+    setQuery,
+    selectedCommand,
+    liveResult,
+    editableDrafts,
+    confirming,
+    successSummary,
+    reset,
+    selectCommand,
+    pickStaffCandidate,
+    updateDraft,
+    removeDraft,
+    backToCompose,
+    handleConfirmClick,
+    handleKeyDown,
+  } = useCommandPalette({ ctx, onConfirmDrafts });
 
   function handleOpenChange(next: boolean) {
     onOpenChange(next);
     if (!next) reset();
   }
 
-  function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key !== 'Enter') return;
-    e.preventDefault();
-    if (liveResult.rejected || liveResult.drafts.length === 0) return;
-    setEditableDrafts(
-      liveResult.drafts.map(draft => ({ key: crypto.randomUUID(), draft })),
-    );
-  }
-
-  function updateDraft(key: string, patch: Partial<ParsedShiftDraft>) {
-    setEditableDrafts(
-      prev =>
-        prev?.map(d => (d.key === key ? { ...d, draft: { ...d.draft, ...patch } } : d)) ??
-        null,
-    );
-  }
-
-  function removeDraft(key: string) {
-    setEditableDrafts(prev => prev?.filter(d => d.key !== key) ?? null);
-  }
-
-  async function handleConfirm() {
-    if (!editableDrafts) return;
-    const ready = editableDrafts
-      .map(d => d.draft)
-      .filter(
-        d =>
-          d.staff.resolvedId !== null &&
-          d.date !== null &&
-          d.startTime !== null &&
-          d.endTime !== null,
-      );
-    if (ready.length === 0) return;
-    setConfirming(true);
-    try {
-      await onConfirmDrafts(ready);
-      handleOpenChange(false);
-    } finally {
-      setConfirming(false);
-    }
-  }
+  // Success phase auto-closes after a beat — same 1.6s the approved
+  // prototype uses.
+  useEffect(() => {
+    if (phase !== 'success') return undefined;
+    const timeout = setTimeout(() => handleOpenChange(false), 1600);
+    return () => clearTimeout(timeout);
+    // handleOpenChange is stable enough for this purpose — re-running the
+    // timeout on every render would just restart the same 1.6s countdown.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogHeader className="sr-only">
         <DialogTitle>AI shift command</DialogTitle>
         <DialogDescription>
-          Type a staff member, a date and a time to add a shift.
+          Type a verb, a staff name, a date and a time — in any order.
         </DialogDescription>
       </DialogHeader>
       <DialogContent
         showCloseButton={false}
         className="top-1/4 max-w-lg translate-y-0 gap-0 overflow-hidden rounded-xl p-0"
       >
-        {!editableDrafts ? (
+        {phase === 'browse' && (
+          <Command>
+            <CommandInput placeholder="Search commands…" autoFocus />
+            <CommandList>
+              <CommandEmpty>No commands match.</CommandEmpty>
+              {COMMANDS.map(cmd => {
+                const Icon = COMMAND_ICONS[cmd.id];
+                return (
+                  <CommandItem
+                    key={cmd.id}
+                    value={`${cmd.label} ${cmd.description} ${cmd.id}`}
+                    disabled={!cmd.enabled}
+                    onSelect={() => selectCommand(cmd)}
+                  >
+                    <Icon className="text-muted-foreground" />
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <span className="flex items-center gap-2">
+                        {cmd.label}
+                        {!cmd.enabled && (
+                          <Badge variant="outline" className="text-[10px] font-normal">
+                            Coming soon
+                          </Badge>
+                        )}
+                      </span>
+                      <span className="text-muted-foreground truncate text-xs">
+                        {cmd.description}
+                      </span>
+                    </div>
+                  </CommandItem>
+                );
+              })}
+            </CommandList>
+          </Command>
+        )}
+
+        {phase === 'compose' && selectedCommand && (
           <>
             <div className="p-1">
               <InputGroup className="h-11 rounded-lg">
+                <InputGroupAddon>
+                  <InputGroupText className="font-medium">
+                    {selectedCommand.label}
+                  </InputGroupText>
+                  <span className="text-border">›</span>
+                </InputGroupAddon>
                 <InputGroupInput
                   autoFocus
-                  value={rawInput}
-                  onChange={e => setRawInput(e.target.value)}
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder='Try "James Chen 10am Sunday 23 Aug"'
+                  placeholder={`e.g. "${selectedCommand.example}"`}
                   className="text-sm"
                 />
-                <InputGroupAddon>
-                  <SearchIcon className="size-4 opacity-50" />
-                </InputGroupAddon>
               </InputGroup>
             </div>
 
             <div className="border-border max-h-80 overflow-y-auto border-t p-4">
-              {rawInput.trim().length === 0 ? (
+              {query.trim().length === 0 ? (
                 <p className="text-muted-foreground text-xs">
-                  Type a verb (optional), a staff name, a date and a time — in any order.
-                  e.g. &quot;roster James Chen 10am Sun 23 Aug&quot; or &quot;Jimmy sat
-                  dinner 5-close&quot;.
+                  Type a staff name, a date and a time — in any order. e.g. &quot;
+                  {selectedCommand.example}&quot;.
                 </p>
               ) : liveResult.rejected ? (
                 <div className="flex items-start gap-2 text-sm">
@@ -211,17 +277,33 @@ export function CommandPalette({
               ) : (
                 <div className="flex flex-col gap-3">
                   {liveResult.drafts.map((draft, i) => (
-                    <PreviewRow key={i} draft={draft} />
+                    <PreviewRow
+                      key={i}
+                      draft={draft}
+                      onPickStaff={staffId => pickStaffCandidate(draft, staffId)}
+                    />
                   ))}
                   <p className="text-muted-foreground text-[11px]">
-                    Press <kbd className="border-border rounded border px-1">Enter</kbd>{' '}
-                    to review before creating.
+                    {liveResult.drafts.length === 1 &&
+                    liveResult.drafts[0].confidence === 'high' ? (
+                      <>
+                        Press <kbd className="border-border rounded border px-1">Enter</kbd>{' '}
+                        to create.
+                      </>
+                    ) : (
+                      <>
+                        Press <kbd className="border-border rounded border px-1">Enter</kbd>{' '}
+                        to review before creating.
+                      </>
+                    )}
                   </p>
                 </div>
               )}
             </div>
           </>
-        ) : (
+        )}
+
+        {phase === 'confirm' && editableDrafts && (
           <ConfirmationCard
             drafts={editableDrafts}
             venueStaff={venueStaff}
@@ -229,10 +311,22 @@ export function CommandPalette({
             roles={roles}
             onChange={updateDraft}
             onRemove={removeDraft}
-            onBack={() => setEditableDrafts(null)}
-            onConfirm={handleConfirm}
+            onBack={backToCompose}
+            onConfirm={handleConfirmClick}
             confirming={confirming}
           />
+        )}
+
+        {phase === 'success' && (
+          <div className="flex flex-col items-center gap-2 p-8 text-center">
+            <div className="bg-success-tint text-success flex size-10 items-center justify-center rounded-full">
+              <CheckIcon className="size-5" />
+            </div>
+            <p className="text-sm font-medium">Shift created</p>
+            {successSummary && (
+              <p className="text-muted-foreground text-xs">{successSummary}</p>
+            )}
+          </div>
         )}
       </DialogContent>
     </Dialog>

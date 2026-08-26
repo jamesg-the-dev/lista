@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon';
 import { describe, expect, it } from 'vitest';
 
-import { parseShiftCommand } from './parser';
+import { parseShiftCommand } from './shift-command-parser';
 import type { ParseContext } from './types';
 import {
   CORPUS,
@@ -20,7 +20,7 @@ const CONTEXT: ParseContext = {
 
 describe('parseShiftCommand — corpus regression', () => {
   for (const testCase of CORPUS) {
-    it(testCase.description, () => {
+    it(`[${testCase.group}] ${testCase.description}`, () => {
       const result = parseShiftCommand(testCase.input, CONTEXT);
 
       if (testCase.expect.rejected) {
@@ -40,6 +40,9 @@ describe('parseShiftCommand — corpus regression', () => {
       if ('staffId' in testCase.expect) {
         expect(draft.staff.resolvedId).toBe(testCase.expect.staffId);
       }
+      if (testCase.expect.candidateCount !== undefined) {
+        expect(draft.staff.candidates).toHaveLength(testCase.expect.candidateCount);
+      }
       if (testCase.expect.date !== undefined) {
         expect(draft.date).toBe(testCase.expect.date);
       }
@@ -55,6 +58,9 @@ describe('parseShiftCommand — corpus regression', () => {
       if (testCase.expect.openEnded !== undefined) {
         expect(draft.openEnded).toBe(testCase.expect.openEnded);
       }
+      if (testCase.expect.section !== undefined) {
+        expect(draft.section).toBe(testCase.expect.section);
+      }
       if (testCase.expect.hasUnconsumedTokens !== undefined) {
         expect(draft.unconsumedTokens.length > 0).toBe(
           testCase.expect.hasUnconsumedTokens,
@@ -62,6 +68,9 @@ describe('parseShiftCommand — corpus regression', () => {
       }
       if (testCase.expect.confidence !== undefined) {
         expect(draft.confidence).toBe(testCase.expect.confidence);
+      }
+      if (testCase.expect.source !== undefined) {
+        expect(draft.source).toBe(testCase.expect.source);
       }
     });
   }

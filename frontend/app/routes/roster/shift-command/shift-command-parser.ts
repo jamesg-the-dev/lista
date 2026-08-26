@@ -1,7 +1,18 @@
 // DeterministicNlpParser — see docs/features/FEATURE_AI_SHIFTS.md
 // "Deterministic Parser" sections for the full input taxonomy and pass
 // order this file implements. Pure function, no network, no React — safe to
-// unit test directly (see parser.test.ts + corpus.ts).
+// unit test directly (see shift-command-parser.test.ts + corpus.ts).
+//
+// Scope call carried over from types.ts's file header, reaffirmed during
+// the docs/features/FEATURE_NEW_AI_SHIFT_LOGIC.md rebuild: named shift
+// presets (lunch/dinner/arvo/...) and sections (FOH/kitchen/...) still have
+// no real venue-configured data source anywhere in this codebase (no
+// Section entity, no Settings screen for presets). Rather than invent fake
+// venue config to resolve against, those tokens are left deliberately
+// unresolved — they fall through to `unconsumedTokens`, which is exactly
+// the signal Phase 2's LLM fallback is meant to pick up. `tonight` is the
+// one daypart word handled below, because it resolves to a date only
+// ("today"), not a preset time range, so it needs no venue config at all.
 //
 // Implementation note on pass order: the spec lists filler-word removal
 // (verbs, "for", "on", "at", "the", "a", "shift", "working", ...) as pass 1,
@@ -82,6 +93,10 @@ const MONTHS = [
   { index: 12, full: 'december', abbrev: 'dec' },
 ] as const;
 
+function stripOrdinal(token: string): string {
+  return token.replace(/^(\d{1,2})(?:st|nd|rd|th)$/i, '$1');
+}
+
 function monthPatternAlternation(): string {
   return MONTHS.map(m => m.full).join('|') + '|' + MONTHS.map(m => m.abbrev).join('|');
 }
@@ -159,10 +174,53 @@ export function damerauLevenshtein(a: string, b: string): number {
   return d[al][bl];
 }
 
+// Tolerance scales with word length per spec: short words (<=4 chars) get
+// zero tolerance so distinct short tokens (e.g. daypart words like "arvo")
+// can never be mistaken for a weekday/month/staff name; longer words get
+// more room for a single typo or transposition.
 function fuzzyThresholdFor(word: string): number {
-  if (word.length <= 4) return 1;
-  if (word.length <= 8) return 2;
-  return 3;
+  if (word.length <= 4) return 0;
+  if (word.length <= 6) return 1;
+  return 2;
+}
+
+// Fuzzy fallback for weekday/month tokens — catches typos like "Sundya"
+// (transposition of "sunday") or "Setpember" (transposition of
+// "september"), same Damerau-Levenshtein mechanism and thresholds used for
+// staff-name matching below, per spec's "This catches Jmaes, Sundya,
+// Setpember." Only used once the exact-match table lookup has already
+// failed, and only against full names — abbreviations are short enough
+// that fuzzy tolerance is zero anyway (see fuzzyThresholdFor).
+function fuzzyFindWeekday(token: string): (typeof WEEKDAYS)[number] | null {
+  const exact = findWeekdayByToken(token);
+  if (exact) return exact;
+  const t = token.toLowerCase();
+  const threshold = fuzzyThresholdFor(t);
+  if (threshold === 0) return null;
+  let best: { weekday: (typeof WEEKDAYS)[number]; distance: number } | null = null;
+  for (const w of WEEKDAYS) {
+    const distance = damerauLevenshtein(t, w.full);
+    if (distance <= threshold && (!best || distance < best.distance)) {
+      best = { weekday: w, distance };
+    }
+  }
+  return best?.weekday ?? null;
+}
+
+function fuzzyFindMonth(token: string): (typeof MONTHS)[number] | null {
+  const exact = findMonthByToken(token);
+  if (exact) return exact;
+  const t = token.toLowerCase();
+  const threshold = fuzzyThresholdFor(t);
+  if (threshold === 0) return null;
+  let best: { month: (typeof MONTHS)[number]; distance: number } | null = null;
+  for (const m of MONTHS) {
+    const distance = damerauLevenshtein(t, m.full);
+    if (distance <= threshold && (!best || distance < best.distance)) {
+      best = { month: m, distance };
+    }
+  }
+  return best?.month ?? null;
 }
 
 // ---------------------------------------------------------------------------
@@ -192,17 +250,23 @@ function parseTimeToken(raw: string): TimeToken | null {
       if (suffix === 'pm') hour += 12;
       return { hour, minute, meridiemKnown: true };
     }
-    return { hour, minute, meridiemKnown: hour >= 13 || hour === 0 };
+    // No am/pm suffix but a colon/dot separator was used — that punctuation
+    // is itself the 24-hour-notation signal (e.g. "16:00"), unlike a bare
+    // number, so it's never ambiguous even for hours 1-12.
+    return { hour, minute, meridiemKnown: true };
   }
 
-  // Military 4 (or 3) digit — "1030", "1730", "930"
+  // Military 4 (or 3) digit — "1030", "1730", "930". Same reasoning as the
+  // colon form above: the format itself is the 24-hour signal, so it's
+  // never ambiguous, even when the hour alone would read as 12-hour (e.g.
+  // "1030" unambiguously means 10:30, not "10:30, am or pm?").
   m = t.match(/^(\d{3,4})$/);
   if (m) {
     const digits = m[1].padStart(4, '0');
     const hour = parseInt(digits.slice(0, 2), 10);
     const minute = parseInt(digits.slice(2), 10);
     if (hour > 23 || minute > 59) return null;
-    return { hour, minute, meridiemKnown: hour >= 13 || hour === 0 };
+    return { hour, minute, meridiemKnown: true };
   }
 
   // 12-hour with am/pm suffix, no minutes — "10am", "10 pm"
@@ -350,13 +414,31 @@ function extractExplicitDate(state: ExtractionState, ctx: ParseContext): void {
     const day = parseInt(m[1], 10);
     const month = parseInt(m[2], 10);
     const yearRaw = m[3];
+    // A 4-digit year token is only trusted in the 2000-2100 range — guards
+    // against a stray 4-digit number (e.g. a mistyped time) being read as a
+    // year, per spec. The whole token is still consumed (not left in the
+    // text) so its digits can't be re-parsed piecemeal by a later, looser
+    // pass (e.g. the day fragment being mistaken for a standalone time).
+    if (yearRaw && yearRaw.length === 4) {
+      const yearNum = parseInt(yearRaw, 10);
+      if (yearNum < 2000 || yearNum > 2100) {
+        state.text = state.text.replace(m[0], ' ');
+        return;
+      }
+    }
     const year = yearRaw
       ? yearRaw.length === 2
         ? 2000 + parseInt(yearRaw, 10)
         : parseInt(yearRaw, 10)
       : ctx.now.year;
-    const dt = DateTime.fromObject({ year, month, day });
+    let dt = DateTime.fromObject({ year, month, day });
     if (dt.isValid) {
+      // No explicit year typed — same "assume next year" rollover as the
+      // day-month pass below, for the same reason (a date near year-end/
+      // start shouldn't resolve into the past).
+      if (!yearRaw && dt < ctx.now.minus({ months: 6 })) {
+        dt = dt.plus({ years: 1 });
+      }
       state.date = dt.toISODate();
       state.text = state.text.replace(m[0], ' ');
     }
@@ -410,6 +492,57 @@ function extractDayMonthDate(state: ExtractionState, ctx: ParseContext): void {
         `"${weekdayToken}" doesn't match ${dt.toFormat('d LLLL')}, which is a ${dt.toFormat('cccc')}`,
       );
     }
+  }
+}
+
+// Fallback for a mistyped day-month date (e.g. "23 Setpember") that the
+// strict alternation-based regex above can't match. Runs only once that
+// regex has already failed, and scans tokens individually so a fuzzy month
+// match can be found regardless of position.
+function extractFuzzyDayMonthDate(state: ExtractionState, ctx: ParseContext): void {
+  if (state.date) return;
+  const tokens = state.text.split(/\s+/).filter(Boolean);
+
+  for (let i = 0; i < tokens.length; i++) {
+    const dayHere = stripOrdinal(tokens[i]);
+    const isDayHere = /^\d{1,2}$/.test(dayHere) && +dayHere >= 1 && +dayHere <= 31;
+
+    let day: number | null = null;
+    let month: (typeof MONTHS)[number] | null = null;
+    let matchTokens: string[] | null = null;
+
+    if (isDayHere && i + 1 < tokens.length) {
+      const monthNext = fuzzyFindMonth(tokens[i + 1]);
+      if (monthNext) {
+        day = parseInt(dayHere, 10);
+        month = monthNext;
+        matchTokens = [tokens[i], tokens[i + 1]];
+      }
+    }
+    if (!month) {
+      const monthHere = fuzzyFindMonth(tokens[i]);
+      const dayNextRaw = i + 1 < tokens.length ? stripOrdinal(tokens[i + 1]) : null;
+      const isDayNext =
+        dayNextRaw !== null && /^\d{1,2}$/.test(dayNextRaw) && +dayNextRaw <= 31;
+      if (monthHere && isDayNext) {
+        day = parseInt(dayNextRaw!, 10);
+        month = monthHere;
+        matchTokens = [tokens[i], tokens[i + 1]];
+      }
+    }
+
+    if (day === null || month === null || matchTokens === null) continue;
+
+    const year = ctx.now.year;
+    let dt = DateTime.fromObject({ year, month: month.index, day });
+    if (!dt.isValid) continue;
+    if (dt < ctx.now.minus({ months: 6 })) dt = dt.plus({ years: 1 });
+
+    state.date = dt.toISODate();
+    for (const t of matchTokens) {
+      state.text = state.text.replace(t, ' ');
+    }
+    return;
   }
 }
 
@@ -470,6 +603,35 @@ function extractRelativeOrNamedDate(state: ExtractionState, ctx: ParseContext): 
       state.date = anchorWeekStart.plus({ days: luxonWeekday - 1 }).toISODate();
       state.text = state.text.replace(m[0], ' ');
     }
+  }
+}
+
+// Fallback for a mistyped bare weekday (e.g. "Sundya") that the strict
+// alternation-based regex above can't match. Same "anchor to the viewed
+// week" semantics as the strict pass, just reached via fuzzy matching.
+function extractFuzzyWeekday(state: ExtractionState, ctx: ParseContext): void {
+  if (state.date || state.multiDates) return;
+  const tokens = state.text.split(/\s+/).filter(Boolean);
+
+  for (let i = 0; i < tokens.length; i++) {
+    const weekday = fuzzyFindWeekday(tokens[i]);
+    if (!weekday) continue;
+
+    const qualifierToken = i > 0 ? tokens[i - 1].toLowerCase() : null;
+    const qualifier =
+      qualifierToken === 'this' || qualifierToken === 'next' || qualifierToken === 'coming'
+        ? qualifierToken
+        : null;
+
+    const luxonWeekday = luxonWeekdayFor(weekday.index);
+    const anchorWeekStart =
+      qualifier === 'next' ? ctx.viewedWeekStart.plus({ weeks: 1 }) : ctx.viewedWeekStart;
+    state.date = anchorWeekStart.plus({ days: luxonWeekday - 1 }).toISODate();
+    state.ambiguities.push(`Matched "${tokens[i]}" to ${weekday.full}`);
+
+    state.text = state.text.replace(tokens[i], ' ');
+    if (qualifier) state.text = state.text.replace(tokens[i - 1], ' ');
+    return;
   }
 }
 
@@ -863,8 +1025,10 @@ export function parseShiftCommand(rawInput: string, ctx: ParseContext): ParseRes
   extractExplicitDate(state, ctx);
   extractTimeRange(state);
   extractDayMonthDate(state, ctx);
+  extractFuzzyDayMonthDate(state, ctx);
   extractMultiWeekday(state, ctx);
   extractRelativeOrNamedDate(state, ctx);
+  extractFuzzyWeekday(state, ctx);
   extractDaypart(state, ctx);
   extractDuration(state);
   extractStandaloneTime(state);

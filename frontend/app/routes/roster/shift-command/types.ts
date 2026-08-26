@@ -91,3 +91,20 @@ export function mustFindStaffCandidate(
   if (!found) throw new Error(`Unknown staffId in draft: ${staffId}`);
   return found;
 }
+
+// Shared by useCommandPalette.ts (deciding whether "Enter" can create
+// immediately) and ConfirmationCard.tsx (deciding whether "Create shift" is
+// enabled for a given row) — a draft is dispatch-ready once every field
+// CreateShiftCommand actually needs is present. An open-ended ("until
+// close") draft still needs a concrete endTime filled in before it's
+// ready — openEnded only means the parser didn't infer one, not that the
+// command can be sent without one.
+export function isDraftReady(draft: ParsedShiftDraft): boolean {
+  return (
+    draft.staff.resolvedId !== null &&
+    draft.date !== null &&
+    draft.startTime !== null &&
+    draft.endTime !== null &&
+    draft.endTime > draft.startTime
+  );
+}

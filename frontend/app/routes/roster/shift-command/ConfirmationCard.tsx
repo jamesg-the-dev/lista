@@ -31,12 +31,9 @@ import { Spinner } from '~/components/ui/spinner';
 
 import { getRateInfo, currency2, dayOfWeekForDate, resolveStaffRate } from '../types';
 import type { Role, StaffMember } from '../types';
+import { isDraftReady } from './types';
 import type { ParsedShiftDraft, StaffCandidate } from './types';
-
-export interface EditableDraft {
-  key: string; // stable React key — draft content alone isn't unique across a fan-out
-  draft: ParsedShiftDraft;
-}
+import type { EditableDraft } from './useCommandPalette';
 
 interface ConfirmationCardProps {
   drafts: EditableDraft[];
@@ -51,16 +48,6 @@ interface ConfirmationCardProps {
 }
 
 const UNPAID_BREAK_MINUTES_DEFAULT = 30;
-
-function isDraftReady(draft: ParsedShiftDraft): boolean {
-  return (
-    draft.staff.resolvedId !== null &&
-    draft.date !== null &&
-    draft.startTime !== null &&
-    draft.endTime !== null &&
-    draft.endTime > draft.startTime
-  );
-}
 
 export function ConfirmationCard({
   drafts,
