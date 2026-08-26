@@ -18,6 +18,8 @@ import { BudgetBar } from './BudgetBar';
 import { CopyPreviousWeekButton } from './CopyPreviousWeekButton';
 import { dateForDay } from '../types';
 import type { BudgetSummary, Venue } from '../types';
+import { Separator } from '~/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip';
 
 interface RosterHeaderProps {
   venues: Venue[];
@@ -49,62 +51,80 @@ export function RosterHeader({
   return (
     <header className="border-border bg-card sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4 border-b px-6 py-4">
       <div className="flex min-w-0 items-center gap-4">
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button
-                variant="outline"
-                className="bg-muted h-auto gap-2 rounded-lg px-3 py-2"
-              />
-            }
-          >
-            <span className="bg-foreground h-2 w-2 shrink-0 rounded-full" />
-            <div className="text-left">
-              <p className="font-sans text-sm leading-tight font-semibold uppercase">
-                {venue.name}
-              </p>
-            </div>
-            <ChevronDownIcon size={14} className="text-muted-foreground ml-1 shrink-0" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="bg-muted w-64">
-            {venues.map(v => (
-              <DropdownMenuItem
-                key={v.id}
-                onClick={() => onVenueChange(v.id)}
-                className="justify-between px-4 py-3"
+        {venues.length > 1 && (
+          <>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    className="bg-muted h-auto gap-2 rounded-lg px-3 py-2"
+                  />
+                }
               >
-                <div>
-                  <p className="text-sm font-medium">{v.name}</p>
+                <span className="bg-foreground h-2 w-2 shrink-0 rounded-full" />
+                <div className="text-left">
+                  <p className="font-sans text-sm leading-tight font-semibold uppercase">
+                    {venue.name}
+                  </p>
                 </div>
-                {v.id === activeVenueId && (
-                  <span className="bg-foreground h-1.5 w-1.5 rounded-full" />
-                )}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+                <ChevronDownIcon
+                  size={14}
+                  className="text-muted-foreground ml-1 shrink-0"
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-muted w-64">
+                {venues.map(v => (
+                  <DropdownMenuItem
+                    key={v.id}
+                    onClick={() => onVenueChange(v.id)}
+                    className="justify-between px-4 py-3"
+                  >
+                    <div>
+                      <p className="text-sm font-medium">{v.name}</p>
+                    </div>
+                    {v.id === activeVenueId && (
+                      <span className="bg-foreground h-1.5 w-1.5 rounded-full" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Separator orientation="vertical" className="mr-2" />
+          </>
+        )}
 
-        <div className="border-border hidden items-center gap-2 border-l pl-4 md:flex">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground"
-            onClick={() => onGoToWeek(-1)}
-          >
-            <ChevronLeftIcon size={18} />
-          </Button>
+        <div className="hidden items-center gap-2 md:flex">
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground"
+                onClick={() => onGoToWeek(-1)}
+              >
+                <ChevronLeftIcon size={18} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Previous week</TooltipContent>
+          </Tooltip>
           <span className="font-sans text-sm font-medium tabular-nums">
             {dateForDay(weekStart, 0).toFormat('d LLL')} –{' '}
             {dateForDay(weekStart, 6).toFormat('d LLL')}
           </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground"
-            onClick={() => onGoToWeek(1)}
-          >
-            <ChevronRightIcon size={18} />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground"
+                onClick={() => onGoToWeek(1)}
+              >
+                <ChevronRightIcon size={18} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Next week</TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
