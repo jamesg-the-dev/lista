@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { DateTime } from 'luxon';
 import { Link } from 'react-router';
 import {
@@ -6,6 +6,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   PlusIcon,
+  SparklesIcon,
 } from 'lucide-react';
 
 import { Button } from '~/components/ui/button';
@@ -17,6 +18,9 @@ import {
 } from '~/components/ui/dropdown-menu';
 import { Empty, EmptyDescription, EmptyTitle } from '~/components/ui/empty';
 import { Spinner } from '~/components/ui/spinner';
+import { toast } from '~/components/ui/toast';
+import { getApiErrorMessage } from '~/lib/api-client';
+import { useCurrentAccount } from '~/lib/account/hooks';
 import { useVenueContextStore } from '~/lib/venue-context';
 
 import { BudgetBar } from './components/BudgetBar';
@@ -36,6 +40,8 @@ import {
   useUpdateShift,
   useVenues,
 } from './hooks';
+import { CommandPalette } from './shift-command/CommandPalette';
+import type { ParsedShiftDraft } from './shift-command/types';
 import type { ComplianceViolationType, Role, Shift, ShiftDraft } from './types';
 import {
   currency,
@@ -61,6 +67,7 @@ export default function RosterBuilder() {
   const [weekStart, setWeekStart] = useState(WEEK_START);
   const weekStartIso = weekStart.toISODate()!;
 
+  const accountQuery = useCurrentAccount();
   const venuesQuery = useVenues();
   usePageTitle(
     `Roster | ${mustFindVenue(venuesQuery.data ?? [], activeVenueId)?.name ?? ''}`,
@@ -82,6 +89,7 @@ export default function RosterBuilder() {
     weekStartIso,
   );
 
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [panel, setPanel] = useState<ShiftEditorPanelState | null>(null);
   const [draft, setDraft] = useState<ShiftDraft>({
@@ -145,6 +153,73 @@ export default function RosterBuilder() {
   }
   function closePanel() {
     setPanelOpen(false);
+  }
+
+  // Opens the AI shift command palette on "/", per the spec's UX Flow step
+  // 1 — skipped while the manager is typing into a real field, or while
+  // another modal is already open, so "/" in a text box still types a
+  // slash.
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key !== '/') return;
+      const target = e.target as HTMLElement | null;
+      const isTypingElsewhere =
+        target != null &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable);
+      if (isTypingElsewhere || commandPaletteOpen || panelOpen) return;
+      e.preventDefault();
+      setCommandPaletteOpen(true);
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [commandPaletteOpen, panelOpen]);
+
+  // The AI parser is purely additive — every confirmed draft still goes
+  // through the same CreateShiftCommand/useCreateShift path a manually
+  // added shift does (see CLAUDE.md's "not a new write path" framing in the
+  // spec). Rate resolution reuses resolveStaffRate exactly like
+  // handleSaveShift above, so a draft with no resolvable award rate can't
+  // silently create an incorrectly-priced shift.
+  async function handleConfirmAiDrafts(drafts: ParsedShiftDraft[]) {
+    const results = await Promise.allSettled(
+      drafts.map(draft => {
+        const draftStaffMember = staff.find(s => s.id === draft.staff.resolvedId);
+        if (!draftStaffMember || !draft.date || !draft.startTime || !draft.endTime) {
+          return Promise.reject(new Error('Incomplete draft'));
+        }
+        const { rate } = resolveStaffRate(draftStaffMember, roleFor(draftStaffMember));
+        if (rate === null) {
+          return Promise.reject(
+            new Error(`No award rate resolved yet for ${draftStaffMember.name}`),
+          );
+        }
+        return createShiftMutation.mutateAsync({
+          venueId: activeVenueId,
+          employeeId: draftStaffMember.id,
+          shiftDate: draft.date,
+          start: draft.startTime,
+          end: draft.endTime,
+          unpaidBreakMinutes: 30,
+          baseRatePerHour: rate,
+        });
+      }),
+    );
+
+    const failures = results.filter(
+      (r): r is PromiseRejectedResult => r.status === 'rejected',
+    );
+    if (failures.length > 0) {
+      toast.add({
+        title:
+          failures.length === drafts.length
+            ? "Couldn't create any shifts"
+            : `${failures.length} of ${drafts.length} shift(s) couldn't be created`,
+        description: getApiErrorMessage(failures[0].reason),
+        type: 'error',
+      });
+    }
   }
 
   async function handleSaveShift() {
@@ -324,6 +399,18 @@ export default function RosterBuilder() {
             )}
             currentShiftCount={shifts.length}
           />
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setCommandPaletteOpen(true)}
+          >
+            <SparklesIcon size={14} />
+            Add shift
+            <kbd className="border-border text-muted-foreground ml-1 rounded border px-1 text-[10px]">
+              /
+            </kbd>
+          </Button>
           <BudgetBar
             summary={budgetSummaryQuery.data}
             onSaveTarget={value => saveForecastTargetMutation.mutate(value)}
@@ -516,6 +603,18 @@ export default function RosterBuilder() {
             ? (overrideViolationMutation.variables?.violationType ?? null)
             : null
         }
+      />
+
+      <CommandPalette
+        open={commandPaletteOpen}
+        onOpenChange={setCommandPaletteOpen}
+        venueId={activeVenueId}
+        managerId={accountQuery.data?.staffMemberId ?? ''}
+        venueStaff={staff.map(s => ({ staffId: s.id, displayName: s.name }))}
+        staffMembers={staff}
+        roles={roles}
+        viewedWeekStart={weekStart}
+        onConfirmDrafts={handleConfirmAiDrafts}
       />
     </div>
   );
