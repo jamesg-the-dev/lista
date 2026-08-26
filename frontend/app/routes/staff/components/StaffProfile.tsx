@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { ArrowLeftIcon } from 'lucide-react';
 
 import { Button } from '~/components/ui/button';
 import { Skeleton } from '~/components/ui/skeleton';
+import { toast } from '~/components/ui/toast';
+import { getApiErrorMessage } from '~/lib/api-client';
 
 import { useSaveStaffMember, useStaffMember } from '../hooks';
 import type { Venue } from '../types';
@@ -71,6 +73,16 @@ export default function StaffProfile({ staffId, venues, onBack }: StaffProfilePr
 
   const staff = staffQuery.data;
 
+  useEffect(() => {
+    if (saveMutation.isError) {
+      toast.add({
+        title: "Couldn't save this profile",
+        description: getApiErrorMessage(saveMutation.error),
+        type: 'error',
+      });
+    }
+  }, [saveMutation.isError, saveMutation.error]);
+
   return (
     <div className="bg-background text-foreground flex min-h-screen w-full flex-col font-sans">
       <header className="border-border bg-card sticky top-0 z-30 flex items-center justify-between gap-4 border-b px-6 py-4">
@@ -118,14 +130,6 @@ export default function StaffProfile({ staffId, venues, onBack }: StaffProfilePr
 
           {!staffQuery.isLoading && !staffQuery.isError && staff && syncedStaffId && (
             <>
-              {saveMutation.isError && (
-                <div className="border-destructive bg-destructive-tint text-destructive rounded-lg border px-4 py-3 text-sm">
-                  {saveMutation.error instanceof Error
-                    ? saveMutation.error.message
-                    : "Couldn't save this profile."}
-                </div>
-              )}
-
               <StaffMemberForm form={form} venues={venues} />
 
               <AvailabilitySection staffId={staffId} exceptions={staff.unavailability} />

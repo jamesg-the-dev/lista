@@ -65,10 +65,7 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table';
-import { ApiClientError } from '~/lib/api-client';
-import { initials } from '~/lib/utils';
 import { useVenueContextStore } from '~/lib/venue-context';
-
 import { useDeactivateStaffMember, useStaffMembers } from '../hooks';
 import {
   CLASSIFICATION_META,
@@ -76,19 +73,8 @@ import {
   PERMISSION_LEVEL_META,
 } from '../types';
 import type { StaffMember } from '../types';
-
-// FluentValidation failures (e.g. DeactivateStaffMemberCommandValidator's
-// "still has future published shifts" / "last remaining Owner" guards)
-// arrive as ApiClientError with a generic message and the real reason in
-// `details` — unwrap that instead of showing "One or more validation
-// errors occurred."
-function deactivateErrorMessage(error: unknown): string {
-  if (error instanceof ApiClientError && error.details) {
-    const messages = Object.values(error.details).flat();
-    if (messages.length > 0) return messages.join(' ');
-  }
-  return error instanceof Error ? error.message : 'Something went wrong.';
-}
+import { DeactivateStaffDialog } from './DeactivateStaffDialog';
+import { toast } from '~/components/ui/toast';
 
 const PAGE_SIZE_ITEMS = [
   { label: '10', value: '10' },
@@ -448,47 +434,19 @@ function StaffDataTable({ staff }: { staff: StaffMember[] }) {
         </Pagination>
       </div>
 
-      <AlertDialog
-        open={deactivateTarget !== null}
-        onOpenChange={open => {
-          if (!open) {
-            setDeactivateTarget(null);
-            deactivateStaffMember.reset();
+      {deactivateTarget && (
+        <DeactivateStaffDialog
+          staff={deactivateTarget}
+          open={!!deactivateTarget}
+          onOpenChange={open => !open && setDeactivateTarget(null)}
+          onDeactivated={() =>
+            toast.add({
+              title: 'Staff member deactivated',
+              type: 'success',
+            })
           }
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Deactivate {deactivateTarget?.name}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              They'll no longer be available to roster at this venue. Past shifts and
-              timesheets are kept — this can't be undone from here.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          {deactivateStaffMember.isError && (
-            <p className="text-destructive text-sm">
-              {deactivateErrorMessage(deactivateStaffMember.error)}
-            </p>
-          )}
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deactivateStaffMember.isPending}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={deactivateStaffMember.isPending}
-              onClick={() => {
-                if (!deactivateTarget) return;
-                deactivateStaffMember.mutate(deactivateTarget.id, {
-                  onSuccess: () => setDeactivateTarget(null),
-                });
-              }}
-            >
-              {deactivateStaffMember.isPending ? 'Deactivating…' : 'Deactivate'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        />
+      )}
     </div>
   );
 }

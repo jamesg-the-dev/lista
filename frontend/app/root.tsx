@@ -14,6 +14,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 
 import { queryClient } from './lib/query-client';
 import { Spinner } from './components/ui/spinner';
+import { Toaster } from './components/ui/toast';
 
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -58,7 +59,9 @@ export default function App() {
   return (
     <StrictMode>
       <QueryClientProvider client={queryClient}>
-        <Outlet />
+        <Toaster>
+          <Outlet />
+        </Toaster>
       </QueryClientProvider>
     </StrictMode>
   );

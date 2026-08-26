@@ -525,6 +525,55 @@ route directory.
     as a plain `string` route parameter, validated the same way inside the
     command — not as the enum type and not with a numeric route constraint.
 
+* **API response envelope: every endpoint returns the same wrapper shape,
+  success and error alike.** Backend: `RosterApp.Api.Common.ApiResponse<T>`
+  (`backend/src/RosterApp.Api/Common/ApiResponse.cs`). Frontend: mirrored
+  exactly by `ApiResponseEnvelope<T>` in `frontend/app/lib/api-client.ts`.
+  Don't design a new endpoint or frontend fetch helper around a bare DTO or
+  a raw error string — always the envelope below:
+
+  ```ts
+  interface ApiResponseEnvelope<T> {
+    success: boolean;
+    data: T | null;
+    error: ApiErrorPayload | null; // null on success
+  }
+
+  interface ApiErrorPayload {
+    code: string;
+    message: string;
+    details: Record<string, string[]> | null; // field name -> validation messages
+  }
+  ```
+
+  * `api-client.ts`'s `request()` already unwraps this envelope for every
+    call — callers just get `T` back on success, or a thrown
+    `ApiClientError` (which carries `code`/`status`/`details`) on failure.
+    Don't re-parse `{ success, data, error }` by hand in a route's `api.ts`.
+  * `message` is often a generic FluentValidation string ("One or more
+    validation errors occurred.") with the actual reason itemised per
+    field in `details`. Use the centralised
+    `getApiErrorMessage(error: unknown): string` helper (same file) to turn
+    either shape into one readable string — it prefers the field-level
+    `details` messages over the generic `message` when present, and falls
+    back to a generic string for non-`ApiClientError` errors. Don't
+    hand-roll this unwrapping per component; two call sites
+    (`StaffList.tsx`'s deactivate-staff confirmation,
+    `StaffProfile.tsx`'s save-profile toast) already had near-identical
+    copies before this was centralised.
+  * Display convention: a mutation error surfaced as a standalone
+    notification (nothing else on screen needs to stay showing the
+    context) uses the shadcn `toast` component
+    (`frontend/app/components/ui/toast.tsx`, Base UI's `Toast` — this
+    project's `base` is `base`, not `radix`/`react-aria`, so it's `toast`
+    not `sonner`) — see `StaffProfile.tsx`'s save mutation for the
+    pattern (`toast.add({ title, description: getApiErrorMessage(error),
+    type: 'error' })`, fired from a `useEffect` keyed on the mutation's
+    `isError`/`error`). An error that must stay pinned next to the
+    control that caused it (e.g. a reason shown inside a still-open
+    confirmation dialog) stays inline instead — don't force every error
+    into a toast just for consistency.
+
 * **Database:** Postgres via Supabase.
 
   * EF Core/Npgsql is the **only writer**. Business logic and audit

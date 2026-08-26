@@ -31,6 +31,22 @@ export class ApiClientError extends Error {
   }
 }
 
+// Formats any error caught from an API call into a single readable string
+// for display (e.g. a toast). FluentValidation failures often carry a
+// generic top-level message ("One or more validation errors occurred.")
+// with the actual reason itemised in `details` — those field-level messages
+// are preferred over the generic one when present.
+export function getApiErrorMessage(error: unknown): string {
+  if (error instanceof ApiClientError) {
+    if (error.details) {
+      const detailMessages = Object.values(error.details).flat();
+      if (detailMessages.length > 0) return detailMessages.join(' ');
+    }
+    return error.message;
+  }
+  return error instanceof Error ? error.message : 'Something went wrong.';
+}
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
