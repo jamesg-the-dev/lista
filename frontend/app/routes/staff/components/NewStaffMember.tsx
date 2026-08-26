@@ -1,7 +1,10 @@
+import { useEffect } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { ArrowLeftIcon } from 'lucide-react';
 
 import { Button } from '~/components/ui/button';
+import { toast } from '~/components/ui/toast';
+import { getApiErrorMessage } from '~/lib/api-client';
 
 import { useSaveStaffMember } from '../hooks';
 import type { Venue } from '../types';
@@ -21,6 +24,16 @@ export default function NewStaffMember({
   onCreated,
 }: NewStaffMemberProps) {
   const saveMutation = useSaveStaffMember();
+
+  useEffect(() => {
+    if (saveMutation.isError) {
+      toast.add({
+        title: "Couldn't save this profile",
+        description: getApiErrorMessage(saveMutation.error),
+        type: 'error',
+      });
+    }
+  }, [saveMutation.isError, saveMutation.error]);
 
   const form = useForm({
     defaultValues: blankStaffMemberForm(defaultVenueId),
@@ -61,14 +74,6 @@ export default function NewStaffMember({
 
       <main className="flex-1 px-6 py-6">
         <div className="mx-auto flex max-w-2xl flex-col gap-8">
-          {saveMutation.isError && (
-            <div className="border-destructive bg-destructive-tint text-destructive rounded-lg border px-4 py-3 text-sm">
-              {saveMutation.error instanceof Error
-                ? saveMutation.error.message
-                : "Couldn't save this profile."}
-            </div>
-          )}
-
           <StaffMemberForm form={form} venues={venues} />
 
           <p className="text-muted-foreground text-xs italic">

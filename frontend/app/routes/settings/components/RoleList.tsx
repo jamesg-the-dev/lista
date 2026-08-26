@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertTriangleIcon, PlusIcon } from 'lucide-react';
 
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { Skeleton } from '~/components/ui/skeleton';
+import { toast } from '~/components/ui/toast';
+import { getApiErrorMessage } from '~/lib/api-client';
 
 import { useDeactivateRole, useRolesForVenue } from '../hooks';
 import { ROLE_COLOR_SWATCHES } from '../types';
@@ -25,6 +27,16 @@ export default function RoleList({ venueId }: { venueId: string }) {
   const [dialogMode, setDialogMode] = useState<'closed' | 'create' | Role>('closed');
 
   const roles = rolesQuery.data ?? [];
+
+  useEffect(() => {
+    if (deactivateMutation.isError) {
+      toast.add({
+        title: "Couldn't deactivate this role",
+        description: getApiErrorMessage(deactivateMutation.error),
+        type: 'error',
+      });
+    }
+  }, [deactivateMutation.isError, deactivateMutation.error]);
 
   return (
     <section>
@@ -109,17 +121,6 @@ export default function RoleList({ venueId }: { venueId: string }) {
             </div>
           ))}
         </div>
-      )}
-
-      {deactivateMutation.isError && (
-        <Alert variant="destructive" className="mt-2">
-          <AlertTitle>Couldn't deactivate this role</AlertTitle>
-          <AlertDescription>
-            {deactivateMutation.error instanceof Error
-              ? deactivateMutation.error.message
-              : 'Something went wrong.'}
-          </AlertDescription>
-        </Alert>
       )}
 
       {/* Keyed by the edit target so the form resets to the right role each

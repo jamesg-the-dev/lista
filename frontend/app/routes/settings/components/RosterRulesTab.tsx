@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert';
@@ -13,6 +13,8 @@ import {
 } from '~/components/ui/card';
 import { Separator } from '~/components/ui/separator';
 import { Skeleton } from '~/components/ui/skeleton';
+import { toast } from '~/components/ui/toast';
+import { getApiErrorMessage } from '~/lib/api-client';
 
 import {
   useActiveRosterComplianceConfiguration,
@@ -64,6 +66,16 @@ export default function RosterRulesTab({ venueId }: { venueId: string }) {
   // fallback.
   const venueState = profileQuery.data!.address.state;
 
+  useEffect(() => {
+    if (updateMutation.isError) {
+      toast.add({
+        title: "Couldn't save changes",
+        description: getApiErrorMessage(updateMutation.error),
+        type: 'error',
+      });
+    }
+  }, [updateMutation.isError, updateMutation.error]);
+
   return (
     <Card>
       <CardHeader>
@@ -94,17 +106,6 @@ export default function RosterRulesTab({ venueId }: { venueId: string }) {
 
         {isReady && (
           <div className="flex flex-col gap-6">
-            {updateMutation.isError && (
-              <Alert variant="destructive">
-                <AlertTitle>Couldn't save changes</AlertTitle>
-                <AlertDescription>
-                  {updateMutation.error instanceof Error
-                    ? updateMutation.error.message
-                    : 'Something went wrong.'}
-                </AlertDescription>
-              </Alert>
-            )}
-
             <RosterRulesForm form={form} />
 
             <Separator />

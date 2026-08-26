@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert';
@@ -22,6 +22,8 @@ import {
 } from '~/components/ui/dialog';
 import { Separator } from '~/components/ui/separator';
 import { Skeleton } from '~/components/ui/skeleton';
+import { toast } from '~/components/ui/toast';
+import { getApiErrorMessage } from '~/lib/api-client';
 
 import {
   useActiveAwardConfiguration,
@@ -94,6 +96,16 @@ export default function AwardPayTab({ venueId }: { venueId: string }) {
   const isReady = !isLoading && !isError && syncedVenueId === venueId;
   const isSaving = updateMutation.isPending;
 
+  useEffect(() => {
+    if (updateMutation.isError) {
+      toast.add({
+        title: "Couldn't save changes",
+        description: getApiErrorMessage(updateMutation.error),
+        type: 'error',
+      });
+    }
+  }, [updateMutation.isError, updateMutation.error]);
+
   return (
     <Card>
       <CardHeader>
@@ -124,17 +136,6 @@ export default function AwardPayTab({ venueId }: { venueId: string }) {
 
         {isReady && (
           <div className="flex flex-col gap-6">
-            {updateMutation.isError && (
-              <Alert variant="destructive">
-                <AlertTitle>Couldn't save changes</AlertTitle>
-                <AlertDescription>
-                  {updateMutation.error instanceof Error
-                    ? updateMutation.error.message
-                    : 'Something went wrong.'}
-                </AlertDescription>
-              </Alert>
-            )}
-
             {(rolesQuery.data ?? []).some(
               r => r.isActive && !r.mappedAwardClassificationId,
             ) && (

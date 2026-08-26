@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
-import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert';
 import { Field, FieldDescription, FieldLabel } from '~/components/ui/field';
 import { Input } from '~/components/ui/input';
+import { toast } from '~/components/ui/toast';
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group';
+import { getApiErrorMessage } from '~/lib/api-client';
 
 import { useUpdateVenueAvailabilitySettings, useVenueProfile } from '../hooks';
 import { SELF_SERVICE_MODE_ITEMS } from '../types';
@@ -41,6 +42,16 @@ export default function AvailabilitySettingsCard({ venueId }: { venueId: string 
     });
     setDraftNoticeDays(null);
   };
+
+  useEffect(() => {
+    if (updateMutation.isError) {
+      toast.add({
+        title: "Couldn't save availability settings",
+        description: getApiErrorMessage(updateMutation.error),
+        type: 'error',
+      });
+    }
+  }, [updateMutation.isError, updateMutation.error]);
 
   return (
     <section className="border-border rounded-lg border p-4">
@@ -95,17 +106,6 @@ export default function AvailabilitySettingsCard({ venueId }: { venueId: string 
             </FieldDescription>
           </Field>
         </div>
-      )}
-
-      {updateMutation.isError && (
-        <Alert variant="destructive" className="mt-3">
-          <AlertTitle>Couldn't save availability settings</AlertTitle>
-          <AlertDescription>
-            {updateMutation.error instanceof Error
-              ? updateMutation.error.message
-              : 'Something went wrong.'}
-          </AlertDescription>
-        </Alert>
       )}
     </section>
   );

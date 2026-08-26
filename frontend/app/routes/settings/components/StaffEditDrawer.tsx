@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert';
 import { Badge } from '~/components/ui/badge';
@@ -23,6 +23,8 @@ import {
 } from '~/components/ui/sheet';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Textarea } from '~/components/ui/textarea';
+import { toast } from '~/components/ui/toast';
+import { getApiErrorMessage } from '~/lib/api-client';
 
 import {
   useClearStaffPayRateOverride,
@@ -72,6 +74,16 @@ export default function StaffEditDrawer({
   const [overrideDraftOpen, setOverrideDraftOpen] = useState(false);
 
   const roles = rolesQuery.data ?? [];
+
+  useEffect(() => {
+    if (permissionMutation.isError) {
+      toast.add({
+        title: "Couldn't update permission level",
+        description: getApiErrorMessage(permissionMutation.error),
+        type: 'error',
+      });
+    }
+  }, [permissionMutation.isError, permissionMutation.error]);
 
   const handleSaveOverride = async () => {
     const rate = Number(overrideRate);
@@ -149,16 +161,6 @@ export default function StaffEditDrawer({
                   {PERMISSION_LEVEL_META[staff.permissionLevel].description}
                 </FieldDescription>
               </Field>
-
-              {permissionMutation.isError && (
-                <Alert variant="destructive">
-                  <AlertDescription>
-                    {permissionMutation.error instanceof Error
-                      ? permissionMutation.error.message
-                      : "Couldn't update permission level."}
-                  </AlertDescription>
-                </Alert>
-              )}
 
               <Field>
                 <FieldLabel htmlFor="drawer-primary-role">Primary role</FieldLabel>
