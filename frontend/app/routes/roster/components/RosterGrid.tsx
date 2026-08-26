@@ -77,7 +77,7 @@ export function RosterGrid({
               const letter = roleLetter(role);
               return (
                 <Fragment key={st.id}>
-                  <div className="border-border flex items-center gap-3 border-t py-3 pr-4">
+                  <div className="border-border flex items-center gap-3 py-3 pr-4">
                     <div
                       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-sans text-sm font-bold"
                       style={{ background: tint, color }}
@@ -104,7 +104,7 @@ export function RosterGrid({
                     return (
                       <div
                         key={key}
-                        className="border-border flex flex-col gap-1.5 border-t px-1.5 py-2"
+                        className="border-border flex flex-col gap-1.5 px-1.5 py-2"
                       >
                         {list.map(sh => (
                           <div key={sh.id} className="relative">

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { FormEvent } from 'react';
+import type { SubmitEvent } from 'react';
 import { PencilIcon } from 'lucide-react';
 
 import { Button } from '~/components/ui/button';
@@ -84,7 +84,7 @@ export function BudgetBar({ summary, onSaveTarget, savingTarget }: BudgetBarProp
     setPopoverOpen(open);
   }
 
-  function handleSubmit(e: FormEvent) {
+  function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     const trimmed = draftValue.trim();
     onSaveTarget(trimmed === '' ? null : Number(trimmed));
@@ -110,54 +110,78 @@ export function BudgetBar({ summary, onSaveTarget, savingTarget }: BudgetBarProp
         <span
           className={`rounded px-1.5 py-0.5 font-sans text-xs font-medium tabular-nums ${style.text} ${style.deltaBg}`}
         >
-          {delta < 0 ? '−' : '+'}
+          {delta < 0 ? '-' : '+'}
           {currency(Math.abs(delta))}
         </span>
       )}
-
-      <Popover open={popoverOpen} onOpenChange={openPopover}>
-        <PopoverTrigger
-          render={
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Set weekly budget target"
-            />
-          }
-        >
-          <PencilIcon />
-        </PopoverTrigger>
-        <PopoverContent align="end">
-          <PopoverHeader>
-            <PopoverTitle>Weekly labour budget</PopoverTitle>
-          </PopoverHeader>
-          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-            <Field>
-              <FieldLabel htmlFor="budget-target">Target for this venue</FieldLabel>
-              <InputGroup>
-                <InputGroupAddon>$</InputGroupAddon>
-                <InputGroupInput
-                  id="budget-target"
-                  type="number"
-                  min="0"
-                  step="50"
-                  inputMode="decimal"
-                  placeholder="No target set"
-                  value={draftValue}
-                  onChange={e => setDraftValue(e.target.value)}
-                />
-              </InputGroup>
-              <FieldDescription>
-                Leave blank to hide colour-coding and show the running total only.
-              </FieldDescription>
-            </Field>
-            <Button type="submit" disabled={savingTarget}>
-              {savingTarget && <Spinner data-icon="inline-start" />}
-              Save target
-            </Button>
-          </form>
-        </PopoverContent>
-      </Popover>
+      <BudgetPopover
+        draftValue={draftValue}
+        setDraftValue={setDraftValue}
+        popoverOpen={popoverOpen}
+        openPopover={openPopover}
+        savingTarget={savingTarget}
+        handleSubmit={handleSubmit}
+      />
     </div>
+  );
+}
+
+type BudgetPopoverProps = {
+  draftValue: string;
+  popoverOpen: boolean;
+  savingTarget: boolean;
+  handleSubmit: (e: SubmitEvent<HTMLFormElement>) => void;
+  openPopover: (open: boolean) => void;
+  setDraftValue: (value: string) => void;
+};
+
+function BudgetPopover({
+  draftValue,
+  setDraftValue,
+  popoverOpen,
+  openPopover,
+  savingTarget,
+  handleSubmit,
+}: BudgetPopoverProps) {
+  return (
+    <Popover open={popoverOpen} onOpenChange={openPopover}>
+      <PopoverTrigger
+        render={
+          <Button variant="ghost" size="icon-sm" aria-label="Set weekly budget target" />
+        }
+      >
+        <PencilIcon />
+      </PopoverTrigger>
+      <PopoverContent align="end">
+        <PopoverHeader>
+          <PopoverTitle>Weekly labour budget</PopoverTitle>
+        </PopoverHeader>
+        <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+          <Field>
+            <FieldLabel htmlFor="budget-target">Target for this venue</FieldLabel>
+            <InputGroup>
+              <InputGroupAddon>$</InputGroupAddon>
+              <InputGroupInput
+                id="budget-target"
+                type="number"
+                min="0"
+                step="50"
+                inputMode="decimal"
+                placeholder="No target set"
+                value={draftValue}
+                onChange={e => setDraftValue(e.target.value)}
+              />
+            </InputGroup>
+            <FieldDescription>
+              Leave blank to hide colour-coding and show the running total only.
+            </FieldDescription>
+          </Field>
+          <Button type="submit" disabled={savingTarget}>
+            {savingTarget && <Spinner data-icon="inline-start" />}
+            Save target
+          </Button>
+        </form>
+      </PopoverContent>
+    </Popover>
   );
 }
