@@ -53,13 +53,18 @@ import {
 import { initials, usePageTitle } from '~/lib/utils';
 import { DAY_LABELS } from '~/lib/date-types';
 
-const WEEK_START = DateTime.local(2026, 8, 17); // Mon 17 Aug 2026
-const TODAY_INDEX = 1; // Tue 18 Aug 2026
+// Luxon's `weekday` (1=Monday..7=Sunday) is always ISO-based regardless of
+// locale, unlike `startOf('week')` — matches this app's own Monday-first
+// convention (DAY_LABELS, types.ts's dayOfWeekForDate).
+const TODAY = DateTime.local().startOf('day');
+const WEEK_START = TODAY.minus({ days: TODAY.weekday - 1 }); // Monday of the current week
+const TODAY_INDEX = TODAY.weekday - 1; // 0=Mon..6=Sun
 
 export default function RosterBuilder() {
   const { activeVenueId, setActiveVenueId } = useVenueContextStore();
   const [weekStart, setWeekStart] = useState(WEEK_START);
   const weekStartIso = weekStart.toISODate()!;
+  const isViewingCurrentWeek = weekStartIso === WEEK_START.toISODate();
 
   const venuesQuery = useVenues();
   usePageTitle(
@@ -236,14 +241,6 @@ export default function RosterBuilder() {
 
   return (
     <div className="bg-background text-foreground flex min-h-screen w-full flex-col font-sans">
-      <style>{`
-        ::-webkit-scrollbar { height: 10px; width: 10px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; }
-        @keyframes pulseDot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
-        .live-dot { animation: pulseDot 2s ease-in-out infinite; }
-      `}</style>
-
       {/* Top bar */}
       <header className="border-border bg-card sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4 border-b px-6 py-4">
         <div className="flex min-w-0 items-center gap-4">
@@ -336,7 +333,7 @@ export default function RosterBuilder() {
       <div className="border-border bg-background border-b px-6 py-3">
         <div className="grid grid-cols-7 gap-2">
           {DAY_LABELS.map((d, i) => {
-            const isToday = i === TODAY_INDEX;
+            const isToday = isViewingCurrentWeek && i === TODAY_INDEX;
             const h = Math.max(6, (perDayTotals[i] / maxDay) * 28);
             return (
               <div key={d} className="flex flex-col items-center gap-1.5">
@@ -379,7 +376,9 @@ export default function RosterBuilder() {
                 <div key={d} className="pb-3 text-center">
                   <p
                     className={`font-sans text-xs font-semibold tracking-widest uppercase ${
-                      i === TODAY_INDEX ? 'text-foreground' : 'text-muted-foreground'
+                      isViewingCurrentWeek && i === TODAY_INDEX
+                        ? 'text-foreground'
+                        : 'text-muted-foreground'
                     }`}
                   >
                     {d}
