@@ -31,7 +31,6 @@ interface RosterHeaderProps {
   budgetSummary: BudgetSummary | undefined;
   onSaveTarget: (value: number | null) => void;
   savingTarget: boolean;
-  onOpenCommandPalette: () => void;
 }
 
 export function RosterHeader({
@@ -46,7 +45,6 @@ export function RosterHeader({
   budgetSummary,
   onSaveTarget,
   savingTarget,
-  onOpenCommandPalette,
 }: RosterHeaderProps) {
   return (
     <header className="border-border bg-card sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4 border-b px-6 py-4">
@@ -125,18 +123,7 @@ export function RosterHeader({
           )}
           currentShiftCount={currentShiftCount}
         />
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-1.5"
-          onClick={onOpenCommandPalette}
-        >
-          <SparklesIcon size={14} />
-          Add shift
-          <kbd className="border-border text-muted-foreground ml-1 rounded border px-1 text-[10px]">
-            /
-          </kbd>
-        </Button>
+
         <BudgetBar
           summary={budgetSummary}
           onSaveTarget={onSaveTarget}

@@ -306,7 +306,6 @@ export default function RosterBuilder() {
         budgetSummary={budgetSummaryQuery.data}
         onSaveTarget={value => saveForecastTargetMutation.mutate(value)}
         savingTarget={saveForecastTargetMutation.isPending}
-        onOpenCommandPalette={() => setCommandPaletteOpen(true)}
       />
 
       <DayCostStrip
