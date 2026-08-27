@@ -96,16 +96,18 @@ export function RosterHeader({
 
         <div className="hidden items-center gap-2 md:flex">
           <Tooltip>
-            <TooltipTrigger>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-muted-foreground"
-                onClick={() => onGoToWeek(-1)}
-              >
-                <ChevronLeftIcon size={18} />
-              </Button>
-            </TooltipTrigger>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground"
+                  onClick={() => onGoToWeek(-1)}
+                >
+                  <ChevronLeftIcon size={18} />
+                </Button>
+              }
+            />
             <TooltipContent>Previous week</TooltipContent>
           </Tooltip>
           <span className="font-sans text-sm font-medium tabular-nums">
@@ -113,16 +115,18 @@ export function RosterHeader({
             {dateForDay(weekStart, 6).toFormat('d LLL')}
           </span>
           <Tooltip>
-            <TooltipTrigger>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-muted-foreground"
-                onClick={() => onGoToWeek(1)}
-              >
-                <ChevronRightIcon size={18} />
-              </Button>
-            </TooltipTrigger>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground"
+                  onClick={() => onGoToWeek(1)}
+                >
+                  <ChevronRightIcon size={18} />
+                </Button>
+              }
+            />
             <TooltipContent>Next week</TooltipContent>
           </Tooltip>
         </div>
