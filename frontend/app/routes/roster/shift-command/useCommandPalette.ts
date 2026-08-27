@@ -36,7 +36,7 @@ export const COMMANDS: CommandDefinition[] = [
     id: 'create-shift',
     label: 'Create shift',
     description: 'Add a new shift for a staff member',
-    example: 'James Chen 10am–4pm Sunday',
+    example: 'James Chen 10am-4pm Sunday',
     enabled: true,
   },
   {
@@ -44,28 +44,28 @@ export const COMMANDS: CommandDefinition[] = [
     label: 'Remove shift',
     description: 'Delete an existing shift',
     example: 'Remove James Chen Sunday',
-    enabled: false,
+    enabled: true,
   },
   {
     id: 'swap-shift',
     label: 'Swap shifts',
     description: "Swap two staff members' shifts",
     example: 'Swap James and Sarah Sunday',
-    enabled: false,
+    enabled: true,
   },
   {
     id: 'copy-week',
     label: 'Copy last week',
     description: "Duplicate last week's roster to this week",
     example: 'Copy last week',
-    enabled: false,
+    enabled: true,
   },
   {
     id: 'clear-day',
     label: 'Clear day',
     description: 'Remove all shifts on a given day',
     example: 'Clear Sunday',
-    enabled: false,
+    enabled: true,
   },
 ];
 
@@ -78,7 +78,7 @@ function summariseForSuccess(drafts: ParsedShiftDraft[]): string {
   if (drafts.length !== 1) return `${drafts.length} shifts created`;
   const [draft] = drafts;
   const time = draft.endTime
-    ? `${draft.startTime}–${draft.endTime}`
+    ? `${draft.startTime}-${draft.endTime}`
     : (draft.startTime ?? '');
   return [draft.staff.displayName, draft.date, time].filter(Boolean).join(' · ');
 }
@@ -101,7 +101,8 @@ export function useCommandPalette({ ctx, onConfirmDrafts }: UseCommandPaletteArg
   // to duplicate here. This hook only drives the compose/confirm/success
   // phases, where the input is a free-text live parser, not a list.
   const liveResult: ParseResult = useMemo(() => {
-    if (phase !== 'compose' && phase !== 'confirm') return { rejected: false, drafts: [] };
+    if (phase !== 'compose' && phase !== 'confirm')
+      return { rejected: false, drafts: [] };
     return parseShiftCommand(query, ctx);
   }, [query, phase, ctx]);
 
@@ -169,19 +170,22 @@ export function useCommandPalette({ ctx, onConfirmDrafts }: UseCommandPaletteArg
   // "@[Name](staff:id)" chip syntax the parser already resolves
   // deterministically (see shift-command-parser.ts's CHIP_REGEX), so the
   // very next parse on this same query text resolves unambiguously.
-  const pickStaffCandidate = useCallback((draft: ParsedShiftDraft, candidateId: string) => {
-    const candidate = draft.staff.candidates.find(c => c.staffId === candidateId);
-    if (!candidate || !draft.staff.displayName) return;
-    setQuery(prev => {
-      const idx = prev.toLowerCase().indexOf(draft.staff.displayName.toLowerCase());
-      if (idx === -1) return prev;
-      return (
-        prev.slice(0, idx) +
-        `@[${candidate.displayName}](staff:${candidate.staffId})` +
-        prev.slice(idx + draft.staff.displayName.length)
-      );
-    });
-  }, []);
+  const pickStaffCandidate = useCallback(
+    (draft: ParsedShiftDraft, candidateId: string) => {
+      const candidate = draft.staff.candidates.find(c => c.staffId === candidateId);
+      if (!candidate || !draft.staff.displayName) return;
+      setQuery(prev => {
+        const idx = prev.toLowerCase().indexOf(draft.staff.displayName.toLowerCase());
+        if (idx === -1) return prev;
+        return (
+          prev.slice(0, idx) +
+          `@[${candidate.displayName}](staff:${candidate.staffId})` +
+          prev.slice(idx + draft.staff.displayName.length)
+        );
+      });
+    },
+    [],
+  );
 
   const updateDraft = useCallback((key: string, patch: Partial<ParsedShiftDraft>) => {
     setEditableDrafts(

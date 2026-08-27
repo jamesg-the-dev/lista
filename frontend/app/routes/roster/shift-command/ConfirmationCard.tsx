@@ -73,7 +73,7 @@ export function ConfirmationCard({
         </DialogDescription>
       </DialogHeader>
 
-      <div className="flex max-h-96 flex-col gap-3 overflow-y-auto p-4">
+      <div className="flex max-h-96 flex-col gap-3 overflow-y-auto p-3">
         {drafts.map(({ key, draft }) => (
           <DraftRow
             key={key}
@@ -88,8 +88,8 @@ export function ConfirmationCard({
         ))}
       </div>
 
-      <div className="border-border flex items-center justify-between gap-3 border-t px-5 py-4">
-        <Button variant="ghost" size="sm" onClick={onBack} disabled={confirming}>
+      <div className="border-border flex items-center justify-between gap-3 border-t p-3">
+        <Button variant="ghost" onClick={onBack} disabled={confirming}>
           Back to editing
         </Button>
         <div className="flex items-center gap-2">

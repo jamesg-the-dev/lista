@@ -38,6 +38,7 @@ import {
   totalAwardCost,
 } from './types';
 import { usePageTitle } from '~/lib/utils';
+import type { DayOfWeek } from '~/lib/date-types';
 
 // Luxon's `weekday` (1=Monday..7=Sunday) is always ISO-based regardless of
 // locale, unlike `startOf('week')` — matches this app's own Monday-first
@@ -120,12 +121,12 @@ export default function RosterBuilder() {
     setWeekStart(prev => prev.plus({ weeks: deltaWeeks }));
   }
 
-  function openAdd(staffId: string, dayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6) {
+  function openAdd(staffId: string, dayOfWeek: DayOfWeek) {
     setDraft({ start: '09:00', end: '17:00', unpaidBreakMinutes: 30 });
     setPanel({ staffId, dayOfWeek, shift: null, draftId: crypto.randomUUID() });
     setPanelOpen(true);
   }
-  function openEdit(staffId: string, dayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6, shift: Shift) {
+  function openEdit(staffId: string, dayOfWeek: DayOfWeek, shift: Shift) {
     setDraft({
       start: shift.start,
       end: shift.end,

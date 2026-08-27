@@ -203,12 +203,12 @@ export function CommandPalette({
       </DialogHeader>
       <DialogContent
         showCloseButton={false}
-        className="top-1/4 max-w-lg translate-y-0 gap-0 overflow-hidden rounded-xl p-0"
+        className={`max-h-[85dvh] max-w-lg gap-0 overflow-hidden rounded-xl p-0 ${phase === 'confirm' ? 'h-full' : ''}`}
       >
         {phase === 'browse' && (
           <Command>
             <CommandInput placeholder="Search commands…" autoFocus />
-            <CommandList>
+            <CommandList className="mt-2">
               <CommandEmpty>No commands match.</CommandEmpty>
               {COMMANDS.map(cmd => {
                 const Icon = COMMAND_ICONS[cmd.id];
@@ -242,24 +242,22 @@ export function CommandPalette({
 
         {phase === 'compose' && selectedCommand && (
           <>
-            <div className="p-1">
-              <InputGroup className="h-11 rounded-lg">
-                <InputGroupAddon>
-                  <InputGroupText className="font-medium">
-                    {selectedCommand.label}
-                  </InputGroupText>
-                  <span className="text-border">›</span>
-                </InputGroupAddon>
-                <InputGroupInput
-                  autoFocus
-                  value={query}
-                  onChange={e => setQuery(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder={`e.g. "${selectedCommand.example}"`}
-                  className="text-sm"
-                />
-              </InputGroup>
-            </div>
+            <InputGroup className="h-11 border-none ring-0!">
+              <InputGroupAddon>
+                <InputGroupText className="font-medium">
+                  {selectedCommand.label}
+                </InputGroupText>
+                <span className="text-gray-400">&rsaquo;</span>
+              </InputGroupAddon>
+              <InputGroupInput
+                autoFocus
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={`e.g. "${selectedCommand.example}"`}
+                className="text-sm"
+              />
+            </InputGroup>
 
             <div className="border-border max-h-80 overflow-y-auto border-t p-4">
               {query.trim().length === 0 ? (
@@ -287,13 +285,15 @@ export function CommandPalette({
                     {liveResult.drafts.length === 1 &&
                     liveResult.drafts[0].confidence === 'high' ? (
                       <>
-                        Press <kbd className="border-border rounded border px-1">Enter</kbd>{' '}
-                        to create.
+                        Press{' '}
+                        <kbd className="border-border rounded border px-1">Enter</kbd> to
+                        create.
                       </>
                     ) : (
                       <>
-                        Press <kbd className="border-border rounded border px-1">Enter</kbd>{' '}
-                        to review before creating.
+                        Press{' '}
+                        <kbd className="border-border rounded border px-1">Enter</kbd> to
+                        review before creating.
                       </>
                     )}
                   </p>

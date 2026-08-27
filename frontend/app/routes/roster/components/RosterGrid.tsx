@@ -5,7 +5,7 @@ import { PlusIcon } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Empty, EmptyDescription, EmptyTitle } from '~/components/ui/empty';
 import { initials } from '~/lib/utils';
-import { DAY_LABELS } from '~/lib/date-types';
+import { DAY_LABELS, type DayOfWeek } from '~/lib/date-types';
 
 import { ComplianceBadge } from './ComplianceBadge';
 import {
@@ -25,12 +25,8 @@ interface RosterGridProps {
   shiftsByKey: ShiftsByKey;
   isViewingCurrentWeek: boolean;
   todayIndex: number;
-  onOpenAdd: (staffId: string, dayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6) => void;
-  onOpenEdit: (
-    staffId: string,
-    dayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6,
-    shift: Shift,
-  ) => void;
+  onOpenAdd: (staffId: string, dayOfWeek: DayOfWeek) => void;
+  onOpenEdit: (staffId: string, dayOfWeek: DayOfWeek, shift: Shift) => void;
 }
 
 export function RosterGrid({
@@ -98,7 +94,7 @@ export function RosterGrid({
                   </div>
 
                   {DAY_LABELS.map((_, dayIdx) => {
-                    const dayOfWeek = dayIdx as 0 | 1 | 2 | 3 | 4 | 5 | 6;
+                    const dayOfWeek = dayIdx as DayOfWeek;
                     const key = shiftKey(st.id, dayIdx);
                     const list = shiftsByKey[key] ?? [];
                     return (
